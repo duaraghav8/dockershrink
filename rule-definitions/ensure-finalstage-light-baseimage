@@ -1,0 +1,32 @@
+MAIN(Dockerfile)
+================
+- Start
+- friendly_image_names = ["node:*slim*", "node:*alpine*", "gcr.io/distroless/nodejs*"]
+- preferred_image = "node:*slim*"  # better than alpine because alpine doesn't use official nodejs distribution due to C compiler differences
+- Get the final stage from the Dockerfile
+- BI = Base image used by the final stage
+- If BI is a not hard-coded string (imagename:tag; eg- node:22.1):
+  - WARN(BI + error message)
+  - exit(0)
+- If BI matches an item in friendly_image_names:
+  - exit(0)
+- size_bi = Attempt to Fetch the size of BI or assign -1
+- if size_bi == -1:
+  - WARN(BI + "unable to examine base image")
+  - exit(0)
+- if size_bi > 90MB:
+  - if BI name is "node":
+    - return FIX-BASE-IMAGE(preferred_image)
+  - else:
+    - log(BI + "image name is not recognized")
+    - exit(0)
+- End
+
+
+
+FIX-BASE-IMAGE(recommended_image)
+=================================
+- start
+- BI = Base image used by the final stage
+- Replace BI with recommended_image
+- end
