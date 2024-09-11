@@ -1,0 +1,29 @@
+MAIN
+====
+- Start
+- recommended_ignore = [".git", "node_modules", "npm_debug.log"]
+- Ensure that .dockerignore file exists
+  - If a path has been supplied by the user:
+    - If file doesn't exist at that path, return FIX-ADD-FILE(path, recommended_ignore)
+  - Else if ".dockerignore" doesn't exist in root directory of the project:
+    - return FIX-ADD-FILE(root, recommended_ignore)
+- Check if all recommended files & dirs are included inside .dockerignore
+  - I = Get the intersection between names present in .dockerignore and recommended_ignore
+  - If I is not empty:
+    - return FIX-ADD-TO-IGNORE(path (higher precedence) or root dir, I)
+- End
+
+
+
+FIX-ADD-FILE(path, ignorefiles)
+==================
+- Start
+- Create the .dockerignore at path and include all items from ignorefiles
+- End
+
+
+
+FIX-ADD-TO-IGNORE(path, ignorefiles)
+- start
+- Add ignorefiles to the .dockerignore file at path
+- End
