@@ -3,9 +3,15 @@ MAIN(Dockerfile)
 - Start
 - friendly_image_names = ["node:*slim*", "node:*alpine*", "gcr.io/distroless/nodejs*"]
 - preferred_image = "node:*slim*"  # better than alpine because alpine doesn't use official nodejs distribution due to C compiler differences
+- If the image contains more than one stage:
+  # This rule should only run if the user is already using multistage builds.
+  # In that case, we want to make sure that the last stage is using a slim image.
+  # If the image only has a single stage, then the ensure-multistage-builds rule
+  # should make code changes instead.
+  - exit(0)
 - Get the final stage from the Dockerfile
 - BI = Base image used by the final stage
-- If BI is a not hard-coded string (imagename:tag; eg- node:22.1):
+- If BI is not a hard-coded string (imagename:tag; eg- node:22.1):
   - WARN(BI + error message)
   - exit(0)
 - If BI matches an item in friendly_image_names:
@@ -13,12 +19,13 @@ MAIN(Dockerfile)
 - size_bi = Attempt to Fetch the size of BI or assign -1
 - if size_bi == -1:
   - WARN(BI + "unable to examine base image")
+  - USER_MSG(BI + " seems to be a private image, make sure it is a light one")
   - exit(0)
 - if size_bi > 90MB:
   - if BI name is "node":
     - return FIX-BASE-IMAGE(preferred_image)
   - else:
-    - log(BI + "image name is not recognized")
+    - WARN(BI + " cannot examine base image as it is currently not supported")
     - exit(0)
 - End
 
