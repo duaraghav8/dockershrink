@@ -1,5 +1,15 @@
 MAIN
 ====
 - Start
--
+- c_run = Find all contiguous RUN statements in the Dockerfile and record the line number of the first RUN statement for each group
+- If c_run is empty:
+  - exit(0)
+- If AI is disabled:
+  - USER_MSG("Layer counts at the following lines should be reduced by moving all command into a single RUN statement: " + c_run)
+  - exit(0)
+- response = LLM()
+  - Reduce the number of layers in this Dockerfile
+  - for $line in c_run:
+    - combine all contiguous RUN statements into the RUN statement at $line
+- return response
 - End

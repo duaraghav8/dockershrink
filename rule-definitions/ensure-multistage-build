@@ -9,11 +9,12 @@ MAIN(Dockerfile)
     "Use Multistage build. The final stage should be with a light base image like " + preferred_image + " enable AI to auto-resolve this issue"
   )
   - exit(0)
-- LLM()
+- response = LLM()
   - Add a final stage to the image if possible
   - (Share Dockerfile, .dockerignore, package.json with llm)
   - Use a light base image. Prefer node-slim over node-alpine.
   - Only copy what is necessary, including all source code.
   - Prefer to do a fresh dependency install, excluding devDependencies (npm install --production)
   - Prefer to set env var NODE_ENV = "production"
+- return response
 - End
