@@ -1,0 +1,2 @@
+- friendly_image_names = ["node:*slim*", "node:*alpine*", "gcr.io/distroless/nodejs*"]
+- preferred_image = "node:*slim*"  # better than alpine because alpine doesn't use official nodejs distribution due to C compiler differences

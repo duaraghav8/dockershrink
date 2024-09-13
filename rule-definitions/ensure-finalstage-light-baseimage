@@ -1,8 +1,6 @@
 MAIN(Dockerfile)
 ================
 - Start
-- friendly_image_names = ["node:*slim*", "node:*alpine*", "gcr.io/distroless/nodejs*"]
-- preferred_image = "node:*slim*"  # better than alpine because alpine doesn't use official nodejs distribution due to C compiler differences
 - If the image contains more than one stage:
   # This rule should only run if the user is already using multistage builds.
   # In that case, we want to make sure that the last stage is using a slim image.
