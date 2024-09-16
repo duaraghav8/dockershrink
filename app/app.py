@@ -83,13 +83,16 @@ def github_login():
 @app.route('/authorize/google')
 def google_authorize():
     token = oauth.google.authorize_access_token()
-    print(f"Token aagya bhenchod: {token}")
+    # print(f"Token aagya bhenchod: {token}")
 
     nonce = session.pop('oauth_nonce', None)
     if nonce is None:
         return jsonify({"error": "Missing nonce in session"}), 400
 
     user_info = oauth.google.parse_id_token(token, nonce=nonce)
+
+    # print(f"*****user_info**** {user_info}")
+
     return handle_oauth_login(user_info, 'google')
 
 @app.route('/authorize/github')
@@ -104,7 +107,7 @@ def handle_oauth_login(user_info, provider):
     # Check if user exists in DB
     user = User.query.filter_by(email=email).first()
     if not user:
-        user = User(email=email, oauth_id=user_info['id'])
+        user = User(email=email, oauth_id=user_info['sub'])
         db.session.add(user)
         db.session.commit()
 
