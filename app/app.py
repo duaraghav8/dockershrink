@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Flask, redirect, url_for, session, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from authlib.integrations.flask_client import OAuth
@@ -33,8 +34,9 @@ oauth.register(
     'google',
     client_id=os.getenv('GOOGLE_CLIENT_ID'),
     client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    access_token_url='https://accounts.google.com/o/oauth2/token',
+    # authorize_url='https://accounts.google.com/o/oauth2/auth',
+    # access_token_url='https://accounts.google.com/o/oauth2/token',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid profile email'}
 )
 
@@ -69,7 +71,9 @@ with app.app_context():
 @app.route('/api/v1/login/google')
 def google_login():
     redirect_uri = url_for('google_authorize', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
+    nonce = str(uuid.uuid4())  # Generate a nonce
+    session['oauth_nonce'] = nonce
+    return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
 
 @app.route('/api/v1/login/github')
 def github_login():
@@ -79,7 +83,13 @@ def github_login():
 @app.route('/authorize/google')
 def google_authorize():
     token = oauth.google.authorize_access_token()
-    user_info = oauth.google.parse_id_token(token)
+    print(f"Token aagya bhenchod: {token}")
+
+    nonce = session.pop('oauth_nonce', None)
+    if nonce is None:
+        return jsonify({"error": "Missing nonce in session"}), 400
+
+    user_info = oauth.google.parse_id_token(token, nonce=nonce)
     return handle_oauth_login(user_info, 'google')
 
 @app.route('/authorize/github')
