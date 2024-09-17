@@ -104,6 +104,8 @@ def store_openai_key():
     return jsonify({'message': 'OpenAI API key stored successfully'})
 
 
+# TODO: remove this api route
+# It is useful only to verify that the whole token authorization thing works
 @api.route('/user/<int:id>')
 def get_user(id):
     api_token = request.headers.get('Authorization')
