@@ -1,5 +1,7 @@
 import os
-from flask import Flask, jsonify, request, redirect, url_for, render_template
+import uuid
+
+from flask import Flask, jsonify, request, redirect, url_for, render_template, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
@@ -26,12 +28,7 @@ google = oauth.register(
     name='google',
     client_id=os.getenv("GOOGLE_CLIENT_ID"),
     client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    access_token_params=None,
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    authorize_params=None,
-    api_base_url='https://www.googleapis.com/oauth2/v1/',
-    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={'scope': 'openid email profile'},
 )
 
@@ -84,8 +81,10 @@ def login():
 
 @app.route('/login/google')
 def google_login():
+    nonce = uuid.uuid4().hex + uuid.uuid1().hex
+    session['google_auth_nonce'] = nonce
     redirect_uri = url_for('google_authorize', _external=True)
-    return google.authorize_redirect(redirect_uri)
+    return google.authorize_redirect(redirect_uri, nonce=nonce)
 
 
 @app.route('/login/github')
@@ -96,17 +95,28 @@ def github_login():
 
 @app.route('/authorize/google')
 def google_authorize():
-    token = google.authorize_access_token()
-    resp = google.get('userinfo')
-    user_info = resp.json()
-    email = user_info['email']
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User(email=email)
-        db.session.add(user)
-        db.session.commit()
-    login_user(user)
-    return redirect(url_for('dashboard'))
+    token = oauth.google.authorize_access_token()
+
+    nonce = session.pop('google_auth_nonce', None)
+    if nonce is None:
+        flash('Authentication failed. Please try again.', 'error')
+        return redirect(url_for('auth.login'))
+
+    try:
+        userinfo = oauth.google.parse_id_token(token)
+        email = userinfo['email']
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            user = User(email=email)
+            db.session.add(user)
+            db.session.commit()
+
+        login_user(user)
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        flash(f'Authentication error: {str(e)}', 'error')
+        return redirect(url_for('auth.login'))
 
 
 @app.route('/authorize/github')
