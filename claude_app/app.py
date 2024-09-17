@@ -100,7 +100,7 @@ def google_authorize():
     nonce = session.pop('google_auth_nonce', None)
     if nonce is None:
         flash('Authentication failed. Please try again.', 'error')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('login'))
 
     try:
         userinfo = oauth.google.parse_id_token(token)
@@ -116,7 +116,7 @@ def google_authorize():
         return redirect(url_for('dashboard'))
     except Exception as e:
         flash(f'Authentication error: {str(e)}', 'error')
-        return redirect(url_for('auth.login'))
+        return redirect(url_for('login'))
 
 
 @app.route('/authorize/github')
