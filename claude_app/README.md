@@ -40,8 +40,10 @@ python -m flask db upgrade
 ```
 
 ## TODO
+- try the other apis of the app
+- how is the user id being set in DB?
 - "pip install python-dotenv" (and add to requirements.txt) to automatically read .env file
 - docker compose-based local setup
 - understand oauth vs openid
 - read everything shared by claude so far
-- try the other apis of the app
+- if I'm already authenticated, then when I open the homepage and click "login", it should directly open my dashboard (check if this is the standard practice)
