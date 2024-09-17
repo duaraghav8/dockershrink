@@ -83,16 +83,12 @@ def github_login():
 @app.route('/authorize/google')
 def google_authorize():
     token = oauth.google.authorize_access_token()
-    # print(f"Token aagya bhenchod: {token}")
 
     nonce = session.pop('oauth_nonce', None)
     if nonce is None:
         return jsonify({"error": "Missing nonce in session"}), 400
 
     user_info = oauth.google.parse_id_token(token, nonce=nonce)
-
-    # print(f"*****user_info**** {user_info}")
-
     return handle_oauth_login(user_info, 'google')
 
 @app.route('/authorize/github')

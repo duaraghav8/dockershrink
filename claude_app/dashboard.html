@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ user.email }}</h1>
+    <p>Your API Token: {{ user.api_token or 'Not generated' }}</p>
+    <button onclick="generateToken()">Generate API Token</button>
+    <br><br>
+    <form onsubmit="storeOpenAIKey(event)">
+        <input type="text" id="openai_key" placeholder="Enter OpenAI API Key">
+        <button type="submit">Store OpenAI API Key</button>
+    </form>
+    <br>
+    <a href="{{ url_for('logout') }}">Logout</a>
+
+    <script>
+        function generateToken() {
+            fetch('/api/v1/generate_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('New API Token: ' + data.token);
+                location.reload();
+            });
+        }
+
+        function storeOpenAIKey(event) {
+            event.preventDefault();
+            const openai_key = document.getElementById('openai_key').value;
+            fetch('/api/v1/store_openai_key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ openai_key: openai_key }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+            });
+        }
+    </script>
+</body>
+</html>
