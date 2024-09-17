@@ -102,21 +102,17 @@ def google_authorize():
         flash('Authentication failed. Please try again.', 'error')
         return redirect(url_for('login'))
 
-    try:
-        userinfo = oauth.google.parse_id_token(token)
-        email = userinfo['email']
+    userinfo = oauth.google.parse_id_token(token, nonce=nonce)
+    email = userinfo['email']
 
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            user = User(email=email)
-            db.session.add(user)
-            db.session.commit()
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email)
+        db.session.add(user)
+        db.session.commit()
 
-        login_user(user)
-        return redirect(url_for('dashboard'))
-    except Exception as e:
-        flash(f'Authentication error: {str(e)}', 'error')
-        return redirect(url_for('login'))
+    login_user(user)
+    return redirect(url_for('dashboard'))
 
 
 @app.route('/authorize/github')
