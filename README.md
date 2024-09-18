@@ -1,6 +1,6 @@
 # DockerShrink
 
-Setup fresh local development environment
+## Development environment setup
 
 1. Run a new PostgreSQL at localhost:5432 & PGAdmin (optional)
 
@@ -12,7 +12,10 @@ docker-compose up
 curl localhost:5432
 
 # open pgadmin in browser - localhost:5050
+# login with user = `admin@admin.com` and password = `root`
 # Create new connection, use "postgres" for host
+
+# Create a new database "dockershrink"
 ```
 
 2. Set the database details (url, credentials, name, etc) in `.env`.
