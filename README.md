@@ -40,7 +40,10 @@ python3 run.py
 #  Any other url like 127.0.0.1 will fail during oauth login.
 
 # To test the API with your token
-curl -X GET http://localhost:5000/api/v1/user/1 -H "Authorization: <API_TOKEN>"
+curl -XPOST http://localhost:5000/api/v1/optimize \
+  -H "Content-type: application/json" \
+  -H "Authorization: <TOKEN>" \
+  --data '{"Dockerfile": "FROM ubuntu", ".dockerignore": "node_modules\nnpm_debug.log", "package.json": "{}"}'
 ```
 
 3. After adding/modifying dependencies, update `requirements.txt`

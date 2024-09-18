@@ -14,4 +14,4 @@ class Analyser:
         # run the rule engine
         # if key available, call ai to analyse further
         # curate results and return response
-        pass
+        return {"ok": "okayyy"}

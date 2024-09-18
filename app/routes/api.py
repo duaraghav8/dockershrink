@@ -27,9 +27,8 @@ def store_openai_key():
     return jsonify({'message': 'OpenAI API key stored successfully'})
 
 
-@api.route('/analyse_project', methods=['POST'])
-def analyse_project():
-    # Ensure that the request has a valid api token that belongs to an active user in the DB
+@api.route('/optimize', methods=['POST'])
+def optimize():
     api_token = request.headers.get('Authorization')
     if not api_token:
         return jsonify({'error': 'API token is missing'}), 401
@@ -38,16 +37,32 @@ def analyse_project():
     if not user:
         return jsonify({'error': 'Invalid API token'}), 401
 
-    # Get the Dockerfile, .dockerignore (optional), package.json (optional) files from post data
+    data = request.get_json()
+    if not data:
+        return jsonify(
+            {'error': 'No data provided, at least Dockerfile must be provided'}
+        ), 400
+
+    dockerfile = data.get('Dockerfile')
+    if not dockerfile:
+        return jsonify({'error': 'Dockerfile was not provided'}, 400)
+
+    dockerignore = data.get('.dockerignore')
+    package_json = data.get('package.json')
 
     analyser = Analyser(
-        dockerfile="",
-        dockerignore="",
-        package_json="",
+        dockerfile=dockerfile,
+        dockerignore=dockerignore,
+        package_json=package_json,
         openai_api_key=user.get_openai_api_key(),
     )
 
-    analysis = analyser.analyse()
+    try:
+        analysis = analyser.analyse()
+    except Exception as e:
+        return jsonify(
+            {'error': f"an error occurred while optimizing the project: {e}"}
+        ), 400
 
     # The API response will be:
     #  A JSON object that contains all suggestions + metadata (file name, line no., etc.)
