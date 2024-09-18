@@ -11,4 +11,7 @@ class Analyser:
         self.openai_api_key = openai_api_key
 
     def analyse(self):
+        # run the rule engine
+        # if key available, call ai to analyse further
+        # curate results and return response
         pass

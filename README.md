@@ -3,6 +3,18 @@
 Setup fresh local development environment
 
 1. Run a new PostgreSQL at localhost:5432 & PGAdmin (optional)
+
+```shell
+cd dev
+docker-compose up
+
+# test postgres
+curl localhost:5432
+
+# open pgadmin in browser - localhost:5050
+# Create new connection, use "postgres" for host
+```
+
 2. Set the database details (url, credentials, name, etc) in `.env`.
 
 ```shell
@@ -28,13 +40,13 @@ python3 run.py
 curl -X GET http://localhost:5000/api/v1/user/1 -H "Authorization: <API_TOKEN>"
 ```
 
-To update `requirements.txt`
+3. After adding/modifying dependencies, update `requirements.txt`
 
 ```shell
 pip freeze > requirements.txt
 ```
 
-Run DB migrations
+4. Run DB migrations
 
 ```shell
 python -m flask db init
