@@ -44,13 +44,16 @@ def create_app():
         client_kwargs={'scope': 'user:email'},
     )
 
-    from app.models import User
+    from app.models.user import User
 
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
 
-    from app.routes import main, auth, api
+    from app.routes.main import main
+    from app.routes.auth import auth
+    from app.routes.api import api
+
     app.register_blueprint(main)
     app.register_blueprint(auth)
     app.register_blueprint(api, url_prefix='/api/v1')
