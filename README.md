@@ -44,6 +44,7 @@ python -m flask db upgrade
 
 ## TODO
 - Implement the image analysis route
+- Setup logging in app so we have complete trace of request flows
 - What's the best practice when creating and providing api tokens?
   - when do we use JWT? and what are the other types of auth tokens possible?
 - Every time I login with google, it shows me the notice about do I wanna allow (with same email id), which feels like a signup.

@@ -14,7 +14,13 @@ class User(UserMixin, db.Model):
         db.session.commit()
         return self.api_token
 
+    def get_api_token(self):
+        return self.api_token
+
     def set_openai_api_key(self, key: str):
         self.openai_api_key = key
         db.session.commit()
+        return self.openai_api_key
+
+    def get_openai_api_key(self):
         return self.openai_api_key

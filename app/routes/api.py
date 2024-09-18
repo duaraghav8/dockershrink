@@ -25,10 +25,9 @@ def store_openai_key():
     return jsonify({'message': 'OpenAI API key stored successfully'})
 
 
-# TODO: remove this api route
-# It is useful only to verify that the whole token authorization thing works
-@api.route('/user/<int:id>')
-def get_user(id):
+@api.route('/analyse_project', methods=['POST'])
+def analyse_project():
+    # Ensure that the request has a valid api token that belongs to an active user in the DB
     api_token = request.headers.get('Authorization')
     if not api_token:
         return jsonify({'error': 'API token is missing'}), 401
@@ -37,11 +36,15 @@ def get_user(id):
     if not user:
         return jsonify({'error': 'Invalid API token'}), 401
 
-    requested_user = User.query.get(id)
-    if not requested_user:
-        return jsonify({'error': 'User not found'}), 404
+    # Get the user's openaiapi key from db. The key is optional
+    #  user.get_openai_api_key()
 
-    return jsonify({
-        'id': requested_user.id,
-        'email': requested_user.email
-    })
+    return jsonify({"ok": "ok"})
+
+    # Get the Dockerfile, .dockerignore (optional), package.json (optional) files from post data
+    # Invoke the analyser and provide it with all the data
+    # Collect response back from analyser
+    # The API response will be:
+    #  A JSON object that contains all suggestions + metadata (file name, line no., etc.)
+    #  All the files that were modified.
+    #  If a file was supplied to the api but not modified by the analyser, we don't send it in response.

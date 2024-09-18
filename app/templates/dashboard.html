@@ -7,7 +7,7 @@
 </head>
 <body>
     <h1>Welcome, {{ user.email }}</h1>
-    <p>Your API Token: {{ user.api_token or 'Not generated' }}</p>
+    <p>Your API Token: {{ user.get_api_token() or 'Not generated' }}</p>
     <button onclick="generateToken()">Generate API Token</button>
     <br><br>
     <form onsubmit="storeOpenAIKey(event)">
