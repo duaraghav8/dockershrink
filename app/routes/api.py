@@ -1,5 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
+
+from app.analyser.analyser import Analyser
 from app.models.user import User
 
 api = Blueprint('api', __name__)
@@ -36,15 +38,20 @@ def analyse_project():
     if not user:
         return jsonify({'error': 'Invalid API token'}), 401
 
-    # Get the user's openaiapi key from db. The key is optional
-    #  user.get_openai_api_key()  # This will be either string or None (if key not present)
-
-    return jsonify({"ok": "ok"})
-
     # Get the Dockerfile, .dockerignore (optional), package.json (optional) files from post data
-    # Invoke the analyser and provide it with all the data
-    # Collect response back from analyser
+
+    analyser = Analyser(
+        dockerfile="",
+        dockerignore="",
+        package_json="",
+        openai_api_key=user.get_openai_api_key(),
+    )
+
+    analysis = analyser.analyse()
+
     # The API response will be:
     #  A JSON object that contains all suggestions + metadata (file name, line no., etc.)
     #  All the files that were modified.
     #  If a file was supplied to the api but not modified by the analyser, we don't send it in response.
+
+    return jsonify(analysis)
