@@ -3,6 +3,7 @@ from functools import wraps
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
+from app.service.generator import ImageDefinitionGenerator
 from app.service.optimizer import Optimizer
 from app.models.user import User
 
@@ -48,9 +49,30 @@ def store_openai_key():
 @api.route('/generate', methods=['POST'])
 @token_required
 def generate(user):
+    data = request.get_json()
+    if not data:
+        return jsonify(
+            {'error': 'No data provided. At least package.json must be provided.'}
+        ), 400
+
+    package_json = data.get('package.json')
+    if not package_json:
+        return jsonify({'error': 'package.json was not provided'}), 400
+
+    generator = ImageDefinitionGenerator(
+        package_json=package_json,
+        openai_api_key=user.get_openai_api_key(),
+    )
+    try:
+        dockerfile, dockerignore = generator.generate()
+    except Exception as e:
+        return jsonify(
+            {'error': f"An error occurred while generating image definition: {e}"}
+        ), 400
+
     return jsonify({
-        "Dockerfile": "",
-        ".dockerignore": ""
+        "Dockerfile": dockerfile,
+        ".dockerignore": dockerignore,
     })
 
 
@@ -60,12 +82,12 @@ def optimize(user):
     data = request.get_json()
     if not data:
         return jsonify(
-            {'error': 'No data provided, at least Dockerfile must be provided'}
+            {'error': 'No data provided. At least Dockerfile must be provided.'}
         ), 400
 
     dockerfile = data.get('Dockerfile')
     if not dockerfile:
-        return jsonify({'error': 'Dockerfile was not provided'}, 400)
+        return jsonify({'error': 'Dockerfile was not provided'}), 400
 
     dockerignore = data.get('.dockerignore')
     package_json = data.get('package.json')
@@ -76,7 +98,6 @@ def optimize(user):
         package_json=package_json,
         openai_api_key=user.get_openai_api_key(),
     )
-
     try:
         resp = optimizer.optimize()
     except Exception as e:
