@@ -13,7 +13,7 @@ source venv/bin/activate
 # Install dependencies
 pip install --no-cache-dir -r requirements.txt
 
-# Set the env vars
+# Set the env vars (see file env.example)
 export $(xargs <.env)
 export FLASK_ENV=development
 
