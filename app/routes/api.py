@@ -1,3 +1,5 @@
+from functools import wraps
+
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
@@ -5,6 +7,22 @@ from app.service.optimizer import Optimizer
 from app.models.user import User
 
 api = Blueprint('api', __name__)
+
+
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        api_token = request.headers.get('Authorization')
+        if not api_token:
+            return jsonify({'error': 'API token is missing'}), 401
+
+        user = User.query.filter_by(api_token=api_token).first()
+        if not user:
+            return jsonify({'error': 'Invalid API token'}), 401
+
+        return f(user, *args, **kwargs)
+
+    return decorated
 
 
 @api.route('/generate_token', methods=['POST'])
@@ -27,16 +45,18 @@ def store_openai_key():
     return jsonify({'message': 'OpenAI API key stored successfully'})
 
 
+@api.route('/generate', methods=['POST'])
+@token_required
+def generate(user):
+    return jsonify({
+        "Dockerfile": "",
+        ".dockerignore": ""
+    })
+
+
 @api.route('/optimize', methods=['POST'])
-def optimize():
-    api_token = request.headers.get('Authorization')
-    if not api_token:
-        return jsonify({'error': 'API token is missing'}), 401
-
-    user = User.query.filter_by(api_token=api_token).first()
-    if not user:
-        return jsonify({'error': 'Invalid API token'}), 401
-
+@token_required
+def optimize(user):
     data = request.get_json()
     if not data:
         return jsonify(
@@ -61,7 +81,7 @@ def optimize():
         resp = optimizer.optimize()
     except Exception as e:
         return jsonify(
-            {'error': f"an error occurred while optimizing the project: {e}"}
+            {'error': f"An error occurred while optimizing the project: {e}"}
         ), 400
 
     # The API response will be:
