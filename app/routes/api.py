@@ -37,7 +37,7 @@ def analyse_project():
         return jsonify({'error': 'Invalid API token'}), 401
 
     # Get the user's openaiapi key from db. The key is optional
-    #  user.get_openai_api_key()
+    #  user.get_openai_api_key()  # This will be either string or None (if key not present)
 
     return jsonify({"ok": "ok"})
 
