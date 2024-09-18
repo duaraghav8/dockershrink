@@ -1,4 +1,4 @@
-class Analyser:
+class Optimizer:
     dockerfile: str
     dockerignore: str
     package_json: str
@@ -10,7 +10,7 @@ class Analyser:
         self.package_json = package_json
         self.openai_api_key = openai_api_key
 
-    def analyse(self):
+    def optimize(self):
         # run the rule engine
         # if key available, call ai to analyse further
         # curate results and return response
