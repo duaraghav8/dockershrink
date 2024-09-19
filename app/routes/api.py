@@ -4,6 +4,9 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
 from app.service.ai import AIService
+from app.service.dockerfile import Dockerfile
+from app.service.dockerignore import Dockerignore
+from app.service.package_json import PackageJSON
 from app.service.project import Project
 from app.models.user import User
 
@@ -49,6 +52,10 @@ def store_openai_key():
 @api.route('/generate', methods=['POST'])
 @token_required
 def generate(user):
+    """
+    Generates new Docker image definition for the given project, focused on minimizing size.
+    This will create new Dockerfile, .dockerignore and any other assets applicable.
+    """
     data = request.get_json()
     if not data:
         return jsonify(
@@ -64,17 +71,17 @@ def generate(user):
     if ai_access_key:
         ai = AIService(ai_access_key)
 
-    project = Project(package_json=package_json)
+    project = Project(package_json=PackageJSON(package_json))
     try:
-        dockerfile, dockerignore = project.generate_docker_image(ai)
+        dockerfile, dockerignore = project.generate_docker_image_definition(ai)
     except Exception as e:
         return jsonify(
             {'error': f"An error occurred while generating image definition: {e}"}
         ), 400
 
     return jsonify({
-        "Dockerfile": dockerfile,
-        ".dockerignore": dockerignore,
+        'Dockerfile': dockerfile,
+        '.dockerignore': dockerignore,
     })
 
 
@@ -89,7 +96,9 @@ def optimize(user):
 
     dockerfile = data.get('Dockerfile')
     if not dockerfile:
-        return jsonify({'error': 'Dockerfile was not provided'}), 400
+        return jsonify(
+            {'error': 'Provide a Dockerfile to optimize or use the /generate API to create a new Dockerfile'}
+        ), 400
 
     dockerignore = data.get('.dockerignore')
     package_json = data.get('package.json')
@@ -100,9 +109,9 @@ def optimize(user):
         ai = AIService(ai_access_key)
 
     project = Project(
-        dockerfile=dockerfile,
-        dockerignore=dockerignore,
-        package_json=package_json,
+        dockerfile=Dockerfile(dockerfile),
+        dockerignore=Dockerignore(dockerignore),
+        package_json=PackageJSON(package_json),
     )
     try:
         resp = project.optimize_docker_image(ai)

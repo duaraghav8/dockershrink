@@ -1,3 +1,8 @@
+from app.service.dockerfile import Dockerfile
+from app.service.dockerignore import Dockerignore
+from app.service.package_json import PackageJSON
+
+
 class Project:
     dockerfile: Dockerfile
     dockerignore: Dockerignore
@@ -5,9 +10,9 @@ class Project:
 
     def __init__(
         self,
-        dockerfile: Dockerfile,
-        dockerignore: Dockerignore,
-        package_json: PackageJSON,
+        dockerfile: Dockerfile = None,
+        dockerignore: Dockerignore = None,
+        package_json: PackageJSON = None,
     ):
         self.dockerfile = dockerfile
         self.dockerignore = dockerignore
@@ -22,25 +27,13 @@ class Project:
         # Light base image, preferably NODE_ENV=production
         pass
 
-    def generate_docker_image(self, ai=None):
-        return "dockerfile", "dockerignore"
+    def generate_docker_image_definition(self, ai=None):
+        return 'dockerfile', 'dockerignore'
 
     def optimize_docker_image(self, ai=None):
         """
         Given all assets of the current project, this method optimises
         the Docker image definition for it.
-
-        TODO: Should each rule get the original dockerfile+assets?
-         Or should each rule receive the assets that have been
-         optimised by the previous rules till now?
-
-         original:
-         -
-
-         No 2 fixes can conflict with each other. If this happens,
-         We must report it as an ERROR log and investigate the cause.
-         + The rule engine should apply the first fix and ignore the
-         second one.
 
         :return:
         """
@@ -49,7 +42,7 @@ class Project:
         if not self.dockerignore.exists():
             self.dockerignore.create()
         self.dockerignore.add_if_not_present(
-            ["node_modules", "npm_debug.log", ".git"]
+            ['node_modules', 'npm_debug.log', '.git']
         )
 
         # First, we try to include multistage build. Using Multistage builds is always recommended.
@@ -66,17 +59,13 @@ class Project:
         self._dockerfile_exclude_dev_dependencies()
         self._dockerfile_minimize_layercount()
         self._dockerfile_use_node_prune()
-        self._exclude_frontend_assets()
-
-        self.dockerfile.finalize()
-        self.dockerignore.finalize()
-        self.package_json.finalize()
+        self._dockerfile_exclude_frontend_assets()
 
         return {
-            "suggestions": self.suggestions,
-            "modified_project": {
-                "Dockerfile": self.dockerfile,
-                "package.json": self.package_json,
-                ".dockerignore": self.dockerignore,
+            'suggestions': self.suggestions,
+            'modified_project': {
+                'Dockerfile': self.dockerfile,
+                'package.json': self.package_json,
+                '.dockerignore': self.dockerignore,
             }
         }
