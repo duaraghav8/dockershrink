@@ -39,11 +39,11 @@ python3 run.py
 # NOTE: use localhost because only localhost is whitelisted by google oauth callback.
 #  Any other url like 127.0.0.1 will fail during oauth login.
 
-# To test the API with your token
+# To test the APIs with your token
 curl -XPOST http://localhost:5000/api/v1/optimize \
   -H "Content-type: application/json" \
   -H "Authorization: <TOKEN>" \
-  --data '{"Dockerfile": "FROM ubuntu", ".dockerignore": "node_modules\nnpm_debug.log", "package.json": "{}"}'
+  --data '{"Dockerfile": "FROM ubuntu", ".dockerignore": "node_modules\nnpm_debug.log", "package.json": {"version": "0.4.32"}}'
 ```
 
 3. After adding/modifying dependencies, update `requirements.txt`

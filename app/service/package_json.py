@@ -1,8 +1,8 @@
 class PackageJSON:
-    _raw_data: str = None
+    _raw_data = None
 
-    def __init__(self, contents: str):
-        self._raw_data = contents
+    def __init__(self, data):
+        self._raw_data = data
 
     def raw(self) -> str:
         return self._raw_data

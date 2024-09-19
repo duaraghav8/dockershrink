@@ -40,6 +40,8 @@ class Project:
         pass
 
     def _dockerfile_exclude_dev_dependencies(self):
+        # ensure npm install --production or yarn install --production
+        # alternatively, check if npm prune command is being used
         pass
 
     def _dockerfile_exclude_frontend_assets(self):
@@ -88,7 +90,7 @@ class Project:
             "recommendations": self.recommendations,
             "modified_project": {
                 "Dockerfile": self.dockerfile.raw(),
-                "package.json": self.package_json.raw(),
                 ".dockerignore": self.dockerignore.raw(),
+                "package.json": self.package_json.raw(),
             },
         }
