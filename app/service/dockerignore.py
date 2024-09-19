@@ -5,10 +5,10 @@ class Dockerignore:
         self._raw_data = contents
 
     def exists(self) -> bool:
-        pass
+        return self._raw_data is not None
 
     def create(self):
-        pass
+        self._raw_data = ""
 
     def add_if_not_present(self, entries):
         pass
