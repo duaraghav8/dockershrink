@@ -53,17 +53,17 @@ class Project:
         if self.dockerfile.get_stage_count() == 1:
             self._dockerfile_use_multistage_builds()
 
-        self._dockerfile_finalstage_use_light_baseimage()
-        self._dockerfile_exclude_dev_dependencies()
-        self._dockerfile_minimize_layercount()
-        self._dockerfile_use_node_prune()
-        self._dockerfile_exclude_frontend_assets()
+        # self._dockerfile_finalstage_use_light_baseimage()
+        # self._dockerfile_exclude_dev_dependencies()
+        # self._dockerfile_minimize_layercount()
+        # self._dockerfile_use_node_prune()
+        # self._dockerfile_exclude_frontend_assets()
 
         return {
             "suggestions": self.suggestions,
             "modified_project": {
-                "Dockerfile": self.dockerfile,
-                "package.json": self.package_json,
-                ".dockerignore": self.dockerignore,
+                "Dockerfile": self.dockerfile.raw(),
+                "package.json": self.package_json.raw(),
+                ".dockerignore": self.dockerignore.raw(),
             },
         }
