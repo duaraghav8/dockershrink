@@ -13,35 +13,35 @@ oauth = OAuth()
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key')
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "your-secret-key")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = "auth.login"
     oauth.init_app(app)
 
     # OAuth configuration
     oauth.register(
-        name='google',
+        name="google",
         client_id=os.getenv("GOOGLE_CLIENT_ID"),
         client_secret=os.getenv("GOOGLE_CLIENT_SECRET"),
-        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-        client_kwargs={'scope': 'openid email profile'},
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
     )
 
     oauth.register(
-        name='github',
+        name="github",
         client_id=os.getenv("GITHUB_CLIENT_ID"),
         client_secret=os.getenv("GITHUB_CLIENT_SECRET"),
-        access_token_url='https://github.com/login/oauth/access_token',
+        access_token_url="https://github.com/login/oauth/access_token",
         access_token_params=None,
-        authorize_url='https://github.com/login/oauth/authorize',
+        authorize_url="https://github.com/login/oauth/authorize",
         authorize_params=None,
-        api_base_url='https://api.github.com/',
-        client_kwargs={'scope': 'user:email'},
+        api_base_url="https://api.github.com/",
+        client_kwargs={"scope": "user:email"},
     )
 
     from app.models.user import User
@@ -56,6 +56,6 @@ def create_app():
 
     app.register_blueprint(main)
     app.register_blueprint(auth)
-    app.register_blueprint(api, url_prefix='/api/v1')
+    app.register_blueprint(api, url_prefix="/api/v1")
 
     return app

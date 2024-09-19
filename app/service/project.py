@@ -28,7 +28,7 @@ class Project:
         pass
 
     def generate_docker_image_definition(self, ai=None):
-        return 'dockerfile', 'dockerignore'
+        return "dockerfile", "dockerignore"
 
     def optimize_docker_image(self, ai=None):
         """
@@ -41,9 +41,7 @@ class Project:
         # files & directories
         if not self.dockerignore.exists():
             self.dockerignore.create()
-        self.dockerignore.add_if_not_present(
-            ['node_modules', 'npm_debug.log', '.git']
-        )
+        self.dockerignore.add_if_not_present(["node_modules", "npm_debug.log", ".git"])
 
         # First, we try to include multistage build. Using Multistage builds is always recommended.
         # Because in the final stage, you can just use a light base image, leave out everything and only cherry-pick
@@ -62,10 +60,10 @@ class Project:
         self._dockerfile_exclude_frontend_assets()
 
         return {
-            'suggestions': self.suggestions,
-            'modified_project': {
-                'Dockerfile': self.dockerfile,
-                'package.json': self.package_json,
-                '.dockerignore': self.dockerignore,
-            }
+            "suggestions": self.suggestions,
+            "modified_project": {
+                "Dockerfile": self.dockerfile,
+                "package.json": self.package_json,
+                ".dockerignore": self.dockerignore,
+            },
         }

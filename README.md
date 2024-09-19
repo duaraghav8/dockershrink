@@ -60,6 +60,12 @@ python -m flask db migrate -m "Initial migration"
 python -m flask db upgrade
 ```
 
+5. Run Black
+
+```shell
+black app
+```
+
 ## TODO
 - Implement the image analysis route
 - Setup logging in app so we have complete trace of request flows
