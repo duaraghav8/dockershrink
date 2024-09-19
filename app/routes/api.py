@@ -3,8 +3,7 @@ from functools import wraps
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 
-from app.service.generator import ImageDefinitionGenerator
-from app.service.optimizer import Optimizer
+from app.service.project import Project
 from app.models.user import User
 
 api = Blueprint('api', __name__)
@@ -59,12 +58,12 @@ def generate(user):
     if not package_json:
         return jsonify({'error': 'package.json was not provided'}), 400
 
-    generator = ImageDefinitionGenerator(
+    project = Project(
         package_json=package_json,
         openai_api_key=user.get_openai_api_key(),
     )
     try:
-        dockerfile, dockerignore = generator.generate()
+        dockerfile, dockerignore = project.generate_docker_image()
     except Exception as e:
         return jsonify(
             {'error': f"An error occurred while generating image definition: {e}"}
@@ -92,14 +91,14 @@ def optimize(user):
     dockerignore = data.get('.dockerignore')
     package_json = data.get('package.json')
 
-    optimizer = Optimizer(
+    project = Project(
         dockerfile=dockerfile,
         dockerignore=dockerignore,
         package_json=package_json,
         openai_api_key=user.get_openai_api_key(),
     )
     try:
-        resp = optimizer.optimize()
+        resp = project.optimize_docker_image()
     except Exception as e:
         return jsonify(
             {'error': f"An error occurred while optimizing the project: {e}"}
