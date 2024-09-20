@@ -67,7 +67,7 @@ class Project:
         # files & directories
         if not self.dockerignore.exists():
             self.dockerignore.create()
-        self.dockerignore.add_if_not_present(["node_modules", "npm_debug.log", ".git"])
+        self.dockerignore.add_if_not_present({"node_modules", "npm_debug.log", ".git"})
 
         # First, we try to include multistage build. Using Multistage builds is always recommended.
         # Because in the final stage, you can just use a light base image, leave out everything and only cherry-pick
