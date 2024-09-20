@@ -67,7 +67,6 @@ black app
 ```
 
 ## TODO
-- Implement the image analysis route
 - Setup logging in app so we have complete trace of request flows
 - What's the best practice when creating and providing api tokens?
   - when do we use JWT? and what are the other types of auth tokens possible?
@@ -80,3 +79,37 @@ black app
 - understand oauth vs openid
 - read everything shared by claude so far
 - if I'm already authenticated, then when I open the homepage and click "login", it should directly open my dashboard (check if this is the standard practice)
+
+## NOTES
+
+### How AI will work
+TODO: evaluate this strategy - is it actually beneficial or just over engineering? Or can we just do full ai for now and introduce rules later?
+
+Collaboration with AI is not just raw, ie, I won't just give it a dockerfile and ask it to make changes and give it back.
+Instead, I'll give it the dockerfile + assets, give it a very specific goal (eg- add Multistage and ONLY stick to the following rules: slim base image + ...), give it a finite list of functions it can call on the code (eg- addLayer(3, "RUN npm install --production"), removeLayer(2), createNewStage(), etc). The AI can call a combination of these functions - return this algorithm as a response to my app.
+Then the app will actually execute these functions and modify the code. The rule engine can have more control this way and ensure we're not writing something syntactically incorrect, unless the AI's thinking itself was wrong and it generated something nonsensical. 
+
+Direct prompt for multistage:
+```text
+You are an expert software and DevOps engineer. I will share a nodejs REST backend code project with you. This backend runs inside Docker containers. Your goal is to optimize the docker image definition to reduce the image size as much as possible, while still keeping it developer-friendly.
+
+Using multistage builds is a highly recommended technique to reduce the size of the final image.
+Your only task is to create a final stage in this Dockerfile which only contains the application source code, dependencies and anything else you think is necessary for the app to run or relevant to the final image.
+The final stage must use a slim base image if possible.
+If you need more information, ask for it. For example, you want to examine the .dockerignore or the source code.
+Don't make any other optimizations, just multistage builds.
+
+Give me a new, more optimized Dockerfile and list each change you made to the file as a step. For example, if you added a new FROM statement first, you can say "1. Add new stage" and so on.
+
+After creating the image, check it once again to make sure you didn't accidentally leave out anything important.
+
+Here is the Dockerfile for the project.
+
+<DOCKERFILE CONTENTS>
+```
+
+Prompt parts that may be included
+```text
+# I don't want this because we would certainly like to have multistage. This allows us to cherry-pick things that we want in the final stage and leave out everything else.
+It is possible that the Dockerfile is already optimised with multistage build. If you think that's the case, there's no need to make any further changes.
+```
