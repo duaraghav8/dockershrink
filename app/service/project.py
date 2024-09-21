@@ -22,19 +22,38 @@ class Project:
         self.recommendations = []
 
     def _dockerfile_use_multistage_builds(self, ai):
-        # Light base image, preferably NODE_ENV=production, should ideally only copy app code + node_modules
-        # Assumes that there is currently only 1 stage in the Dockerfile
+        """
+        Given a single-stage Dockerfile, this method uses AI to modify it to use Multistage builds.
+        The final stage in the Dockerfile uses a slim base image and only contains the application code,
+          dependencies (excluding dev deps) and any other assets needed to run the app.
+        If it fails to add a new stage, this method simply returns the original Dockerfile without any
+          modifications.
+
+        :param ai:
+        :return: Dockerfile
+        """
+
+        # prep the base prompt
+        # check for "npm run" commands in dockerfile, extract them from package.json and add them to prompt
+        # call llm, supply prompt & dockerfile
+        # questions: how do i integrate, how do i prompt, what are roles (system, user), can I re-use a prompt
 
         # TODO: Use different dockerfile examples to run on LLM to build and optimise the prompt
         #  If needed, check how different apps/people are doing their prompts, especially for coding tasks
 
         # If the dockerfile contains "npm run build" command, then extract the build command
         # from package.json and include it in the prompt.
+        # In general, if there's any "npm run X" command, supply the code for X from package.json.
+        # "npm start" is an alias to "npm run start". If "start" is not defined in package.json,
+        # default command is "node server.js".
 
         # Call LLM with prompt and Dockerfile, get back the optimised file.
         # Create a new Dockerfile object with this new file to run further tests on it.
         # Check that the returned file is a valid (syntactically correct) dockerfile.
         # Check stage count. If LLM didn't add another stage, report this event for further investigation but don't throw any error, just exit
+
+        # Verify that the commands written by llm in RUN statements are correct.
+        # Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.
 
         # Make sure that the final stage base image uses the same nodejs version as previous stage.
         #  If it uses something like "latest", we should be consistent with that too.

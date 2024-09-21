@@ -82,13 +82,6 @@ black app
 
 ## NOTES
 
-### How AI will work
-TODO: evaluate this strategy - is it actually beneficial or just over engineering? Or can we just do full ai for now and introduce rules later?
-
-Collaboration with AI is not just raw, ie, I won't just give it a dockerfile and ask it to make changes and give it back.
-Instead, I'll give it the dockerfile + assets, give it a very specific goal (eg- add Multistage and ONLY stick to the following rules: slim base image + ...), give it a finite list of functions it can call on the code (eg- addLayer(3, "RUN npm install --production"), removeLayer(2), createNewStage(), etc). The AI can call a combination of these functions - return this algorithm as a response to my app.
-Then the app will actually execute these functions and modify the code. The rule engine can have more control this way and ensure we're not writing something syntactically incorrect, unless the AI's thinking itself was wrong and it generated something nonsensical. 
-
 Prompt tips:
 
 - Give llm a persona
@@ -120,30 +113,36 @@ Multistage specific tasks
 
 Direct prompt for multistage:
 ```text
-You are an expert software and DevOps engineer who specialises in NodeJS-based REST API backend applications.
+You are an expert software and DevOps engineer who specializes in Docker and NodeJS backend applications.
 
 Given a Nodejs project that contains a Docker image definition to containerize it, your goal is to reduce the size of the docker image as much as possible, while still keeping the code legible and developer-friendly.
 
-As part of this request, your only task is to modify the single-stage Dockerfile to adopt Multistage builds. Multistage has the benefit that the final image produced (final stage) uses a slim base image and only contains things that you put in it.
-Create a final stage in the Dockerfile which only contains the application source code, its dependencies and anything else you think is necessary for the app to run or relevant to the final image.
+As part of this request, your only task is to modify the given single-stage Dockerfile to adopt Multistage builds. Multistage has the benefit that the final image produced (final stage) uses a slim base image and only contains things that you put in it.
+Create a final stage in the Dockerfile which only contains the application source code, its dependencies (excluding "devDependencies" from package.json) and anything else you think is necessary for the app to run or relevant to the final image.
 
 * The final stage must use a slim base image if possible. If the previous stage uses a specific version of NodeJS, make sure to use the same version.
-* Try to keep your code changes as consistent with the original code as possible. For example, if the previous stage used "npm install" for installing dependencies, favour that command. If it used "npm ci", favour ci.
+* If possible, set the `NODE_ENV` environment variable to `production`. This should be done BEFORE running any commands related to nodejs or npm. This ensures that dev dependencies are not installed in the final stage.
+* Do a fresh install of the dependencies (node_modules) in the final stage and exclude dev dependencies. Do not change the installation commands in the previous stage and don't copy node_modules from the previous stage.
+* Try to keep your code changes as consistent with the original code as possible. For example, if the previous stage uses "npm install" for installing dependencies, don't replace it with "npm ci". Try to use "install" only.
 * If the previous stage contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if you think its relevant.
+* Comments should be added only in the new stage that you're writing. Don't add any comments in the previous stage unless you need to make an important remark.
 
-After writing all the code, review it step-by-step to ensure you didn't accidentally leave out anything important.
+After writing all the code, review it step-by-step and think what the final image would contain to ensure you didn't accidentally leave out anything important.
 
-Output only the new Dockerfile, nothing else.
+As your response, output only the new Dockerfile, nothing else.
 
-Here is the Dockerfile for the project:
+Here is the Dockerfile for the project that you need to optimize:
 
 """
 <DOCKERFILE CONTENTS>
 """
-```
 
-Prompt parts that may be included
-```text
-# I don't want this because we would certainly like to have multistage. This allows us to cherry-pick things that we want in the final stage and leave out everything else.
-It is possible that the Dockerfile is already optimised with multistage build. If you think that's the case, there's no need to make any further changes.
+
+x-x-x-x-x-x Additional details x-x-x-x-x-x-x
+
+The `npm run build` command in the Dockerfile executes the following code (extracted from package.json):
+`<build script contents>`
+
+The `npm run start` command in the Dockerfile executes the following code (extracted from package.json):
+`<start script contents>`
 ```
