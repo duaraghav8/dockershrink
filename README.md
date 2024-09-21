@@ -89,13 +89,48 @@ Collaboration with AI is not just raw, ie, I won't just give it a dockerfile and
 Instead, I'll give it the dockerfile + assets, give it a very specific goal (eg- add Multistage and ONLY stick to the following rules: slim base image + ...), give it a finite list of functions it can call on the code (eg- addLayer(3, "RUN npm install --production"), removeLayer(2), createNewStage(), etc). The AI can call a combination of these functions - return this algorithm as a response to my app.
 Then the app will actually execute these functions and modify the code. The rule engine can have more control this way and ensure we're not writing something syntactically incorrect, unless the AI's thinking itself was wrong and it generated something nonsensical. 
 
+Prompt tips:
+
+- Give llm a persona
+- Give Context, define the task + scope
+- specify the output format
+  - only produce dockerfile as a python string
+  - hide all your other thoughts, don't output them
+- if required, specify limits on output generation to keep costs under control
+- If required, tell the LLM what NOT to do
+- direct instructions
+  - List the specific points to ensure when doing multistage
+- provide examples where helpful
+- (experiment) Tell LLM Make the least amount of code changes possible to achieve your goal
+- (experiment) Tell the LLM to review its work after generating
+- (experiment) tell llm to think its solution through, step by step
+- (experiment) What to do in case the dockerfile given to llm seems incomplete or invalid or "doesn't make sense"
+- TODO: Check holmesgpt prompts, other llm apps' prompts
+
+Multistage specific tasks
+
+- Assign a name like "build" to the first stage
+- Create a new (final) stage with a slim base image (favour slim over alpine?)
+- Copy the final assets (source code, node_modules, anything else applicable) into the final stage
+- If the first stage contains commands related to running the app, they should be moved to the final stage
+-  eg- EXPOSE, CMD, ENTRYPOINT
+- Any metadata statements such as LABEL should be moved to final stage
+- WORKDIR statement should be copied into the final stage
+
+
 Direct prompt for multistage:
 ```text
-You are an expert software and DevOps engineer. I will share a nodejs REST backend code project with you. This backend runs inside Docker containers. Your goal is to optimize the docker image definition to reduce the image size as much as possible, while still keeping it developer-friendly.
+You are an expert software and DevOps engineer.
+I will share a nodejs REST backend code project with you. This backend runs inside a Docker container. Your goal is to optimize the docker image definition to reduce the image size as much as possible, while still keeping it legible and developer-friendly.
 
-Using multistage builds is a highly recommended technique to reduce the size of the final image.
 Your only task is to create a final stage in this Dockerfile which only contains the application source code, dependencies and anything else you think is necessary for the app to run or relevant to the final image.
+
 The final stage must use a slim base image if possible.
+When possible, favour using "npm install" over "npm ci".
+If the original definition contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if it is relevant. For example
+
+# TODO: in case of "npm run build" being used in dockerfile, should I also supply the package.json command to LLM and ask it to consider the command
+
 If you need more information, ask for it. For example, you want to examine the .dockerignore or the source code.
 Don't make any other optimizations, just multistage builds.
 

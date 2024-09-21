@@ -25,32 +25,18 @@ class Project:
         # Light base image, preferably NODE_ENV=production, should ideally only copy app code + node_modules
         # Assumes that there is currently only 1 stage in the Dockerfile
 
-        # TODO:
-        #  Use different dockerfile examples to run on LLM to build and optimise the prompt
-        #  Write code here to call the LLM, supply the dockerfile + prompt
-        #  Receive updated dockerfile
-        #  If ai didn't add another stage, exit now
-        #  Run any checks necessary to ensure that the ai "did the right thing"
-        #    Any check violation = exit now
-        #  Update self.dockerfile to new one
-
-        # Assign a name like "build" to the first stage
-        # Create a new (final) stage with a slim base image (favour slim over alpine?)
-        # Copy the final assets (source code, node_modules, anything else applicable) into the final stage
-        # If the first stage contains commands related to running the app, they should be moved to the final stage
-        #  eg- EXPOSE, CMD, ENTRYPOINT
-        # Any metadata statements such as LABEL should be moved to final stage
-        # WORKDIR statement should be copied into the final stage
+        # TODO: Use different dockerfile examples to run on LLM to build and optimise the prompt
 
         # Call LLM with prompt and Dockerfile, get back the optimised file.
+        # Create a new Dockerfile object with this new file to run further tests on it.
+        # Check that the returned file is a valid (syntactically correct) dockerfile.
+        # Check stage count. If LLM didn't add another stage, report this event for further investigation but don't throw any error, just exit
 
-        # If the LLM didn't add another stage, report this event for further investigation but don't throw any error
-
-        # Write rules to ensure that the multistage was done correctly and a valid dockerfile was produced.
+        # Write rules to ensure that the multistage was done correctly
         # If any of the rules are violated, we do not apply the changes.
         # Only stick to rules you think are important
 
-        # If all good, apply the changes.
+        # If all good, apply the changes to self.dockerfile. return
 
         pass
 
@@ -61,8 +47,7 @@ class Project:
         pass
 
     def _dockerfile_use_node_prune(self):
-        """
-        """
+        """ """
         # if single stage, download node-prune after the last "npm/yarn install" and invoke it to trim down node_modules, then delete it.
         # if multistage, download node-prune as last step of second last stage. Copy node-prune into the last stage. In final stage, invoke node-prune.
         #  if there's any "npm/yarn install" in final stage, invoke the binary AFTER the install command. After this, delete node-prune.

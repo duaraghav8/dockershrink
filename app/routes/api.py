@@ -85,6 +85,14 @@ def generate(user):
             400,
         )
 
+    # TODO: Optimise the generated docker assets
+    #  One way is to add the dockerfile, .dockerignore into a new project and run optimize() on it
+    #  p2 = Project(dockerfile, dockerignore)
+    #  resp = p2.optimize()
+    #  return resp assets
+    # In this case, the generate method only needs to generate a dockerfile with basic rules.
+    # Other rules are taken care of by optimize()
+
     return jsonify(
         {
             "Dockerfile": dockerfile,
