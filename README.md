@@ -120,27 +120,26 @@ Multistage specific tasks
 
 Direct prompt for multistage:
 ```text
-You are an expert software and DevOps engineer.
-I will share a nodejs REST backend code project with you. This backend runs inside a Docker container. Your goal is to optimize the docker image definition to reduce the image size as much as possible, while still keeping it legible and developer-friendly.
+You are an expert software and DevOps engineer who specialises in NodeJS-based REST API backend applications.
 
-Your only task is to create a final stage in this Dockerfile which only contains the application source code, dependencies and anything else you think is necessary for the app to run or relevant to the final image.
+Given a Nodejs project that contains a Docker image definition to containerize it, your goal is to reduce the size of the docker image as much as possible, while still keeping the code legible and developer-friendly.
 
-The final stage must use a slim base image if possible.
-When possible, favour using "npm install" over "npm ci".
-If the original definition contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if it is relevant. For example
+As part of this request, your only task is to modify the single-stage Dockerfile to adopt Multistage builds. Multistage has the benefit that the final image produced (final stage) uses a slim base image and only contains things that you put in it.
+Create a final stage in the Dockerfile which only contains the application source code, its dependencies and anything else you think is necessary for the app to run or relevant to the final image.
 
-# TODO: in case of "npm run build" being used in dockerfile, should I also supply the package.json command to LLM and ask it to consider the command
+* The final stage must use a slim base image if possible. If the previous stage uses a specific version of NodeJS, make sure to use the same version.
+* Try to keep your code changes as consistent with the original code as possible. For example, if the previous stage used "npm install" for installing dependencies, favour that command. If it used "npm ci", favour ci.
+* If the previous stage contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if you think its relevant.
 
-If you need more information, ask for it. For example, you want to examine the .dockerignore or the source code.
-Don't make any other optimizations, just multistage builds.
+After writing all the code, review it step-by-step to ensure you didn't accidentally leave out anything important.
 
-Give me a new, more optimized Dockerfile and list each change you made to the file as a step. For example, if you added a new FROM statement first, you can say "1. Add new stage" and so on.
+Output only the new Dockerfile, nothing else.
 
-After creating the image, check it once again to make sure you didn't accidentally leave out anything important.
+Here is the Dockerfile for the project:
 
-Here is the Dockerfile for the project.
-
+"""
 <DOCKERFILE CONTENTS>
+"""
 ```
 
 Prompt parts that may be included

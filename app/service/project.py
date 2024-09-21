@@ -26,11 +26,18 @@ class Project:
         # Assumes that there is currently only 1 stage in the Dockerfile
 
         # TODO: Use different dockerfile examples to run on LLM to build and optimise the prompt
+        #  If needed, check how different apps/people are doing their prompts, especially for coding tasks
+
+        # If the dockerfile contains "npm run build" command, then extract the build command
+        # from package.json and include it in the prompt.
 
         # Call LLM with prompt and Dockerfile, get back the optimised file.
         # Create a new Dockerfile object with this new file to run further tests on it.
         # Check that the returned file is a valid (syntactically correct) dockerfile.
         # Check stage count. If LLM didn't add another stage, report this event for further investigation but don't throw any error, just exit
+
+        # Make sure that the final stage base image uses the same nodejs version as previous stage.
+        #  If it uses something like "latest", we should be consistent with that too.
 
         # Write rules to ensure that the multistage was done correctly
         # If any of the rules are violated, we do not apply the changes.
