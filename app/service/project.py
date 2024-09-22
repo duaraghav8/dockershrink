@@ -1,10 +1,32 @@
+from typing import List
+
+import dockerfile as df
+
 from app.service.ai import AIService
 from app.service.dockerfile import Dockerfile
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
 
 
+class Recommendation:
+    def __init__(self, rule: str, filename: str, title: str, description: str):
+        self.rule = rule
+        self.filename = filename
+        self.title = title
+        self.description = description
+
+    def to_json(self) -> dict:
+        return {
+            "rule": self.rule,
+            "filename": self.filename,
+            "title": self.title,
+            "description": self.description,
+        }
+
+
 class Project:
+    _recommendations: List[Recommendation]
+
     dockerfile: Dockerfile
     dockerignore: Dockerignore
     package_json: PackageJSON
@@ -19,7 +41,7 @@ class Project:
         self.dockerignore = dockerignore
         self.package_json = package_json
 
-        self.recommendations = []
+        self._recommendations = []
 
     def _dockerfile_use_multistage_builds(self, ai: AIService):
         """
@@ -34,37 +56,40 @@ class Project:
         """
 
         scripts = self.dockerfile.extract_scripts_invoked()
-
         try:
             updated_dockerfile_code = ai.add_multistage_builds(
                 dockerfile=self.dockerfile.raw(), scripts=scripts
             )
         except Exception as e:
-            # TODO: log this event for further debugging
+            # TODO: log this event for further analysis
             return
 
         try:
             new_dockerfile = Dockerfile(updated_dockerfile_code)
-        except ValidationError as ve:
+        except df.ValidationError as ve:
             # TODO: log this event for analysis
             return
 
-        # Create a new Dockerfile object with this new file to run further tests on it.
-        # Check that the returned file is a valid (syntactically correct) dockerfile.
-        # Check stage count. If LLM didn't add another stage, report this event for further investigation
-        #   but don't throw any error. Add "use multistage" in self.recommandations. Then exit
+        if new_dockerfile.get_stage_count() < 2:
+            # TODO: log this event for analysis
 
-        # Verify that the commands written by llm in RUN statements are correct.
-        # Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.
+            rec = Recommendation(
+                rule="use-multistage-builds",
+                filename="Dockerfile",
+                title="Use Multistage Builds",
+                description="""Create a final stage in Dockerfile using a slim base image such as node alpine.
+Use the first stage to test and build the application.
+Copy the built application code & assets into the final stage.
+Set the \"NODE_ENV\" environment variable to \"production\" and install the dependencies, excluding devDependencies.""",
+            )
+            self._add_recommendation(rec)
 
-        # Make sure that the final stage base image uses the same nodejs version as previous stage.
-        #  If it uses something like "latest", we should be consistent with that too.
+            return
 
-        # Write rules to ensure that the multistage was done correctly
-        # If any of the rules are violated, we do not apply the changes.
-        # Only stick to rules you think are important
+        # TODO: Verify that the commands written by LLM in RUN statements are correct.
+        #  Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.
 
-        # If all good, apply the changes to self.dockerfile. return
+        self.dockerfile = new_dockerfile
 
     def _dockerfile_minimize_layers(self):
         """
@@ -95,6 +120,13 @@ class Project:
         At the moment, this rule cannot "fix" this in the Dockerfile.
         """
         pass
+
+    def _add_recommendation(self, r: Recommendation = None):
+        self._recommendations.append(r)
+
+    def _get_recommendations_json(self) -> List[dict]:
+        recommendations = [r.to_json() for r in self._recommendations]
+        return recommendations
 
     def generate_docker_image_definition(self, ai=None):
         return "dockerfile", "dockerignore"
@@ -134,7 +166,7 @@ class Project:
         self._dockerfile_exclude_frontend_assets()
 
         return {
-            "recommendations": self.recommendations,
+            "recommendations": self._get_recommendations_json(),
             "modified_project": {
                 "Dockerfile": self.dockerfile.raw(),
                 ".dockerignore": self.dockerignore.raw(),

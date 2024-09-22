@@ -2,6 +2,7 @@ from functools import wraps
 
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
+from openai import OpenAI
 
 from app.service.ai import AIService
 from app.service.dockerfile import Dockerfile
@@ -130,7 +131,8 @@ def optimize(user):
     ai = None
     ai_access_key = user.get_openai_api_key()
     if ai_access_key:
-        ai = AIService(ai_access_key)
+        openai_client = OpenAI(api_key=ai_access_key)
+        ai = AIService(openai_client)
 
     project = Project(
         dockerfile=Dockerfile(dockerfile),
@@ -144,10 +146,5 @@ def optimize(user):
             jsonify({"error": f"An error occurred while optimizing the project: {e}"}),
             400,
         )
-
-    # The API response will be:
-    #  A JSON object that contains all suggestions + metadata (file name, line no., etc.)
-    #  All the files that were modified.
-    #  If a file was supplied to the api but not modified by the analyser, we don't send it in response.
 
     return jsonify(resp)

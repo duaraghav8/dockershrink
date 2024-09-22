@@ -1,6 +1,8 @@
-# Temperature should be set to a low value, we want more deterministic, fact-based results for our tasks
+from openai import OpenAI
 
-_system_prompt = """
+openai_model = "gpt-4o-2024-08-06"
+
+_multistage_system_prompt = """
 You are an expert software and DevOps engineer who specializes in Docker and NodeJS backend applications.
 
 Given a Nodejs project that contains a Docker image definition to containerize it, your goal is to reduce the size of the docker image as much as possible, while still keeping the code legible and developer-friendly.
@@ -21,7 +23,7 @@ After writing all the code, review it step-by-step and think what the final imag
 As your response, output only the new Dockerfile, nothing else.
 """
 
-_user_prompt = """
+_multistage_user_prompt = """
 Optimize this Dockerfile:
 
 ```
@@ -37,10 +39,13 @@ _user_prompt_additional_scripts = """
 
 
 class AIService:
-    def __init__(self, api_key):
-        self.openai_api_key = api_key
+    _client: OpenAI
+
+    def __init__(self, client: OpenAI):
+        self._client = client
 
     def add_multistage_builds(self, dockerfile: str, scripts: list):
         # Extract the dockerfile code from the response if applicable
         #   (eg- gpt 4o always returns code inside backticks "```dockerfile\n...\n```")
+        # Temperature should be set to a low value, we want more deterministic, fact-based results for our tasks
         pass
