@@ -6,6 +6,7 @@ from app.service.ai import AIService
 from app.service.dockerfile import Dockerfile
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
+from app.utils.log import LOG
 
 
 class Recommendation:
@@ -54,6 +55,15 @@ class Project:
         :param ai: AIService
         :return: Dockerfile
         """
+        rec = Recommendation(
+            rule="use-multistage-builds",
+            filename="Dockerfile",
+            title="Use Multistage Builds",
+            description="""Create a final stage in Dockerfile using a slim base image such as node alpine.
+Use the first stage to test and build the application.
+Copy the built application code & assets into the final stage.
+Set the \"NODE_ENV\" environment variable to \"production\" and install the dependencies, excluding devDependencies.""",
+        )
 
         scripts = self.dockerfile.extract_scripts_invoked()
         try:
@@ -61,33 +71,48 @@ class Project:
                 dockerfile=self.dockerfile.raw(), scripts=scripts
             )
         except Exception as e:
-            # TODO: log this event for further analysis
+            LOG.error(
+                f"AI service failed to add multistage builds to dockerfile: {e}",
+                data={
+                    "dockerfile": self.dockerfile.raw(),
+                    "scripts": scripts,
+                },
+            )
+
+            self._add_recommendation(rec)
             return
 
         try:
             new_dockerfile = Dockerfile(updated_dockerfile_code)
         except df.ValidationError as ve:
-            # TODO: log this event for analysis
+            LOG.error(
+                f"dockerfile received from ai/multistage is invalid: {ve}",
+                data={
+                    "dockerfile": self.dockerfile.raw(),
+                    "scripts": scripts,
+                    "new_dockerfile": updated_dockerfile_code,
+                },
+            )
+
+            self._add_recommendation(rec)
             return
 
         if new_dockerfile.get_stage_count() < 2:
-            # TODO: log this event for analysis
-
-            rec = Recommendation(
-                rule="use-multistage-builds",
-                filename="Dockerfile",
-                title="Use Multistage Builds",
-                description="""Create a final stage in Dockerfile using a slim base image such as node alpine.
-Use the first stage to test and build the application.
-Copy the built application code & assets into the final stage.
-Set the \"NODE_ENV\" environment variable to \"production\" and install the dependencies, excluding devDependencies.""",
+            LOG.warning(
+                "ai service could not add multistage builds to dockerfile",
+                data={
+                    "dockerfile": self.dockerfile.raw(),
+                    "scripts": scripts,
+                    "new_dockerfile": updated_dockerfile_code,
+                },
             )
-            self._add_recommendation(rec)
 
+            self._add_recommendation(rec)
             return
 
         # TODO: Verify that the commands written by LLM in RUN statements are correct.
         #  Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.
+        #  The "install" command actually has the --only option.
 
         self.dockerfile = new_dockerfile
 
