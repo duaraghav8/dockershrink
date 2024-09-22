@@ -21,7 +21,7 @@ class Project:
 
         self.recommendations = []
 
-    def _dockerfile_use_multistage_builds(self, ai):
+    def _dockerfile_use_multistage_builds(self, ai: AIService):
         """
         Given a single-stage Dockerfile, this method uses AI to modify it to use Multistage builds.
         The final stage in the Dockerfile uses a slim base image and only contains the application code,
@@ -33,23 +33,22 @@ class Project:
         :return: Dockerfile
         """
 
-        # prep the base prompt
-        # check for "npm run" commands in dockerfile, extract them from package.json and add them to prompt
-        # call llm, supply prompt & dockerfile
-        # questions: how do i integrate, how do i prompt, what are roles (system, user), can I re-use a prompt
+        scripts = self.dockerfile.extract_scripts_invoked()
 
-        # TODO: Use different dockerfile examples to run on LLM to build and optimise the prompt
-        #  If needed, check how different apps/people are doing their prompts, especially for coding tasks
+        try:
+            updated_dockerfile_code = ai.add_multistage_builds(
+                dockerfile=self.dockerfile.raw(), scripts=scripts
+            )
+        except Exception as e:
+            # TODO: log this event for further debugging
+            return
 
-        # If the dockerfile contains "npm run build" command, then extract the build command
-        # from package.json and include it in the prompt.
-        # In general, if there's any "npm run X" command, supply the code for X from package.json.
-        # "npm start" is an alias to "npm run start". If "start" is not defined in package.json,
-        # default command is "node server.js".
+        try:
+            new_dockerfile = Dockerfile(updated_dockerfile_code)
+        except ValidationError as ve:
+            # TODO: log this event for analysis
+            return
 
-        # Call LLM with prompt and Dockerfile, get back the optimised code.
-        # Extract the dockerfile code from the response if applicable
-        #   (eg- gpt 4o always returns code inside backticks "```dockerfile\n...\n```")
         # Create a new Dockerfile object with this new file to run further tests on it.
         # Check that the returned file is a valid (syntactically correct) dockerfile.
         # Check stage count. If LLM didn't add another stage, report this event for further investigation
@@ -66,8 +65,6 @@ class Project:
         # Only stick to rules you think are important
 
         # If all good, apply the changes to self.dockerfile. return
-
-        pass
 
     def _dockerfile_minimize_layers(self):
         """

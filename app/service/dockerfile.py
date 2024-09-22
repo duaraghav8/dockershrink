@@ -19,5 +19,18 @@ class Dockerfile:
     def get_stage_count(self) -> int:
         pass
 
+    def extract_scripts_invoked(self) -> list:
+        """
+        Returns a list of scripts invoked in the Dockerfile and the contents (commands) inside these scripts.
+        "npm start" and "npm run start" are treated as the same script.
+        If start is invoked but not defined in package.json, it is treated as "node server.js".
+
+        Example return value:
+        [ {"command": "npm run build", "source": "package.json", "contents": "tsc -f ."} ]
+
+        :return: List of scripts invoked in the dockerfile
+        """
+        pass
+
     def raw(self) -> str:
         return self._raw_data
