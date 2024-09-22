@@ -29,7 +29,7 @@ class Project:
         If it fails to add a new stage, this method simply returns the original Dockerfile without any
           modifications.
 
-        :param ai:
+        :param ai: AIService
         :return: Dockerfile
         """
 
@@ -47,10 +47,13 @@ class Project:
         # "npm start" is an alias to "npm run start". If "start" is not defined in package.json,
         # default command is "node server.js".
 
-        # Call LLM with prompt and Dockerfile, get back the optimised file.
+        # Call LLM with prompt and Dockerfile, get back the optimised code.
+        # Extract the dockerfile code from the response if applicable
+        #   (eg- gpt 4o always returns code inside backticks "```dockerfile\n...\n```")
         # Create a new Dockerfile object with this new file to run further tests on it.
         # Check that the returned file is a valid (syntactically correct) dockerfile.
-        # Check stage count. If LLM didn't add another stage, report this event for further investigation but don't throw any error, just exit
+        # Check stage count. If LLM didn't add another stage, report this event for further investigation
+        #   but don't throw any error. Add "use multistage" in self.recommandations. Then exit
 
         # Verify that the commands written by llm in RUN statements are correct.
         # Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.

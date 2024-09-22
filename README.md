@@ -126,23 +126,20 @@ Create a final stage in the Dockerfile which only contains the application sourc
 * Try to keep your code changes as consistent with the original code as possible. For example, if the previous stage uses "npm install" for installing dependencies, don't replace it with "npm ci". Try to use "install" only.
 * If the previous stage contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if you think its relevant.
 * Comments should be added only in the new stage that you're writing. Don't add any comments in the previous stage unless you need to make an important remark.
+* If the previous stage contains any `RUN` statements invoking any scripts like `npm run build`, the commands in this script will also be shared with you so you can understand its behaviour.
 
 After writing all the code, review it step-by-step and think what the final image would contain to ensure you didn't accidentally leave out anything important.
 
 As your response, output only the new Dockerfile, nothing else.
 
-Here is the Dockerfile for the project that you need to optimize:
+Optimize this Dockerfile:
 
 """
 <DOCKERFILE CONTENTS>
 """
 
-
-x-x-x-x-x-x Additional details x-x-x-x-x-x-x
+-- Additional details --
 
 The `npm run build` command in the Dockerfile executes the following code (extracted from package.json):
 `<build script contents>`
-
-The `npm run start` command in the Dockerfile executes the following code (extracted from package.json):
-`<start script contents>`
 ```
