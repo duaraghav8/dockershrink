@@ -3,7 +3,7 @@ from typing import List
 import dockerfile as df
 
 from app.service.ai import AIService
-from app.service.dockerfile import Dockerfile
+from app.service.dockerfile import Dockerfile, Image
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
 from app.utils.log import LOG
@@ -123,14 +123,40 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
         pass
 
     def _dockerfile_use_node_prune(self):
-        """ """
         # if single stage, download node-prune after the last "npm/yarn install" and invoke it to trim down node_modules, then delete it.
         # if multistage, download node-prune as last step of second last stage. Copy node-prune into the last stage. In final stage, invoke node-prune.
         #  if there's any "npm/yarn install" in final stage, invoke the binary AFTER the install command. After this, delete node-prune.
         pass
 
     def _dockerfile_finalstage_use_light_baseimage(self):
-        pass
+        final_stage_baseimage: Image = self.dockerfile.final_stage().baseimage()
+        if final_stage_baseimage.is_alpine_or_slim():
+            # a light image is already being used, nothing to do, exit
+            return
+
+        default_recommended_image = "node:alpine"
+        if final_stage_baseimage.name() == "node":
+            default_recommended_image = (
+                f"node:{final_stage_baseimage.alpine_equivalent_tag()}"
+            )
+
+        rec_description = f"""Use {default_recommended_image} instead of {final_stage_baseimage.full_name()} as the base image.
+This will significantly decrease the final image's size."""
+        rec_description_add_multistage = """This practice is best combined with Multistage builds. The final stage of your Dockerfile must use a slim base image.
+Since all testing and build processes take place in a previous stage, dev dependencies and a heavy distro isn't really needed in the final image."""
+
+        if self.dockerfile.get_stage_count() == 1:
+            rec_description = f"{rec_description}\n{rec_description_add_multistage}"
+
+        rec = Recommendation(
+            rule="final-stage-slim-baseimage",
+            filename="Dockerfile",
+            title="Use a smaller base image for the final image produced",
+            description=rec_description,
+        )
+        self._add_recommendation(rec)
+
+        # in case of single stage, reommend. for multistage, modify
 
     def _dockerfile_exclude_dev_dependencies(self):
         # ensure npm install --production or yarn install --production
