@@ -7,7 +7,9 @@ class Image:
     _tag: str
 
     def __init__(self, full_name: str):
-        self._name, self._tag = full_name.split(":")
+        components = full_name.split(":")
+        self._name = components[0]
+        self._tag = components[1] if len(components) > 1 else "latest"
 
     def name(self) -> str:
         return self._name
@@ -33,20 +35,14 @@ class Image:
         pass
 
 
-class Stage:
-    def __init__(self):
-        pass
-
-    def baseimage(self) -> Image:
-        pass
-
-
 class Dockerfile:
     _raw_data: str
 
     def __init__(self, contents: str):
         self._raw_data = contents
         self._validate()
+
+        # TODO: initialize self._final_stage
 
     def _validate(self):
         if not self._raw_data:
@@ -71,7 +67,10 @@ class Dockerfile:
         """
         pass
 
-    def final_stage(self) -> Stage:
+    def final_stage_baseimage(self) -> Image:
+        pass
+
+    def set_final_stage_baseimage(self, image: Image):
         pass
 
     def raw(self) -> str:
