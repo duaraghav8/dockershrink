@@ -137,8 +137,9 @@ This stage only includes the application code, dependencies and any other assets
         """
         pass
 
-    def _dockerfile_use_node_prune(self):
+    def _remove_unnecessary_files_from_node_modules(self):
         # TODO
+        # maybe node-prune or yarn clean or similar OSS tools to achieve this
 
         # if single stage, download node-prune after the last "npm/yarn install" and invoke it to trim down node_modules, then delete it.
         # if multistage, download node-prune as last step of second last stage. Copy node-prune into the last stage. In final stage, invoke node-prune.
@@ -194,6 +195,17 @@ This becomes the base image of the final image produced, reducing the size signi
         self._add_action_taken(action)
 
         self.dockerfile.set_final_stage_baseimage(preferred_image)
+
+    def _remove_unused_node_modules(self):
+        # According to user feedback, devs often forget to remove unused packages, resulting in bloated node_modules.
+        #  Removing this has shed as much as 700MB in size!
+        # user feedback - https://www.linkedin.com/feed/update/urn:li:activity:7244193836338397185?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7244193836338397185%2C7244202247755030529%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287244202247755030529%2Curn%3Ali%3Aactivity%3A7244193836338397185%29
+        # We can probably already do this using some npm/yarn built-in functionality.
+
+        # most popular suggestions seem to be:
+        # https://github.com/depcheck/depcheck
+        # https://github.com/dylang/npm-check
+        pass
 
     def _dockerfile_exclude_dev_dependencies(self):
         # ensure npm install --production or yarn install --production
@@ -256,16 +268,14 @@ This becomes the base image of the final image produced, reducing the size signi
             # TODO: All rules using AI must be moved here
 
         self._dockerfile_finalstage_use_light_baseimage()
-        self._dockerfile_minimize_layers()
-        self._dockerfile_use_node_prune()
+        self._remove_unused_node_modules()
+        self._remove_unnecessary_files_from_node_modules()
         self._dockerfile_exclude_dev_dependencies()
-        self._dockerfile_exclude_frontend_assets()
+        self._dockerfile_minimize_layers()
 
-        # TODO: Check for unused packages and remove them from package.json.
-        # According to user feedback, devs often forget to remove unused packages, resulting in bloated node_modules.
-        #  Removing this has shed as much as 700MB in size!
-        # user feedback - https://www.linkedin.com/feed/update/urn:li:activity:7244193836338397185?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7244193836338397185%2C7244202247755030529%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287244202247755030529%2Curn%3Ali%3Aactivity%3A7244193836338397185%29
-        # We can probably already do this using some npm/yarn built-in functionality.
+        # TODO
+        # self._use_bundler()
+        # self._dockerfile_exclude_frontend_assets()
 
         return {
             "actions_taken": self._get_actions_taken(),
