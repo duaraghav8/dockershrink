@@ -131,11 +131,6 @@ This stage only includes the application code, dependencies and any other assets
 
         self.dockerfile = new_dockerfile
 
-    def _dockerfile_minimize_layers(self):
-        """
-        Minimizes the number of layers by combining consecutive RUN statements into a single RUN statement.
-        """
-
     def _remove_unnecessary_files_from_node_modules(self):
         # TODO
         # maybe node-prune or yarn clean or similar OSS tools to achieve this
@@ -207,8 +202,32 @@ This becomes the base image of the final image produced, reducing the size signi
         pass
 
     def _dockerfile_exclude_dev_dependencies(self):
-        # ensure npm install --production or yarn install --production
-        # alternatively, check if npm prune command is being used
+        # A developer writing Dockerfile must make sure to never install the devDependencies in node_modules in the final docker image - this just adds unnecessary weight to the image.
+        # This method checks if the final image produced by the Dockerfile will contain the devDependencies (as specified in package.json). If yes, it applies a fix to only install production dependencies.
+        # Otherwise, no action is required.
+
+        # ALGORITHM TO CHECK FOR devDependencies:
+        # The final stage must only contain prod deps
+        # 1. deps are being installed in final stage
+        #  1.1 look for NODE_ENV = production BEFORE any installation commands are run
+        #  1.2 look for "npm install --production"
+        #  1.3 look for "npm prune --omit=dev" or "npm prune --production"
+        #  1.4 look for "yarn install --production"
+        #  1.5 look for "npm ci --omit=dev"
+        # 2. deps were installed in a previous stage and copied into the final stage
+        #  2.1 Get the name of the stage from which node_modules has been copied
+        #  2.2 Run step 1 for this stage
+        # 3. No deps were installed in the final stage at all
+        #  3.1 nothing to do, exit
+
+        # HOW THE FIX WILL BE APPLIED:
+        # For Step 1, the fix is easy. Get the last command that is installing deps.
+        #  Add the appropriate flag to this command.
+        # For step 2
+        #  remove the COPY node_modules statement
+        #  COPY package*.json from the same stage
+        #  RUN npm install --production
+
         pass
 
     def _dockerfile_exclude_frontend_assets(self):
@@ -267,14 +286,14 @@ This becomes the base image of the final image produced, reducing the size signi
             # TODO: All rules using AI must be moved here
 
         self._dockerfile_finalstage_use_light_baseimage()
+        self._dockerfile_exclude_dev_dependencies()
         self._remove_unused_node_modules()
         self._remove_unnecessary_files_from_node_modules()
-        self._dockerfile_exclude_dev_dependencies()
-        self._dockerfile_minimize_layers()
 
         # TODO
         # self._use_bundler()
         # self._dockerfile_exclude_frontend_assets()
+        # self._dockerfile_minimize_layers()
 
         return {
             "actions_taken": self._get_actions_taken(),
