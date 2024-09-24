@@ -9,7 +9,7 @@ from app.service.package_json import PackageJSON
 from app.utils.log import LOG
 
 
-class Recommendation:
+class OptimizationAction:
     def __init__(self, rule: str, filename: str, title: str, description: str):
         self.rule = rule
         self.filename = filename
@@ -26,7 +26,8 @@ class Recommendation:
 
 
 class Project:
-    _recommendations: List[Recommendation]
+    _recommendations: List[OptimizationAction]
+    _actions_taken: List[OptimizationAction]
 
     dockerfile: Dockerfile
     dockerignore: Dockerignore
@@ -43,6 +44,7 @@ class Project:
         self.package_json = package_json
 
         self._recommendations = []
+        self._actions_taken = []
 
     def _dockerfile_use_multistage_builds(self, ai: AIService):
         """
@@ -55,9 +57,12 @@ class Project:
         :param ai: AIService
         :return: Dockerfile
         """
-        rec = Recommendation(
-            rule="use-multistage-builds",
-            filename="Dockerfile",
+        rule = "use-multistage-builds"
+        filename = "Dockerfile"
+
+        rec = OptimizationAction(
+            rule=rule,
+            filename=filename,
             title="Use Multistage Builds",
             description="""Create a final stage in Dockerfile using a slim base image such as node alpine.
 Use the first stage to test and build the application.
@@ -114,6 +119,16 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
         #  Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.
         #  The "install" command actually has the --only option.
 
+        action = OptimizationAction(
+            rule=rule,
+            filename=filename,
+            title="Implemented Multistage Builds",
+            description="""Multistage Builds have been applied to the Dockerfile.
+A new stage has been created with a lighter base Image.
+This stage only includes the application code, dependencies and any other assets necessary for running the app.""",
+        )
+        self._add_action_taken(action)
+
         self.dockerfile = new_dockerfile
 
     def _dockerfile_minimize_layers(self):
@@ -131,6 +146,9 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
         pass
 
     def _dockerfile_finalstage_use_light_baseimage(self):
+        rule = "final-stage-slim-baseimage"
+        filename = "Dockerfile"
+
         final_stage_baseimage: df.Image = self.dockerfile.final_stage_baseimage()
         if final_stage_baseimage.is_alpine_or_slim():
             # a light image is already being used, nothing to do, exit
@@ -145,16 +163,15 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
         if self.dockerfile.get_stage_count() == 1:
             # In case of a single stage, we'll only give a recommendation.
             # This is because this stage is probably building & testing, and we don't want to cause limitations in that.
-            rec_description = f"""Use {preferred_image.full_name()} instead of {final_stage_baseimage.full_name()} as the base image.
+            rec = OptimizationAction(
+                rule=rule,
+                filename=filename,
+                title="Use a smaller base image for the final image produced",
+                description=f"""Use {preferred_image.full_name()} instead of {final_stage_baseimage.full_name()} as the base image.
 This will significantly decrease the final image's size.
 This practice is best combined with Multistage builds. The final stage of your Dockerfile must use a slim base image.
 Since all testing and build processes take place in a previous stage, dev dependencies and a heavy distro isn't really needed in the final image.
-Enable AI to generate code for multistage build."""
-            rec = Recommendation(
-                rule="final-stage-slim-baseimage",
-                filename="Dockerfile",
-                title="Use a smaller base image for the final image produced",
-                description=rec_description,
+Enable AI to generate code for multistage build.""",
             )
             self._add_recommendation(rec)
             return
@@ -167,6 +184,15 @@ Enable AI to generate code for multistage build."""
                 "new_baseimage": preferred_image.full_name(),
             },
         )
+        action = OptimizationAction(
+            rule=rule,
+            filename=filename,
+            title="Used a new and smaller base image for the final stage in Multistage Dockerfile",
+            description=f"""Used {preferred_image.full_name()} instead of {final_stage_baseimage.full_name()} as the base image of the final stage.
+This becomes the base image of the final image produced, reducing the size significantly.""",
+        )
+        self._add_action_taken(action)
+
         self.dockerfile.set_final_stage_baseimage(preferred_image)
 
     def _dockerfile_exclude_dev_dependencies(self):
@@ -183,12 +209,19 @@ Enable AI to generate code for multistage build."""
         """
         pass
 
-    def _add_recommendation(self, r: Recommendation = None):
+    def _add_recommendation(self, r: OptimizationAction):
         self._recommendations.append(r)
 
-    def _get_recommendations_json(self) -> List[dict]:
+    def _add_action_taken(self, a: OptimizationAction):
+        self._actions_taken.append(a)
+
+    def _get_recommendations(self) -> List[dict]:
         recommendations = [r.to_json() for r in self._recommendations]
         return recommendations
+
+    def _get_actions_taken(self) -> List[dict]:
+        actions = [a.to_json() for a in self._actions_taken]
+        return actions
 
     def generate_docker_image_definition(self, ai=None):
         return "dockerfile", "dockerignore"
@@ -202,6 +235,7 @@ Enable AI to generate code for multistage build."""
         """
         # Ensure that .dockerignore exists and contains the recommended
         # files & directories
+        # TODO: Add actions for creating and modifying .dockerignore in self._actions_taken
         if not self.dockerignore.exists():
             self.dockerignore.create()
         self.dockerignore.add_if_not_present({"node_modules", "npm_debug.log", ".git"})
@@ -234,7 +268,8 @@ Enable AI to generate code for multistage build."""
         # We can probably already do this using some npm/yarn built-in functionality.
 
         return {
-            "recommendations": self._get_recommendations_json(),
+            "actions_taken": self._get_actions_taken(),
+            "recommendations": self._get_recommendations(),
             "modified_project": {
                 "Dockerfile": self.dockerfile.raw(),
                 ".dockerignore": self.dockerignore.raw(),
