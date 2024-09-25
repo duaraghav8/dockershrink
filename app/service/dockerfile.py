@@ -1,5 +1,53 @@
+from enum import Enum
+from typing import Dict, List
+
+
 class ValidationError(Exception):
     pass
+
+
+class Command(Enum):
+    COPY = 0
+    RUN = 1
+    ENV = 2
+
+
+class Layer:
+    _command: Command
+
+    def __init__(self):
+        pass
+
+    def command(self) -> Command:
+        return self._command
+
+    def env_vars(self) -> Dict[str]:
+        pass
+
+    def get_run_shell_commands(self) -> list:
+        pass
+
+    def get_copy_statement(self):
+        pass
+
+    def line_num(self) -> int:
+        """
+        Returns the line number in the Dockerfile on which this layer begins.
+        :return: int
+        """
+        pass
+
+
+class ShellCommand:
+    def __init__(self):
+        pass
+
+    def line_num(self) -> int:
+        """
+        Returns the line number in the Dockerfile on which is resides.
+        :return: int
+        """
+        pass
 
 
 class Image:
@@ -70,7 +118,13 @@ class Dockerfile:
     def final_stage_baseimage(self) -> Image:
         pass
 
+    def stage_layers(self, stage: str) -> List[Layer]:
+        pass
+
     def set_final_stage_baseimage(self, image: Image):
+        pass
+
+    def replace_shell_command(self, original: ShellCommand, new: ShellCommand):
         pass
 
     def raw(self) -> str:
