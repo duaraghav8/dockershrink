@@ -197,6 +197,7 @@ This becomes the base image of the final image produced, reducing the size signi
         self.dockerfile.set_final_stage_baseimage(preferred_image)
 
     def _remove_unused_node_modules(self):
+        # task: remove packages from package.json "dependencies" which are not actually being used in the project.
         # According to user feedback, devs often forget to remove unused packages, resulting in bloated node_modules.
         #  Removing this has shed as much as 700MB in size!
         # user feedback - https://www.linkedin.com/feed/update/urn:li:activity:7244193836338397185?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7244193836338397185%2C7244202247755030529%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287244202247755030529%2Curn%3Ali%3Aactivity%3A7244193836338397185%29
@@ -274,7 +275,7 @@ This becomes the base image of the final image produced, reducing the size signi
             # a dir containing node modules is being copied.
             pass
 
-        def stage_installs_dev_dependencies(stage: str) -> (bool, df.ShellCommand):
+        def stage_installs_dev_dependencies(stage: int) -> (bool, df.ShellCommand):
             """
             Determines if the given stage installs devDependencies.
             If the stage doesn't install node_modules at all, this function returns False, None.
@@ -311,7 +312,7 @@ This becomes the base image of the final image produced, reducing the size signi
 
         # Check the final stage first.
         offending_cmd: df.ShellCommand
-        offends, offending_cmd = stage_installs_dev_dependencies(df.FinalStage)
+        offends, offending_cmd = stage_installs_dev_dependencies(df.StagePosition.LAST)
         if offends:
             # In case of multistage Dockerfile, if any command is found to be installing devDependencies
             #  in the final stage, fix it to only install prod deps instead.
@@ -340,7 +341,7 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
         # The final stage doesn't install any devDependencies.
         # Now, we need to check if it is copying node_modules from localhost or a previous stage.
-        final_stage_layers = self.dockerfile.stage_layers(df.FinalStage)
+        final_stage_layers = self.dockerfile.stage_layers(df.StagePosition.LAST)
 
         layer: df.Layer
         for layer in final_stage_layers:
@@ -352,6 +353,18 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                     continue
 
                 stage_count = self.dockerfile.get_stage_count()
+
+                layers_install_prod_deps_only = [
+                    df.Layer(
+                        command=df.Command.COPY,
+                        src="package*.json",
+                        dest="./",
+                    ),
+                    df.Layer(
+                        command=df.Command.RUN,
+                        shell_commands=["npm install --production"],
+                    ),
+                ]
 
                 # If no 'from' is specified in the COPY statement, then the node_modules are being copied
                 #  from local system. This should be prevented.
@@ -372,10 +385,9 @@ Create a new (final) stage in your Dockerfile, copy the built code into this sta
                         self._add_recommendation(rec)
                         return
 
-                    # TODO
-                    # replace this COPY statement with "COPY package*.json && npm install --production"
-                    # or add a recommendation
+                    self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
                     return
+
                 if stage_installs_dev_dependencies(from_stage):
                     # If this Dockefile is single-stage, then you cannot COPY from a previous stage.
                     # So this is an illegal state.
@@ -384,82 +396,15 @@ Create a new (final) stage in your Dockerfile, copy the built code into this sta
                         # TODO: Add recommendation that you cannot COPY from a previous stage.
                         return
 
-                    # TODO
                     # user is copying node_modules from previous stage, but the previous stage
                     #  installs devDependencies as well.
-                    # So replace this COPY statement with "COPY package*.json && npm install --production"
+                    # So replace this COPY layer with prod dep installation
+                    self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
                     return
 
         # The final stage also doesn't copy any node_modules into it.
         # Since it neither installs nor copies, there are no node_modules in the image.
-        # Nothing to do!
-
-        ################################# Claude-dev generated code begins ##########################################
-
-        final_stage_commands = self.dockerfile.get_final_stage_commands()
-        deps_installed = False
-
-        for command in final_stage_commands:
-            if "NODE_ENV=production" in command:
-                deps_installed = True
-            if "npm install" in command and "--production" not in command:
-                deps_installed = True
-                command += " --production"
-            if (
-                "npm prune" in command
-                and "--omit=dev" not in command
-                and "--production" not in command
-            ):
-                deps_installed = True
-                command += " --omit=dev"
-            if "yarn install" in command and "--production" not in command:
-                deps_installed = True
-                command += " --production"
-            if "npm ci" in command and "--omit=dev" not in command:
-                deps_installed = True
-                command += " --omit=dev"
-
-        if deps_installed:
-            self.dockerfile.update_final_stage_commands(final_stage_commands)
-            return
-
-        # Check if dependencies were installed in a previous stage and copied into the final stage
-        previous_stage_name = self.dockerfile.get_previous_stage_name()
-        if previous_stage_name:
-            previous_stage_commands = self.dockerfile.get_stage_commands(
-                previous_stage_name
-            )
-            for command in previous_stage_commands:
-                if "NODE_ENV=production" in command:
-                    deps_installed = True
-                if "npm install" in command and "--production" not in command:
-                    deps_installed = True
-                    command += " --production"
-                if (
-                    "npm prune" in command
-                    and "--omit=dev" not in command
-                    and "--production" not in command
-                ):
-                    deps_installed = True
-                    command += " --omit=dev"
-                if "yarn install" in command and "--production" not in command:
-                    deps_installed = True
-                    command += " --production"
-                if "npm ci" in command and "--omit=dev" not in command:
-                    deps_installed = True
-                    command += " --omit=dev"
-
-            if deps_installed:
-                self.dockerfile.update_stage_commands(
-                    previous_stage_name, previous_stage_commands
-                )
-                self.dockerfile.remove_copy_node_modules()
-                self.dockerfile.add_copy_package_json()
-                self.dockerfile.add_run_npm_install_production()
-                return
-
-        # No dependencies were installed in the final stage
-        return
+        # Nothing to do.
 
     def _dockerfile_exclude_frontend_assets(self):
         """

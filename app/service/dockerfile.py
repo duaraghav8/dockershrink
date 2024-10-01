@@ -6,6 +6,11 @@ class ValidationError(Exception):
     pass
 
 
+class StagePosition(int, Enum):
+    FIRST = 0
+    LAST = -1
+
+
 class Command(Enum):
     COPY = 0
     RUN = 1
@@ -15,8 +20,9 @@ class Command(Enum):
 class Layer:
     _command: Command
 
-    def __init__(self):
-        pass
+    def __init__(self, command: Command, **kwargs):
+        self._command = command
+        self._data = kwargs
 
     def command(self) -> Command:
         return self._command
@@ -25,6 +31,11 @@ class Layer:
         pass
 
     def get_run_shell_commands(self) -> list:
+        """
+        If the current layer is a RUN command, this method returns a list of shell commands
+        that exist in this RUN layer.
+        :return: list
+        """
         pass
 
     def get_copy_statement(self):
@@ -118,13 +129,21 @@ class Dockerfile:
     def final_stage_baseimage(self) -> Image:
         pass
 
-    def stage_layers(self, stage: str) -> List[Layer]:
+    def stage_layers(self, stage: int) -> List[Layer]:
         pass
 
     def set_final_stage_baseimage(self, image: Image):
         pass
 
     def replace_shell_command(self, original: ShellCommand, new: ShellCommand):
+        pass
+
+    def replace_layer(self, layer: Layer, new_layers: List[Layer]):
+        """
+        replaces the given layer with a new set of layers.
+        :param layer: the layer that already exists in the dockerfile
+        :param new_layers: list of Layer objects to put in pace of the original layer
+        """
         pass
 
     def raw(self) -> str:
