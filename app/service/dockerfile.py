@@ -84,6 +84,13 @@ class ShellCommand:
         """
         pass
 
+    def options(self) -> dict:
+        """
+        Returns a dict of all options specified in this command.
+        eg- "npm install --production --foo=bar --lorem=false" -> {"production": True, "foo": "bar", "lorem": False}
+        """
+        pass
+
     def text(self) -> str:
         """
         :return: the complete shell command as a string

@@ -248,51 +248,66 @@ This becomes the base image of the final image produced, reducing the size signi
         rule = "exclude-devDependencies"
         filename = "Dockerfile"
 
-        node_modules_installation_commands = [
-            {
-                "command": ["npm", "install"],
-                "prod_options": [{"production": "true"}],
+        node_dep_installation_commands = {
+            "npm": {
+                "install": {"production": True},
+                "ci": {"omit": "dev"},
             },
-            {
-                "command": ["yarn", "install"],
-                "prod_options": [{"production": "true"}],
+            "yarn": {
+                "install": {"production": True},
             },
-            {
-                "command": ["npm", "prune"],
-                "prod_options": [{"omit": "dev"}, {"production": "true"}],
+        }
+        node_remove_dev_deps_commands = {
+            "npm": {
+                "prune": {
+                    "omit": "dev",
+                    "production": True,
+                },
             },
-            {
-                "command": ["npm", "ci"],
-                "prod_options": [{"omit": "dev"}],
-            },
-        ]
+        }
 
         def installs_node_modules(shell_command: df.ShellCommand) -> bool:
             """
-            Returns true if the given command installs npm node dependencies, false otherwise.
+            Returns true if the given command installs node dependencies, false otherwise.
             There can be multiple commands for installing deps, like "npm install", "yarn install",
              "npm ci", etc.
             :param shell_command: the command to analyse
             """
-            dep_installation_commands = {
-                "npm": {
-                    "install": None,
-                    "ci": None,
-                },
-                "yarn": {
-                    "install": None,
-                },
-            }
-
             program = shell_command.program()
-            if program not in dep_installation_commands:
+            if program not in node_dep_installation_commands:
                 return False
 
             subcommand = shell_command.subcommand()
-            if subcommand not in dep_installation_commands[program]:
+            if subcommand not in node_dep_installation_commands[program]:
                 return False
 
+            return True
+
         def install_command_uses_prod_option(shell_command: df.ShellCommand) -> bool:
+            """
+            Returns true if the given node dependency installation command uses production option, ie, the command
+              only installs prod dependencies.
+            Returns false otherwise, ie, the command installs devDependencies as well.
+            """
+            program = shell_command.program()
+            subcommand = shell_command.subcommand()
+            prod_options = node_dep_installation_commands[program][subcommand]
+            specified_options = shell_command.options()
+
+            for opt, val in specified_options.items():
+                if opt in prod_options and prod_options[opt] == val:
+                    return True
+
+            # We iterated through all the options, none of them were prod options
+            return False
+
+        def removes_dev_deps(shell_command: df.ShellCommand, node_env: str) -> bool:
+            """
+            Returns true if the given command deletes devDependencies, false otherwise.
+            eg- "npm prune --omit=dev" does this.
+            :param shell_command: the command to analyse
+            :param node_env: current value of NODE_ENV environment variable
+            """
             pass
 
         def apply_prod_option(shell_command: df.ShellCommand) -> df.ShellCommand:
@@ -303,7 +318,9 @@ This becomes the base image of the final image produced, reducing the size signi
             # a dir containing node modules is being copied.
             pass
 
-        def stage_installs_dev_dependencies(stage: int) -> (bool, df.ShellCommand):
+        def stage_installs_dev_dependencies(
+            stage: int,
+        ) -> (bool, Optional[df.ShellCommand]):
             """
             Determines if the given stage installs devDependencies.
             If the stage doesn't install node_modules at all, this function returns False, None.
@@ -460,7 +477,8 @@ A fresh install of production dependencies here ensures that the final image onl
 
                     return
 
-                if stage_installs_dev_dependencies(from_stage):
+                offends, _ = stage_installs_dev_dependencies(from_stage)
+                if offends:
                     # If this Dockefile is single-stage, then you cannot COPY from a previous stage.
                     # So this is an illegal state.
                     if stage_count < 2:
