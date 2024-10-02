@@ -70,6 +70,20 @@ class ShellCommand:
         """
         pass
 
+    def program(self) -> str:
+        """
+        Returns the main program invoked as part of this command, ie, the first word in the text.
+        eg- In "npm install", the program is "npm".
+        """
+        pass
+
+    def subcommand(self) -> str:
+        """
+        Returns the subcommand invoked for the program.
+        eg- For "npm --hello=world install --production --foo=bar ./", the subcommand is "install".
+        """
+        pass
+
     def text(self) -> str:
         """
         :return: the complete shell command as a string

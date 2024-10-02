@@ -1,5 +1,6 @@
 import os
-from typing import List
+from enum import Enum
+from typing import List, Optional
 
 import dockerfile as df
 
@@ -30,6 +31,10 @@ class OptimizationAction:
         if self.line > 0:
             resp["line"] = self.line
         return resp
+
+
+class NodeEnv(str, Enum):
+    PRODUCTION = "production"
 
 
 class Project:
@@ -263,7 +268,29 @@ This becomes the base image of the final image produced, reducing the size signi
         ]
 
         def installs_node_modules(shell_command: df.ShellCommand) -> bool:
-            pass
+            """
+            Returns true if the given command installs npm node dependencies, false otherwise.
+            There can be multiple commands for installing deps, like "npm install", "yarn install",
+             "npm ci", etc.
+            :param shell_command: the command to analyse
+            """
+            dep_installation_commands = {
+                "npm": {
+                    "install": None,
+                    "ci": None,
+                },
+                "yarn": {
+                    "install": None,
+                },
+            }
+
+            program = shell_command.program()
+            if program not in dep_installation_commands:
+                return False
+
+            subcommand = shell_command.subcommand()
+            if subcommand not in dep_installation_commands[program]:
+                return False
 
         def install_command_uses_prod_option(shell_command: df.ShellCommand) -> bool:
             pass
@@ -285,31 +312,49 @@ This becomes the base image of the final image produced, reducing the size signi
               where SC is the offending shell command inside a particular RUN Layer
               (since a RUN layer can have multiple shell commands)
             """
+            installs_dev_deps = False
+            offending_command: Optional[df.ShellCommand] = None
+
             stage_layers = self.dockerfile.stage_layers(stage)
             node_env_value = ""
 
+            # Visit each layer from top to bottom.
+            # When a RUN layer is encountered, check its shell commands.
+            # If cmd is a dep install command:
+            #  if it installs only prod deps, then unmark any violations flagged
+            #  if it installs devDeps too, then mark it for violation
+            # If cmd removes dev deps:
+            #  unmark any violations flagged
+            # By the time all layers have been scanned, we know exactly whether devDeps are installed or not.
+            # The last install/prune command in the stage determines this result and that's what we return.
             layer: df.Layer
             for layer in stage_layers:
                 cmd = layer.command()
 
                 if cmd == df.Command.ENV:
-                    node_env_value = layer.env_vars().get("NODE_ENV", "")
+                    node_env_value: str = layer.env_vars().get("NODE_ENV", "")
 
                 elif cmd == df.Command.RUN:
                     for shell_command in layer.get_run_shell_commands():
                         if installs_node_modules(shell_command):
                             # If installation command was run with NODE_ENV=production, rule is satisfied
                             # Or if install command uses a prod option, rule is satisfied
+                            # Otherwise, devDeps are being installed as well.
                             if (
-                                node_env_value == "production"
+                                node_env_value == NodeEnv.PRODUCTION
                                 or install_command_uses_prod_option(shell_command)
                             ):
-                                return False, None
+                                installs_dev_deps, offending_command = False, None
+                            else:
+                                installs_dev_deps, offending_command = (
+                                    True,
+                                    shell_command,
+                                )
 
-                            return True, shell_command
+                        elif removes_dev_deps(shell_command, node_env_value):
+                            installs_dev_deps, offending_command = False, None
 
-            # We went through all the layers in this stage, no installation command was found
-            return False, None
+            return installs_dev_deps, offending_command
 
         # Check the final stage first.
         offending_cmd: df.ShellCommand
