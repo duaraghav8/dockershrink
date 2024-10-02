@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from typing import Dict, List
 
@@ -8,7 +9,7 @@ class ValidationError(Exception):
 
 class StagePosition(int, Enum):
     FIRST = 0
-    LAST = -1
+    LAST = sys.maxsize
 
 
 class Command(Enum):
@@ -19,6 +20,7 @@ class Command(Enum):
 
 class Layer:
     _command: Command
+    _data: dict
 
     def __init__(self, command: Command, **kwargs):
         self._command = command
@@ -48,10 +50,18 @@ class Layer:
         """
         pass
 
+    def text(self) -> str:
+        """
+        :return: The complete contents of the layer as text, ie, command + parameters
+        """
+        pass
+
 
 class ShellCommand:
-    def __init__(self):
-        pass
+    _text: str
+
+    def __init__(self, cmd: str):
+        self._text = cmd
 
     def line_num(self) -> int:
         """
@@ -59,6 +69,12 @@ class ShellCommand:
         :return: int
         """
         pass
+
+    def text(self) -> str:
+        """
+        :return: the complete shell command as a string
+        """
+        return self._text
 
 
 class Image:
@@ -126,14 +142,33 @@ class Dockerfile:
         """
         pass
 
+    def stage_baseimage(self, stage: int) -> Image:
+        if stage < StagePosition.FIRST or stage > StagePosition.LAST:
+            # TODO: Raise invalid value exception
+            pass
+        # TODO: return stage based on specified index
+
     def final_stage_baseimage(self) -> Image:
-        pass
+        """
+        A wrapper around stage_baseimage(StagePosition.LAST)
+        :return: base image of the specified stage
+        """
+        return self.stage_baseimage(StagePosition.LAST)
+
+    def set_stage_baseimage(self, stage: int, image: Image):
+        if stage < StagePosition.FIRST or stage > StagePosition.LAST:
+            # TODO: Raise invalid value exception
+            pass
 
     def stage_layers(self, stage: int) -> List[Layer]:
         pass
 
     def set_final_stage_baseimage(self, image: Image):
-        pass
+        """
+        wrapper around set_stage_baseimage(StagePosition.LAST, image)
+        :param image: the baseimage to set
+        """
+        self.set_stage_baseimage(StagePosition.LAST, image)
 
     def replace_shell_command(self, original: ShellCommand, new: ShellCommand):
         pass

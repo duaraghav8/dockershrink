@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import dockerfile as df
@@ -125,6 +126,8 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
         #  Claude wrote "npm ci --only=production", which is incorrect because ci command doesn't have any such option.
         #  The "install" command actually has the --only option.
 
+        self.dockerfile = new_dockerfile
+
         action = OptimizationAction(
             rule=rule,
             filename=filename,
@@ -134,8 +137,6 @@ A new stage has been created with a lighter base Image.
 This stage only includes the application code, dependencies and any other assets necessary for running the app.""",
         )
         self._add_action_taken(action)
-
-        self.dockerfile = new_dockerfile
 
     def _remove_unnecessary_files_from_node_modules(self):
         # TODO
@@ -185,6 +186,8 @@ Enable AI to generate code for multistage build.""",
                 "new_baseimage": preferred_image.full_name(),
             },
         )
+        self.dockerfile.set_final_stage_baseimage(preferred_image)
+
         action = OptimizationAction(
             rule=rule,
             filename=filename,
@@ -193,8 +196,6 @@ Enable AI to generate code for multistage build.""",
 This becomes the base image of the final image produced, reducing the size significantly.""",
         )
         self._add_action_taken(action)
-
-        self.dockerfile.set_final_stage_baseimage(preferred_image)
 
     def _remove_unused_node_modules(self):
         # task: remove packages from package.json "dependencies" which are not actually being used in the project.
@@ -321,6 +322,17 @@ This becomes the base image of the final image produced, reducing the size signi
                 self.dockerfile.replace_shell_command(
                     offending_cmd, new_install_command
                 )
+
+                action = OptimizationAction(
+                    rule=rule,
+                    filename=filename,
+                    line=offending_cmd.line_num(),
+                    title="Modified installation command to exclude devDependencies",
+                    description=f"""The dependency installation command in the last stage '{offending_cmd.text()}' has been modified to '{new_install_command.text()}'.
+This ensures that the final image excludes all modules listed in "devDependencies" in package.json and only includes production modules needed by the app at runtime.""",
+                )
+                self._add_action_taken(action)
+
                 return
             # In case of single stage dockerfile, we cannot change the command since
             #  it might break build/test processes. So add a recommendation.
@@ -365,6 +377,9 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                         shell_commands=["npm install --production"],
                     ),
                 ]
+                layers_install_prod_deps_only_text = os.linesep.join(
+                    [lyr.text() for lyr in layers_install_prod_deps_only]
+                )
 
                 # If no 'from' is specified in the COPY statement, then the node_modules are being copied
                 #  from local system. This should be prevented.
@@ -386,6 +401,18 @@ Create a new (final) stage in your Dockerfile, copy the built code into this sta
                         return
 
                     self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
+
+                    action = OptimizationAction(
+                        rule=rule,
+                        filename=filename,
+                        line=layer.line_num(),
+                        title="Perform fresh install of node_modules in the final stage",
+                        description=f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
+Copying node_modules from the local machine is not recommended.
+A fresh install of production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies.""",
+                    )
+                    self._add_action_taken(action)
+
                     return
 
                 if stage_installs_dev_dependencies(from_stage):
@@ -400,6 +427,19 @@ Create a new (final) stage in your Dockerfile, copy the built code into this sta
                     #  installs devDependencies as well.
                     # So replace this COPY layer with prod dep installation
                     self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
+
+                    action = OptimizationAction(
+                        rule=rule,
+                        filename=filename,
+                        line=layer.line_num(),
+                        title="Perform fresh install of node_modules in the final stage",
+                        description=f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
+It seems that you're copying node_modules from a previous stage '{from_stage}' which installs devDependencies as well.
+So your final image will contain unnecessary packages. 
+Instead, a fresh installation of only production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies.""",
+                    )
+                    self._add_action_taken(action)
+
                     return
 
         # The final stage also doesn't copy any node_modules into it.
