@@ -2,9 +2,8 @@ import os
 from enum import Enum
 from typing import List, Optional
 
-import dockerfile as df
-
 from app.service.ai import AIService
+from app.service import dockerfile as df
 from app.service.dockerfile import Dockerfile
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
@@ -329,8 +328,22 @@ This becomes the base image of the final image produced, reducing the size signi
             # A deletion command is being used, but it is not deleting the devDependencies.
             return False
 
-        def apply_prod_option(shell_command: df.ShellCommand) -> df.ShellCommand:
-            pass
+        def apply_prod_option_to_installation_command(
+            shell_command: df.ShellCommand,
+        ) -> df.ShellCommand:
+            program = shell_command.program()
+            subcommand = shell_command.subcommand()
+            prod_opts = node_dep_installation_commands[program][subcommand]
+
+            prod_opt_name = list(prod_opts)[0]
+            prod_opt_value = prod_opts[prod_opt_name]
+
+            from copy import deepcopy
+
+            new_cmd = deepcopy(shell_command)
+
+            new_cmd.add_option(name=prod_opt_name, value=prod_opt_value)
+            return new_cmd
 
         def copies_node_modules(statement) -> bool:
             # NOTE: Either node_modules is directly being named in the COPY statement or
@@ -399,7 +412,9 @@ This becomes the base image of the final image produced, reducing the size signi
             # In case of multistage Dockerfile, if any command is found to be installing devDependencies
             #  in the final stage, fix it to only install prod deps instead.
             if self.dockerfile.get_stage_count() > 1:
-                new_install_command: df.ShellCommand = apply_prod_option(offending_cmd)
+                new_install_command: df.ShellCommand = (
+                    apply_prod_option_to_installation_command(offending_cmd)
+                )
                 self.dockerfile.replace_shell_command(
                     offending_cmd, new_install_command
                 )

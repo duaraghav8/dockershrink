@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Dict, List
+from typing import Dict, List, Union
 
 
 class ValidationError(Exception):
@@ -29,7 +29,7 @@ class Layer:
     def command(self) -> Command:
         return self._command
 
-    def env_vars(self) -> Dict[str]:
+    def env_vars(self) -> Dict[str, str]:
         pass
 
     def get_run_shell_commands(self) -> list:
@@ -96,6 +96,16 @@ class ShellCommand:
         :return: the complete shell command as a string
         """
         return self._text
+
+    def add_option(self, name: str, value: Union[str, bool]):
+        """
+        Adds the specified option to the command.
+          eg- add_option("omit", "dev") -> "npm ci --omit=dev"
+        If the value is bool and set to True, the option is added as a flag.
+          If False, this method exits without making any changes to the command.
+          eg- add_option("production", True) -> "npm install --production"
+        """
+        pass
 
 
 class Image:
