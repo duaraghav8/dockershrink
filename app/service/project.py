@@ -261,7 +261,7 @@ This becomes the base image of the final image produced, reducing the size signi
             "npm": {
                 "prune": {
                     "omit": "dev",
-                    "production": True,
+                    "production": True,  # Older versions of npm allowed --production with prune
                 },
             },
         }
@@ -308,7 +308,26 @@ This becomes the base image of the final image produced, reducing the size signi
             :param shell_command: the command to analyse
             :param node_env: current value of NODE_ENV environment variable
             """
-            pass
+            program = shell_command.program()
+            if program not in node_remove_dev_deps_commands:
+                return False
+
+            subcommand = shell_command.subcommand()
+            if subcommand not in node_remove_dev_deps_commands[program]:
+                return False
+
+            if node_env == NodeEnv.PRODUCTION:
+                return True
+
+            dev_dep_options = node_remove_dev_deps_commands[program][subcommand]
+            specified_options = shell_command.options()
+
+            for opt, val in specified_options.items():
+                if opt in dev_dep_options and dev_dep_options[opt] == val:
+                    return True
+
+            # A deletion command is being used, but it is not deleting the devDependencies.
+            return False
 
         def apply_prod_option(shell_command: df.ShellCommand) -> df.ShellCommand:
             pass
