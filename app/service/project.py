@@ -9,6 +9,10 @@ from app.service.package_json import PackageJSON
 from app.utils.log import LOG
 
 
+_NODE_ENV_PRODUCTION = "production"
+_NODE_MODULES_DIR = "node_modules"
+
+
 class OptimizationAction:
     def __init__(
         self, rule: str, filename: str, title: str, description: str, line: int = -1
@@ -29,10 +33,6 @@ class OptimizationAction:
         if self.line > 0:
             resp["line"] = self.line
         return resp
-
-
-class NodeEnv(str, Enum):
-    PRODUCTION = "production"
 
 
 class Project:
@@ -340,7 +340,7 @@ This becomes the base image of the final image produced, reducing the size signi
             if subcommand not in node_remove_dev_deps_commands[program]:
                 return False
 
-            if node_env == NodeEnv.PRODUCTION:
+            if node_env == _NODE_ENV_PRODUCTION:
                 return True
 
             dev_dep_options = node_remove_dev_deps_commands[program][subcommand]
@@ -371,9 +371,21 @@ This becomes the base image of the final image produced, reducing the size signi
             return new_cmd
 
         def copies_node_modules(layer: df.CopyLayer) -> bool:
-            # NOTE: Either node_modules is directly being named in the COPY statement or
-            # a dir containing node modules is being copied.
-            pass
+            """
+            Returns true if the given COPY layer copies node_modules into the image stage, false otherwise.
+            It only checks for node_modules as the base directory.
+            If the layer copies a different directory which may contain node_modules, this method cannot detect that.
+            eg-
+             "COPY --from=build /app/node_modules ." -> True
+             "COPY /app /app" -> False (even if app directory contains node_modules inside it)
+            """
+            import os.path
+
+            for src in layer.src():
+                if os.path.basename(src) == _NODE_MODULES_DIR:
+                    return True
+
+            return False
 
         def stage_installs_dev_dependencies(
             stage: df.Stage,
@@ -415,7 +427,7 @@ This becomes the base image of the final image produced, reducing the size signi
                             # Or if the command uses a prod option, rule is satisfied
                             # Otherwise, devDeps are being installed as well and rule is violated
                             if (
-                                node_env_value == NodeEnv.PRODUCTION
+                                node_env_value == _NODE_ENV_PRODUCTION
                                 or install_command_uses_prod_option(shell_command)
                             ):
                                 installs_dev_deps, offending_command = False, None
@@ -486,8 +498,9 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
                 stage_count = self.dockerfile.get_stage_count()
 
+                # TODO: Make sure this copying is correct. Will package.json be in curr dir only?
                 layers_install_prod_deps_only = [
-                    df.CopyLayer(src="package*.json", dest="./"),
+                    df.CopyLayer(src=["package*.json"], dest="./"),
                     df.RunLayer(
                         shell_commands=[
                             df.ShellCommand("npm install --production"),
@@ -497,6 +510,28 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                 layers_install_prod_deps_only_text = os.linesep.join(
                     [lyr.text() for lyr in layers_install_prod_deps_only]
                 )
+
+                # If layer is copying multiple files and directories (and not just node_modules), we cannot simply
+                #  delete the layer.
+                # We need to only remove node_modules from it and keep the layer as-is.
+                # Then add new layers to perform fresh install os node_modules.
+                if len(layer.src()) > 1:
+                    # TODO: Add a new COPY layer on index 0 to layers_install_prod_deps_only.
+                    #  This layer is same as original, except its src list doesn't contain node_modules.
+                    #  Then we don't need to add recommendation and return from this conditional,
+                    #  we can let the algo continue.
+                    #  This involves some effort so for now, we just add a recommendation and exit.
+                    rec = OptimizationAction(
+                        rule=rule,
+                        filename=filename,
+                        line=layer.line_num(),
+                        title="Avoid copying node_modules into the final image",
+                        description="""You seem to be copying node_modules into your final image.
+Avoid this. Instead, perform a fresh dependency installation which excludes devDependencies (defined in your package.json).
+Instead of "COPY", use something like "RUN npm install --production" / "RUN yarn install --production".""",
+                    )
+                    self._add_recommendation(rec)
+                    return
 
                 # If no '--from' is specified in the COPY statement, then the node_modules are being copied
                 #  from build context (local system). This should be prevented.

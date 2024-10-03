@@ -40,12 +40,13 @@ class EnvLayer(Layer):
 
 
 class CopyLayer(Layer):
-    _src: str
+    _src: List[str]
     _dest: str
 
-    def __init__(self, src: str, dest: str):
+    def __init__(self, src: List[str], dest: str):
         self._src = src
         self._dest = dest
+
         super().__init__(LayerCommand.COPY)
 
     def copies_from_build_context(self) -> bool:
@@ -76,6 +77,9 @@ class CopyLayer(Layer):
          this method returns None.
         """
         pass
+
+    def src(self) -> List[str]:
+        return self._src
 
 
 class RunLayer(Layer):
