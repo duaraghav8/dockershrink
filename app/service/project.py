@@ -345,7 +345,7 @@ This becomes the base image of the final image produced, reducing the size signi
             new_cmd.add_option(name=prod_opt_name, value=prod_opt_value)
             return new_cmd
 
-        def copies_node_modules(statement) -> bool:
+        def copies_node_modules(layer: df.CopyLayer) -> bool:
             # NOTE: Either node_modules is directly being named in the COPY statement or
             # a dir containing node modules is being copied.
             pass
@@ -376,19 +376,19 @@ This becomes the base image of the final image produced, reducing the size signi
             #  unmark any violations flagged
             # By the time all layers have been scanned, we know exactly whether devDeps are installed or not.
             # The last install/prune command in the stage determines this result and that's what we return.
-            layer: df.Layer
             for layer in stage_layers:
                 cmd = layer.command()
 
-                if cmd == df.Command.ENV:
+                if cmd == df.LayerCommand.ENV:
                     node_env_value: str = layer.env_vars().get("NODE_ENV", "")
 
-                elif cmd == df.Command.RUN:
-                    for shell_command in layer.get_run_shell_commands():
+                elif cmd == df.LayerCommand.RUN:
+                    shell_command: df.ShellCommand
+                    for shell_command in layer.shell_commands():
                         if installs_node_modules(shell_command):
                             # If installation command was run with NODE_ENV=production, rule is satisfied
-                            # Or if install command uses a prod option, rule is satisfied
-                            # Otherwise, devDeps are being installed as well.
+                            # Or if the command uses a prod option, rule is satisfied
+                            # Otherwise, devDeps are being installed as well and rule is violated
                             if (
                                 node_env_value == NodeEnv.PRODUCTION
                                 or install_command_uses_prod_option(shell_command)
@@ -405,7 +405,7 @@ This becomes the base image of the final image produced, reducing the size signi
 
             return installs_dev_deps, offending_command
 
-        # Check the final stage first.
+        # First, check the final stage for any dependency installation commands
         offending_cmd: df.ShellCommand
         offends, offending_cmd = stage_installs_dev_dependencies(df.StagePosition.LAST)
         if offends:
@@ -451,25 +451,22 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
         # Now, we need to check if it is copying node_modules from localhost or a previous stage.
         final_stage_layers = self.dockerfile.stage_layers(df.StagePosition.LAST)
 
-        layer: df.Layer
         for layer in final_stage_layers:
-            if layer.command() == df.Command.COPY:
-                statement = layer.get_copy_statement()
-
+            if layer.command() == df.LayerCommand.COPY:
                 # skip if this COPY statement doesn't deal with node_modules
-                if not copies_node_modules(statement):
+                if not copies_node_modules(layer):
                     continue
 
                 stage_count = self.dockerfile.get_stage_count()
 
                 layers_install_prod_deps_only = [
                     df.Layer(
-                        command=df.Command.COPY,
+                        command=df.LayerCommand.COPY,
                         src="package*.json",
                         dest="./",
                     ),
                     df.Layer(
-                        command=df.Command.RUN,
+                        command=df.LayerCommand.RUN,
                         shell_commands=["npm install --production"],
                     ),
                 ]
@@ -479,8 +476,8 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
                 # If no 'from' is specified in the COPY statement, then the node_modules are being copied
                 #  from local system. This should be prevented.
-                from_stage = statement.get("from_stage")
-                if from_stage is None:
+                source_stage = layer.source_stage()
+                if source_stage is None:
                     # In case of single-stage dockerfile, don't try to fix this because it might break build/test.
                     # Add a recommendation instead.
                     if stage_count < 2:
@@ -511,7 +508,7 @@ A fresh install of production dependencies here ensures that the final image onl
 
                     return
 
-                offends, _ = stage_installs_dev_dependencies(from_stage)
+                offends, _ = stage_installs_dev_dependencies(source_stage)
                 if offends:
                     # If this Dockefile is single-stage, then you cannot COPY from a previous stage.
                     # So this is an illegal state.
@@ -531,7 +528,7 @@ A fresh install of production dependencies here ensures that the final image onl
                         line=layer.line_num(),
                         title="Perform fresh install of node_modules in the final stage",
                         description=f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
-It seems that you're copying node_modules from a previous stage '{from_stage}' which installs devDependencies as well.
+It seems that you're copying node_modules from a previous stage '{source_stage}' which installs devDependencies as well.
 So your final image will contain unnecessary packages. 
 Instead, a fresh installation of only production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies.""",
                     )

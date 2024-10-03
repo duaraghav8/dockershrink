@@ -12,49 +12,10 @@ class StagePosition(int, Enum):
     LAST = sys.maxsize
 
 
-class Command(Enum):
+class LayerCommand(Enum):
     COPY = 0
     RUN = 1
     ENV = 2
-
-
-class Layer:
-    _command: Command
-    _data: dict
-
-    def __init__(self, command: Command, **kwargs):
-        self._command = command
-        self._data = kwargs
-
-    def command(self) -> Command:
-        return self._command
-
-    def env_vars(self) -> Dict[str, str]:
-        pass
-
-    def get_run_shell_commands(self) -> list:
-        """
-        If the current layer is a RUN command, this method returns a list of shell commands
-        that exist in this RUN layer.
-        :return: list
-        """
-        pass
-
-    def get_copy_statement(self):
-        pass
-
-    def line_num(self) -> int:
-        """
-        Returns the line number in the Dockerfile on which this layer begins.
-        :return: int
-        """
-        pass
-
-    def text(self) -> str:
-        """
-        :return: The complete contents of the layer as text, ie, command + parameters
-        """
-        pass
 
 
 class ShellCommand:
@@ -104,6 +65,58 @@ class ShellCommand:
         If the value is bool and set to True, the option is added as a flag.
           If False, this method exits without making any changes to the command.
           eg- add_option("production", True) -> "npm install --production"
+        """
+        pass
+
+
+class Layer:
+    _command: LayerCommand
+    _data: dict
+
+    def __init__(self, command: LayerCommand, **kwargs):
+        self._command = command
+        self._data = kwargs
+
+    def command(self) -> LayerCommand:
+        return self._command
+
+    def line_num(self) -> int:
+        """
+        Returns the line number in the Dockerfile on which this layer begins.
+        :return: int
+        """
+        pass
+
+    def text(self) -> str:
+        """
+        :return: The complete contents of the layer as text, ie, command + parameters
+        """
+        pass
+
+
+class EnvLayer(Layer):
+    def env_vars(self) -> Dict[str, str]:
+        pass
+
+
+class CopyLayer(Layer):
+    def source_stage(self):
+        """
+        Returns the stage the data is being copied from.
+         eg- for "COPY --from=build node_modules .", this method returns "build"
+        If this COPY statement doesn't specify "--from" or doesn't specify a stage in --from,
+         this method returns None.
+        :return:
+        """
+        pass
+
+
+class RunLayer(Layer):
+    def shell_commands(self) -> List[ShellCommand]:
+        """
+        If the current layer is a RUN command, this method returns a list of shell commands
+        that exist in this RUN layer.
+        :return: list
         """
         pass
 
@@ -191,7 +204,12 @@ class Dockerfile:
             # TODO: Raise invalid value exception
             pass
 
-    def stage_layers(self, stage: int) -> List[Layer]:
+    def stage_layers(self, stage: int) -> list:
+        """
+        Returns a list of layers present inside the specified stage.
+        Each item in the list is an object of type Layer or one of its subclasses (eg- RunLayer for RUN-based layers)
+        :param stage: position of the stage whose layers are requested
+        """
         pass
 
     def set_final_stage_baseimage(self, image: Image):
