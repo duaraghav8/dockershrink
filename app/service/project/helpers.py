@@ -1,5 +1,4 @@
-# TODO
-from typing import Optional
+from typing import Optional, Dict, List
 
 from app.service.dockerfile import (
     Dockerfile,
@@ -8,7 +7,7 @@ from app.service.dockerfile import (
     Stage,
     LayerCommand,
 )
-
+from app.service.package_json import PackageJSON
 
 NODE_ENV_PRODUCTION = "production"
 
@@ -31,7 +30,9 @@ node_dev_dependency_removal_commands = {
 }
 
 
-def extract_npm_scripts_invoked(dockerfile: Dockerfile) -> list:
+def extract_npm_scripts_invoked(
+    dockerfile: Dockerfile, package_json: PackageJSON
+) -> List[Dict[str, str]]:
     """
     Returns a list of scripts invoked in the Dockerfile and the contents (commands) inside these scripts.
     "npm start" and "npm run start" are treated as the same script.
@@ -42,21 +43,58 @@ def extract_npm_scripts_invoked(dockerfile: Dockerfile) -> list:
 
     :return: List of scripts invoked in the dockerfile
     """
+    scripts = []
 
-    # TODO
+    stage: Stage
+    for stage in dockerfile.get_all_stages():
+        for layer in stage.layers():
+            if not layer.command() == LayerCommand.RUN:
+                continue
 
-    # NOTE: It is possible that package.json does not exist because it wasn't provided in the api call.
-    # Need to handle that case.
+            cmd: ShellCommand
+            for cmd in layer.shell_commands():
+                if not cmd.program() == "npm":
+                    continue
 
-    # response = []
-    # For each stage in dockerfile:
-    #  For each RUN layer in stage:
-    #    For each ShellCommand in run layer:
-    #      If command is a script invokation:
-    #        script = extract script for the command from package.json
-    #        add command, script to response
-    # Return response
-    pass
+                subcmd = cmd.subcommand()
+                text = cmd.text()
+
+                if subcmd == "start":
+                    # This is equivalent to "npm run start"
+                    contents = package_json.get_script("start")
+                    if contents is None:
+                        contents = "node server.js"
+
+                    scripts.append(
+                        {
+                            "command": text,
+                            "script_contents": contents,
+                        },
+                    )
+
+                elif subcmd in ["run", "run-script"]:
+                    # command structure is: "npm run <script name>"
+                    # args[0] is the subcommand, so args[1] is always the script to invoke
+                    script_name = cmd.args()[1]
+
+                    contents = package_json.get_script(script_name)
+                    if contents is None:
+                        if script_name == "start":
+                            contents = "node server.js"
+                        else:
+                            # NOTE: This is symantecally incorrect.
+                            # An npm script is invoked, but it doesn't contain a corresponding definition
+                            #  in package.json.
+                            contents = "(No Definition found in package.json)"
+
+                        scripts.append(
+                            {
+                                "command": text,
+                                "script_contents": contents,
+                            },
+                        )
+
+    return scripts
 
 
 def check_command_installs_node_modules(shell_command: ShellCommand) -> bool:

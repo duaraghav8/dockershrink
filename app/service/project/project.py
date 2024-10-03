@@ -56,7 +56,12 @@ Copy the built application code & assets into the final stage.
 Set the \"NODE_ENV\" environment variable to \"production\" and install the dependencies, excluding devDependencies.""",
         )
 
-        scripts = helpers.extract_npm_scripts_invoked(self.dockerfile)
+        scripts = []
+        if self.package_json is not None:
+            scripts = helpers.extract_npm_scripts_invoked(
+                self.dockerfile, self.package_json
+            )
+
         try:
             updated_dockerfile_code = ai.add_multistage_builds(
                 dockerfile=self.dockerfile.raw(), scripts=scripts

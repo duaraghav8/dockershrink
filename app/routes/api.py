@@ -124,7 +124,6 @@ def optimize(user):
         )
 
     dockerignore = data.get(".dockerignore")
-    package_json = data.get("package.json")
 
     ai = None
     ai_access_key = user.get_openai_api_key()
@@ -132,10 +131,15 @@ def optimize(user):
         openai_client = OpenAI(api_key=ai_access_key)
         ai = AIService(openai_client)
 
+    pj = None
+    package_json = data.get("package.json")
+    if package_json is not None:
+        pj = PackageJSON(package_json)
+
     project = Project(
         dockerfile=Dockerfile(dockerfile),
         dockerignore=Dockerignore(dockerignore),
-        package_json=PackageJSON(package_json),
+        package_json=pj,
     )
     try:
         resp = project.optimize_docker_image(ai)

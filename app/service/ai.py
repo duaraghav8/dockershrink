@@ -1,3 +1,5 @@
+from typing import Dict, List
+
 from openai import OpenAI
 
 openai_model = "gpt-4o-2024-08-06"
@@ -44,8 +46,9 @@ class AIService:
     def __init__(self, client: OpenAI):
         self._client = client
 
-    def add_multistage_builds(self, dockerfile: str, scripts: list):
+    def add_multistage_builds(self, dockerfile: str, scripts: List[Dict[str, str]]):
         # Extract the dockerfile code from the response if applicable
         #   (eg- gpt 4o always returns code inside backticks "```dockerfile\n...\n```")
         # Temperature should be set to a low value, we want more deterministic, fact-based results for our tasks
+        # If scripts is empty, don't include the additional details in the prompt
         pass

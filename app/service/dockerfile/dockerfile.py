@@ -29,6 +29,9 @@ class Dockerfile:
     def get_stage_count(self) -> int:
         pass
 
+    def get_all_stages(self) -> List[Stage]:
+        pass
+
     def get_final_stage(self) -> Stage:
         """
         Returns the last stage in the dockerfile

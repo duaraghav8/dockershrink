@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, List
 
 
 class ShellCommand:
@@ -21,12 +21,25 @@ class ShellCommand:
         """
         pass
 
+    def args(self) -> List[str]:
+        """
+        Returns a list of arguments passed to the program.
+        eg-
+          "npm --foo=bar run test --production" -> ["run", "test"]
+          "npm" -> []
+        """
+        pass
+
     def subcommand(self) -> str:
         """
         Returns the subcommand invoked for the program.
-        eg- For "npm --hello=world install --production --foo=bar ./", the subcommand is "install".
+        This method is a wrapper around args()[0]
+        eg-
+          For "npm --hello=world install --production --foo=bar ./", the subcommand is "install".
+          For "npm", the subcommand is "".
         """
-        pass
+        args = self.args()
+        return args[0] if len(args) > 0 else ""
 
     def options(self) -> dict:
         """
