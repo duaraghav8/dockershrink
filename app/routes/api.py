@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 from openai import OpenAI
 
 from app.service.ai import AIService
-from app.service.dockerfile import Dockerfile
+from app.service.dockerfile.dockerfile import Dockerfile
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
 from app.service.project import Project

@@ -2,9 +2,8 @@ import os
 from enum import Enum
 from typing import List, Optional
 
-from app.service.ai import AIService
 from app.service import dockerfile as df
-from app.service.dockerfile import Dockerfile
+from app.service.ai import AIService
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
 from app.utils.log import LOG
@@ -40,13 +39,13 @@ class Project:
     _recommendations: List[OptimizationAction]
     _actions_taken: List[OptimizationAction]
 
-    dockerfile: Dockerfile
+    dockerfile: df.Dockerfile
     dockerignore: Dockerignore
     package_json: PackageJSON
 
     def __init__(
         self,
-        dockerfile: Dockerfile = None,
+        dockerfile: df.Dockerfile = None,
         dockerignore: Dockerignore = None,
         package_json: PackageJSON = None,
     ):
@@ -123,7 +122,7 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
             return
 
         try:
-            new_dockerfile = Dockerfile(updated_dockerfile_code)
+            new_dockerfile = df.Dockerfile(updated_dockerfile_code)
         except df.ValidationError as ve:
             LOG.error(
                 f"dockerfile received from ai/multistage is invalid: {ve}",
