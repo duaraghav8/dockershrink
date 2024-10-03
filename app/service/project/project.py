@@ -221,9 +221,10 @@ This becomes the base image of the final image produced, reducing the size signi
         #  RUN npm install --production
 
         ###########################################################################
-
-        rule = "exclude-devDependencies"
-        filename = "Dockerfile"
+        optimization_action = OptimizationAction(
+            rule="exclude-devDependencies",
+            filename="Dockerfile",
+        )
 
         # First, check the final stage for any dependency installation commands
         offending_cmd: df.ShellCommand
@@ -232,7 +233,7 @@ This becomes the base image of the final image produced, reducing the size signi
         )
         if offends:
             # In case of multistage Dockerfile, if any command is found to be installing devDependencies
-            #  in the final stage, fix it to only install prod deps only.
+            #  in the final stage, fix it to only install prod deps instead.
             if self.dockerfile.get_stage_count() > 1:
                 new_install_command: df.ShellCommand = (
                     helpers.apply_prod_option_to_installation_command(offending_cmd)
@@ -241,33 +242,30 @@ This becomes the base image of the final image produced, reducing the size signi
                     offending_cmd, new_install_command
                 )
 
-                action = OptimizationAction(
-                    rule=rule,
-                    filename=filename,
-                    line=offending_cmd.line_num(),
-                    title="Modified installation command to exclude devDependencies",
-                    description=f"""The dependency installation command in the last stage '{offending_cmd.text()}' has been modified to '{new_install_command.text()}'.
-This ensures that the final image excludes all modules listed in "devDependencies" in package.json and only includes production modules needed by the app at runtime.""",
+                optimization_action.line = offending_cmd.line_num()
+                optimization_action.title = (
+                    "Modified installation command to exclude devDependencies"
                 )
-                self._add_action_taken(action)
+                optimization_action.description = f"""The dependency installation command in the last stage '{offending_cmd.text()}' has been modified to '{new_install_command.text()}'.
+This ensures that the final image excludes all modules listed in "devDependencies" in package.json and only includes production modules needed by the app at runtime."""
+                self._add_action_taken(optimization_action)
 
                 return
 
             # In case of single stage dockerfile, we cannot change the command since
             #  it might break build/test processes. So add a recommendation.
-            rec = OptimizationAction(
-                rule=rule,
-                filename=filename,
-                line=offending_cmd.line_num(),
-                title="Do not install devDependencies in the final image",
-                description="""You seem to be installing modules listed in "devDependencies" in your package.json.
+            optimization_action.line = offending_cmd.line_num()
+            optimization_action.title = (
+                "Do not install devDependencies in the final image"
+            )
+            optimization_action.description = """You seem to be installing modules listed in "devDependencies" in your package.json.
 These modules are suitable in the build/test phase but are not required by your app during runtime.
 The final image of your app should not contain these unnecessary dependencies.
 Instead, use a command like "npm install --production", "yarn install --production" or "npm ci --omit=dev" to exclude devDependencies.
 This is best done using multistage builds.
-Create a new (final) stage in the Dockerfile and install node_modules excluding the devDependencies.""",
-            )
-            self._add_recommendation(rec)
+Create a new (final) stage in the Dockerfile and install node_modules excluding the devDependencies."""
+            self._add_recommendation(optimization_action)
+
             return
 
         # The final stage doesn't install any devDependencies.
@@ -305,16 +303,14 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                     #  Then we don't need to add recommendation and return from this conditional,
                     #  we can let the algo continue.
                     #  This involves some effort so for now, we just add a recommendation and exit.
-                    rec = OptimizationAction(
-                        rule=rule,
-                        filename=filename,
-                        line=layer.line_num(),
-                        title="Avoid copying node_modules into the final image",
-                        description="""You seem to be copying node_modules into your final image.
-Avoid this. Instead, perform a fresh dependency installation which excludes devDependencies (defined in your package.json).
-Instead of "COPY", use something like "RUN npm install --production" / "RUN yarn install --production".""",
+                    optimization_action.line = layer.line_num()
+                    optimization_action.title = (
+                        "Avoid copying node_modules into the final image"
                     )
-                    self._add_recommendation(rec)
+                    optimization_action.description = """You seem to be copying node_modules into your final image.
+Avoid this. Instead, perform a fresh dependency installation which excludes devDependencies (defined in your package.json).
+Instead of "COPY", use something like "RUN npm install --production" / "RUN yarn install --production"."""
+                    self._add_recommendation(optimization_action)
                     return
 
                 # If no '--from' is specified in the COPY statement, then the node_modules are being copied
@@ -323,30 +319,26 @@ Instead of "COPY", use something like "RUN npm install --production" / "RUN yarn
                     # In case of single-stage dockerfile, don't try to fix this because it might break build/test.
                     # Add a recommendation instead.
                     if stage_count < 2:
-                        rec = OptimizationAction(
-                            rule=rule,
-                            filename=filename,
-                            line=layer.line_num(),
-                            title="Do not copy node_modules from your local system",
-                            description="""You seem to be copying node_modules from your local system into the final image.
-Avoid this. For your final image, always perform a fresh dependency installation which excludes devDependencies (defined in your package.json).
-Create a new (final) stage in your Dockerfile, copy the built code into this stage and perform a fresh install of node_modules using "npm install --production" / "yarn install --production".""",
+                        optimization_action.line = layer.line_num()
+                        optimization_action.title = (
+                            "Do not copy node_modules from your local system"
                         )
-                        self._add_recommendation(rec)
+                        optimization_action.description = """You seem to be copying node_modules from your local system into the final image.
+Avoid this. For your final image, always perform a fresh dependency installation which excludes devDependencies (defined in your package.json).
+Create a new (final) stage in your Dockerfile, copy the built code into this stage and perform a fresh install of node_modules using "npm install --production" / "yarn install --production"."""
+                        self._add_recommendation(optimization_action)
                         return
 
                     self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
 
-                    action = OptimizationAction(
-                        rule=rule,
-                        filename=filename,
-                        line=layer.line_num(),
-                        title="Perform fresh install of node_modules in the final stage",
-                        description=f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
-Copying node_modules from the local machine is not recommended.
-A fresh install of production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies.""",
+                    optimization_action.line = layer.line_num()
+                    optimization_action.title = (
+                        "Perform fresh install of node_modules in the final stage"
                     )
-                    self._add_action_taken(action)
+                    optimization_action.description = f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
+Copying node_modules from the local machine is not recommended.
+A fresh install of production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies."""
+                    self._add_action_taken(optimization_action)
 
                     return
 
@@ -371,17 +363,15 @@ A fresh install of production dependencies here ensures that the final image onl
                     # So replace this COPY layer with prod dep installation
                     self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
 
-                    action = OptimizationAction(
-                        rule=rule,
-                        filename=filename,
-                        line=layer.line_num(),
-                        title="Perform fresh install of node_modules in the final stage",
-                        description=f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
+                    optimization_action.line = layer.line_num()
+                    optimization_action.title = (
+                        "Perform fresh install of node_modules in the final stage"
+                    )
+                    optimization_action.description = f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
 It seems that you're copying node_modules from a previous stage '{source_stage.name()}' which installs devDependencies as well.
 So your final image will contain unnecessary packages. 
-Instead, a fresh installation of only production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies.""",
-                    )
-                    self._add_action_taken(action)
+Instead, a fresh installation of only production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies."""
+                    self._add_action_taken(optimization_action)
 
                     return
 

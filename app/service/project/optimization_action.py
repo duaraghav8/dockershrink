@@ -1,6 +1,11 @@
 class OptimizationAction:
     def __init__(
-        self, rule: str, filename: str, title: str, description: str, line: int = -1
+        self,
+        rule: str,
+        filename: str,
+        title: str = "",
+        description: str = "",
+        line: int = -1,
     ):
         self.rule = rule
         self.filename = filename
