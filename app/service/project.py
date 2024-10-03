@@ -68,6 +68,30 @@ class Project:
         :param ai: AIService
         :return: Dockerfile
         """
+
+        # TODO
+        def extract_scripts_invoked() -> list:
+            """
+            Returns a list of scripts invoked in the Dockerfile and the contents (commands) inside these scripts.
+            "npm start" and "npm run start" are treated as the same script.
+            If start is invoked but not defined in package.json, it is treated as "node server.js".
+
+            Example return value:
+            [ {"command": "npm run build", "source": "package.json", "contents": "tsc -f ."} ]
+
+            :return: List of scripts invoked in the dockerfile
+            """
+
+            # response = []
+            # For each stage in dockerfile:
+            #  For each RUN layer in stage:
+            #    For each ShellCommand in run layer:
+            #      If command is a script invokation:
+            #        script = extract script for the command from package.json
+            #        add command, script to response
+            # Return response
+            pass
+
         rule = "use-multistage-builds"
         filename = "Dockerfile"
 
@@ -81,7 +105,7 @@ Copy the built application code & assets into the final stage.
 Set the \"NODE_ENV\" environment variable to \"production\" and install the dependencies, excluding devDependencies.""",
         )
 
-        scripts = self.dockerfile.extract_scripts_invoked()
+        scripts = extract_scripts_invoked()
         try:
             updated_dockerfile_code = ai.add_multistage_builds(
                 dockerfile=self.dockerfile.raw(), scripts=scripts
@@ -155,7 +179,9 @@ This stage only includes the application code, dependencies and any other assets
         rule = "final-stage-slim-baseimage"
         filename = "Dockerfile"
 
-        final_stage_baseimage: df.Image = self.dockerfile.final_stage_baseimage()
+        final_stage = self.dockerfile.get_final_stage()
+
+        final_stage_baseimage: df.Image = final_stage.baseimage()
         if final_stage_baseimage.is_alpine_or_slim():
             # a light image is already being used, nothing to do, exit
             return
@@ -190,7 +216,7 @@ Enable AI to generate code for multistage build.""",
                 "new_baseimage": preferred_image.full_name(),
             },
         )
-        self.dockerfile.set_final_stage_baseimage(preferred_image)
+        self.dockerfile.set_stage_baseimage(final_stage, preferred_image)
 
         action = OptimizationAction(
             rule=rule,
@@ -351,7 +377,7 @@ This becomes the base image of the final image produced, reducing the size signi
             pass
 
         def stage_installs_dev_dependencies(
-            stage: int,
+            stage: df.Stage,
         ) -> (bool, Optional[df.ShellCommand]):
             """
             Determines if the given stage installs devDependencies.
@@ -364,7 +390,7 @@ This becomes the base image of the final image produced, reducing the size signi
             installs_dev_deps = False
             offending_command: Optional[df.ShellCommand] = None
 
-            stage_layers = self.dockerfile.stage_layers(stage)
+            stage_layers = stage.layers()
             node_env_value = ""
 
             # Visit each layer from top to bottom.
@@ -407,7 +433,9 @@ This becomes the base image of the final image produced, reducing the size signi
 
         # First, check the final stage for any dependency installation commands
         offending_cmd: df.ShellCommand
-        offends, offending_cmd = stage_installs_dev_dependencies(df.StagePosition.LAST)
+        offends, offending_cmd = stage_installs_dev_dependencies(
+            self.dockerfile.get_final_stage()
+        )
         if offends:
             # In case of multistage Dockerfile, if any command is found to be installing devDependencies
             #  in the final stage, fix it to only install prod deps instead.
@@ -449,7 +477,7 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
         # The final stage doesn't install any devDependencies.
         # Now, we need to check if it is copying node_modules from localhost or a previous stage.
-        final_stage_layers = self.dockerfile.stage_layers(df.StagePosition.LAST)
+        final_stage_layers = self.dockerfile.get_final_stage().layers()
 
         for layer in final_stage_layers:
             if layer.command() == df.LayerCommand.COPY:
@@ -460,24 +488,20 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                 stage_count = self.dockerfile.get_stage_count()
 
                 layers_install_prod_deps_only = [
-                    df.Layer(
-                        command=df.LayerCommand.COPY,
-                        src="package*.json",
-                        dest="./",
-                    ),
-                    df.Layer(
-                        command=df.LayerCommand.RUN,
-                        shell_commands=["npm install --production"],
+                    df.CopyLayer(src="package*.json", dest="./"),
+                    df.RunLayer(
+                        shell_commands=[
+                            df.ShellCommand("npm install --production"),
+                        ],
                     ),
                 ]
                 layers_install_prod_deps_only_text = os.linesep.join(
                     [lyr.text() for lyr in layers_install_prod_deps_only]
                 )
 
-                # If no 'from' is specified in the COPY statement, then the node_modules are being copied
-                #  from local system. This should be prevented.
-                source_stage = layer.source_stage()
-                if source_stage is None:
+                # If no '--from' is specified in the COPY statement, then the node_modules are being copied
+                #  from build context (local system). This should be prevented.
+                if layer.copies_from_build_context():
                     # In case of single-stage dockerfile, don't try to fix this because it might break build/test.
                     # Add a recommendation instead.
                     if stage_count < 2:
@@ -508,6 +532,13 @@ A fresh install of production dependencies here ensures that the final image onl
 
                     return
 
+                # Data is copied from external context.
+                # Right now, we only support checking a previous stage in the current Dockerfile.
+                # Other external contexts are ignored and no action is taken on them.
+                if not layer.copies_from_previous_stage():
+                    return
+
+                source_stage = layer.source_stage()
                 offends, _ = stage_installs_dev_dependencies(source_stage)
                 if offends:
                     # If this Dockefile is single-stage, then you cannot COPY from a previous stage.
@@ -528,7 +559,7 @@ A fresh install of production dependencies here ensures that the final image onl
                         line=layer.line_num(),
                         title="Perform fresh install of node_modules in the final stage",
                         description=f"""In the last stage, the layer: {os.linesep}{layer.text()}{os.linesep} has been replaced by: {os.linesep}{layers_install_prod_deps_only_text}{os.linesep}
-It seems that you're copying node_modules from a previous stage '{source_stage}' which installs devDependencies as well.
+It seems that you're copying node_modules from a previous stage '{source_stage.name()}' which installs devDependencies as well.
 So your final image will contain unnecessary packages. 
 Instead, a fresh installation of only production dependencies here ensures that the final image only contains modules needed for runtime, leaving out all devDependencies.""",
                     )
