@@ -118,9 +118,7 @@ def optimize(user):
     if not dockerfile:
         return (
             jsonify(
-                {
-                    "error": "Provide a Dockerfile to optimize or use the /generate API to create a new Dockerfile"
-                }
+                {"error": "No Dockerfile provided"},
             ),
             400,
         )

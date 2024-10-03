@@ -1,5 +1,4 @@
 import os
-from enum import Enum
 from typing import List, Optional
 
 from app.service import dockerfile as df
@@ -8,31 +7,8 @@ from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
 from app.utils.log import LOG
 
-
-_NODE_ENV_PRODUCTION = "production"
-_NODE_MODULES_DIR = "node_modules"
-
-
-class OptimizationAction:
-    def __init__(
-        self, rule: str, filename: str, title: str, description: str, line: int = -1
-    ):
-        self.rule = rule
-        self.filename = filename
-        self.title = title
-        self.description = description
-        self.line = line
-
-    def to_json(self) -> dict:
-        resp = {
-            "rule": self.rule,
-            "filename": self.filename,
-            "title": self.title,
-            "description": self.description,
-        }
-        if self.line > 0:
-            resp["line"] = self.line
-        return resp
+from . import helpers
+from .optimization_action import OptimizationAction
 
 
 class Project:
@@ -67,30 +43,6 @@ class Project:
         :param ai: AIService
         :return: Dockerfile
         """
-
-        # TODO
-        def extract_scripts_invoked() -> list:
-            """
-            Returns a list of scripts invoked in the Dockerfile and the contents (commands) inside these scripts.
-            "npm start" and "npm run start" are treated as the same script.
-            If start is invoked but not defined in package.json, it is treated as "node server.js".
-
-            Example return value:
-            [ {"command": "npm run build", "source": "package.json", "contents": "tsc -f ."} ]
-
-            :return: List of scripts invoked in the dockerfile
-            """
-
-            # response = []
-            # For each stage in dockerfile:
-            #  For each RUN layer in stage:
-            #    For each ShellCommand in run layer:
-            #      If command is a script invokation:
-            #        script = extract script for the command from package.json
-            #        add command, script to response
-            # Return response
-            pass
-
         rule = "use-multistage-builds"
         filename = "Dockerfile"
 
@@ -104,7 +56,7 @@ Copy the built application code & assets into the final stage.
 Set the \"NODE_ENV\" environment variable to \"production\" and install the dependencies, excluding devDependencies.""",
         )
 
-        scripts = extract_scripts_invoked()
+        scripts = helpers.extract_npm_scripts_invoked(self.dockerfile)
         try:
             updated_dockerfile_code = ai.add_multistage_builds(
                 dockerfile=self.dockerfile.raw(), scripts=scripts
@@ -269,190 +221,21 @@ This becomes the base image of the final image produced, reducing the size signi
         #  RUN npm install --production
 
         ###########################################################################
+
         rule = "exclude-devDependencies"
         filename = "Dockerfile"
 
-        node_dep_installation_commands = {
-            "npm": {
-                "install": {"production": True},
-                "ci": {"omit": "dev"},
-            },
-            "yarn": {
-                "install": {"production": True},
-            },
-        }
-        node_remove_dev_deps_commands = {
-            "npm": {
-                "prune": {
-                    "omit": "dev",
-                    "production": True,  # Older versions of npm allowed --production with prune
-                },
-            },
-        }
-
-        def installs_node_modules(shell_command: df.ShellCommand) -> bool:
-            """
-            Returns true if the given command installs node dependencies, false otherwise.
-            There can be multiple commands for installing deps, like "npm install", "yarn install",
-             "npm ci", etc.
-            :param shell_command: the command to analyse
-            """
-            program = shell_command.program()
-            if program not in node_dep_installation_commands:
-                return False
-
-            subcommand = shell_command.subcommand()
-            if subcommand not in node_dep_installation_commands[program]:
-                return False
-
-            return True
-
-        def install_command_uses_prod_option(shell_command: df.ShellCommand) -> bool:
-            """
-            Returns true if the given node dependency installation command uses production option, ie, the command
-              only installs prod dependencies.
-            Returns false otherwise, ie, the command installs devDependencies as well.
-            """
-            program = shell_command.program()
-            subcommand = shell_command.subcommand()
-            prod_options = node_dep_installation_commands[program][subcommand]
-            specified_options = shell_command.options()
-
-            for opt, val in specified_options.items():
-                if opt in prod_options and prod_options[opt] == val:
-                    return True
-
-            # We iterated through all the options, none of them were prod options
-            return False
-
-        def removes_dev_deps(shell_command: df.ShellCommand, node_env: str) -> bool:
-            """
-            Returns true if the given command deletes devDependencies, false otherwise.
-            eg- "npm prune --omit=dev" does this.
-            :param shell_command: the command to analyse
-            :param node_env: current value of NODE_ENV environment variable
-            """
-            program = shell_command.program()
-            if program not in node_remove_dev_deps_commands:
-                return False
-
-            subcommand = shell_command.subcommand()
-            if subcommand not in node_remove_dev_deps_commands[program]:
-                return False
-
-            if node_env == _NODE_ENV_PRODUCTION:
-                return True
-
-            dev_dep_options = node_remove_dev_deps_commands[program][subcommand]
-            specified_options = shell_command.options()
-
-            for opt, val in specified_options.items():
-                if opt in dev_dep_options and dev_dep_options[opt] == val:
-                    return True
-
-            # A deletion command is being used, but it is not deleting the devDependencies.
-            return False
-
-        def apply_prod_option_to_installation_command(
-            shell_command: df.ShellCommand,
-        ) -> df.ShellCommand:
-            program = shell_command.program()
-            subcommand = shell_command.subcommand()
-            prod_opts = node_dep_installation_commands[program][subcommand]
-
-            prod_opt_name = list(prod_opts)[0]
-            prod_opt_value = prod_opts[prod_opt_name]
-
-            from copy import deepcopy
-
-            new_cmd = deepcopy(shell_command)
-
-            new_cmd.add_option(name=prod_opt_name, value=prod_opt_value)
-            return new_cmd
-
-        def copies_node_modules(layer: df.CopyLayer) -> bool:
-            """
-            Returns true if the given COPY layer copies node_modules into the image stage, false otherwise.
-            It only checks for node_modules as the base directory.
-            If the layer copies a different directory which may contain node_modules, this method cannot detect that.
-            eg-
-             "COPY --from=build /app/node_modules ." -> True
-             "COPY /app /app" -> False (even if app directory contains node_modules inside it)
-            """
-            import os.path
-
-            for src in layer.src():
-                if os.path.basename(src) == _NODE_MODULES_DIR:
-                    return True
-
-            return False
-
-        def stage_installs_dev_dependencies(
-            stage: df.Stage,
-        ) -> (bool, Optional[df.ShellCommand]):
-            """
-            Determines if the given stage installs devDependencies.
-            If the stage doesn't install node_modules at all, this function returns False, None.
-            If the stage installs node_modules but without devDependencies, it returns False, None.
-            But if devDependencies are also installed, it returns True, SC
-              where SC is the offending shell command inside a particular RUN Layer
-              (since a RUN layer can have multiple shell commands)
-            """
-            installs_dev_deps = False
-            offending_command: Optional[df.ShellCommand] = None
-
-            stage_layers = stage.layers()
-            node_env_value = ""
-
-            # Visit each layer from top to bottom.
-            # When a RUN layer is encountered, check its shell commands.
-            # If cmd is a dep install command:
-            #  if it installs only prod deps, then unmark any violations flagged
-            #  if it installs devDeps too, then mark it for violation
-            # If cmd removes dev deps:
-            #  unmark any violations flagged
-            # By the time all layers have been scanned, we know exactly whether devDeps are installed or not.
-            # The last install/prune command in the stage determines this result and that's what we return.
-            for layer in stage_layers:
-                cmd = layer.command()
-
-                if cmd == df.LayerCommand.ENV:
-                    node_env_value: str = layer.env_vars().get("NODE_ENV", "")
-
-                elif cmd == df.LayerCommand.RUN:
-                    shell_command: df.ShellCommand
-                    for shell_command in layer.shell_commands():
-                        if installs_node_modules(shell_command):
-                            # If installation command was run with NODE_ENV=production, rule is satisfied
-                            # Or if the command uses a prod option, rule is satisfied
-                            # Otherwise, devDeps are being installed as well and rule is violated
-                            if (
-                                node_env_value == _NODE_ENV_PRODUCTION
-                                or install_command_uses_prod_option(shell_command)
-                            ):
-                                installs_dev_deps, offending_command = False, None
-                            else:
-                                installs_dev_deps, offending_command = (
-                                    True,
-                                    shell_command,
-                                )
-
-                        elif removes_dev_deps(shell_command, node_env_value):
-                            installs_dev_deps, offending_command = False, None
-
-            return installs_dev_deps, offending_command
-
         # First, check the final stage for any dependency installation commands
         offending_cmd: df.ShellCommand
-        offends, offending_cmd = stage_installs_dev_dependencies(
+        offends, offending_cmd = helpers.check_stage_installs_dev_dependencies(
             self.dockerfile.get_final_stage()
         )
         if offends:
             # In case of multistage Dockerfile, if any command is found to be installing devDependencies
-            #  in the final stage, fix it to only install prod deps instead.
+            #  in the final stage, fix it to only install prod deps only.
             if self.dockerfile.get_stage_count() > 1:
                 new_install_command: df.ShellCommand = (
-                    apply_prod_option_to_installation_command(offending_cmd)
+                    helpers.apply_prod_option_to_installation_command(offending_cmd)
                 )
                 self.dockerfile.replace_shell_command(
                     offending_cmd, new_install_command
@@ -469,6 +252,7 @@ This ensures that the final image excludes all modules listed in "devDependencie
                 self._add_action_taken(action)
 
                 return
+
             # In case of single stage dockerfile, we cannot change the command since
             #  it might break build/test processes. So add a recommendation.
             rec = OptimizationAction(
@@ -493,7 +277,7 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
         for layer in final_stage_layers:
             if layer.command() == df.LayerCommand.COPY:
                 # skip if this COPY statement doesn't deal with node_modules
-                if not copies_node_modules(layer):
+                if not helpers.check_layer_copies_node_modules(layer):
                     continue
 
                 stage_count = self.dockerfile.get_stage_count()
@@ -573,7 +357,7 @@ A fresh install of production dependencies here ensures that the final image onl
                     return
 
                 source_stage = layer.source_stage()
-                offends, _ = stage_installs_dev_dependencies(source_stage)
+                offends, _ = helpers.check_stage_installs_dev_dependencies(source_stage)
                 if offends:
                     # If this Dockefile is single-stage, then you cannot COPY from a previous stage.
                     # So this is an illegal state.
@@ -605,15 +389,6 @@ Instead, a fresh installation of only production dependencies here ensures that 
         # Since it neither installs nor copies, there are no node_modules in the image.
         # Nothing to do.
 
-    def _dockerfile_exclude_frontend_assets(self):
-        """
-        Determines whether any frontend assets are being packaged inside the image.
-        If yes, this rule adds a recommendation to avoid including FE assets in the image.
-        FE assets are better served via a CDN or dedicated frontend server (like nginx).
-        At the moment, this rule cannot "fix" this in the Dockerfile.
-        """
-        pass
-
     def _add_recommendation(self, r: OptimizationAction):
         self._recommendations.append(r)
 
@@ -629,7 +404,7 @@ Instead, a fresh installation of only production dependencies here ensures that 
         return actions
 
     def generate_docker_image_definition(self, ai=None):
-        return "dockerfile", "dockerignore"
+        pass
 
     def optimize_docker_image(self, ai: AIService = None):
         """
@@ -670,6 +445,8 @@ Instead, a fresh installation of only production dependencies here ensures that 
         # self._dockerfile_exclude_frontend_assets()
         # self._dockerfile_minimize_layers()
 
+        # TODO: Project should return structured python object.
+        #  It is upto the user of this module, ie, the api, to convert it into json format to return api response.
         return {
             "actions_taken": self._get_actions_taken(),
             "recommendations": self._get_recommendations(),
