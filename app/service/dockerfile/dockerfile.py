@@ -50,9 +50,17 @@ class Dockerfile:
 
     def replace_layer(self, layer: Layer, new_layers: List[Layer]):
         """
-        replaces the given layer with a new set of layers.
+        Replaces the given layer with a new set of layers.
         :param layer: the layer that already exists in the dockerfile
         :param new_layers: list of Layer objects to put in pace of the original layer
+        """
+        pass
+
+    def insert_layer_before(self, layer: Layer, new_layer: Layer):
+        """
+        Inserts new_layer right before the given layer.
+        :param layer: Layer that already exists in Dockerfile
+        :param new_layer: New Layer to be added
         """
         pass
 

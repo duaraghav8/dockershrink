@@ -261,3 +261,26 @@ def check_stage_installs_dev_dependencies(
                     installs_dev_deps, offending_command = False, None
 
     return installs_dev_deps, offending_command
+
+
+def check_command_runs_depcheck_or_npm_check(shell_command: ShellCommand) -> bool:
+    """
+    Returns true if the given shell command runs depcheck or npm-check, false otherwise.
+    """
+    # TODO: Add support for depcheck invoked via npm script
+    # eg- (dockerfile) "npm run dependency_check" | (package.json) "script": {"dependency_checker": "npx depcheck"}
+
+    # Possible ways to invoke depcheck or npm-check:
+    #  npx depcheck
+    #  npx npm-check
+    #  depcheck
+    #  npm-check
+    dep_checker_programs = {"depcheck", "npm-check"}
+
+    program = shell_command.program()
+    if program in dep_checker_programs:
+        return True
+    if program == "npx" and shell_command.subcommand() in dep_checker_programs:
+        return True
+
+    return False

@@ -183,17 +183,62 @@ This becomes the base image of the final image produced, reducing the size signi
         )
         self._add_action_taken(action)
 
-    def _remove_unused_node_modules(self):
-        # task: remove packages from package.json "dependencies" which are not actually being used in the project.
-        # According to user feedback, devs often forget to remove unused packages, resulting in bloated node_modules.
-        #  Removing this has shed as much as 700MB in size!
-        # user feedback - https://www.linkedin.com/feed/update/urn:li:activity:7244193836338397185?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7244193836338397185%2C7244202247755030529%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287244202247755030529%2Curn%3Ali%3Aactivity%3A7244193836338397185%29
-        # We can probably already do this using some npm/yarn built-in functionality.
+    def _use_depcheck(self):
+        """
+        Ensures that depcheck or npm-check is being used in the Dockerfile.
+        If not, this method adds command(s) to run depcheck right before
+         the first node module installation command is run.
+        In case of any unused dependencies, depcheck will fail the image build process
+         and the user must delete the packages from package.json.
+        """
+        # TODO: Add functionality to remove the packages flagged by depcheck from package.json.
+        # For now, we simply integrate depcheck in the Dockerfile.
+        # This fails the image build if any unused dependencies are detected.
+        # This is already helpful. But ideally, we want to remove these deps ourselves.
+        # But currently there are 2 challenges with that:
+        #  1. Depcheck might be giving false positives sometimes. In such cases, we can't decide on the user's behalf
+        #     (Maybe they just want depcheck to --ignore those packages).
+        #  2. Depcheck itself doesn't provide an option to remove these packages.
+        #     So to remove, we need to implement a mechanism on top of depcheck to remove them, which is more effort.
 
-        # most popular suggestions seem to be:
-        # https://github.com/depcheck/depcheck
-        # https://github.com/dylang/npm-check
-        pass
+        first_install_layer: df.RunLayer = None
+
+        stage: df.Stage
+        for stage in self.dockerfile.get_all_stages():
+            for layer in stage.layers():
+                if not layer.command() == df.LayerCommand.RUN:
+                    continue
+
+                for shell_cmd in layer.shell_commands():
+                    # If depcheck or npm-check is already being used anywhere in the Dockerfile,
+                    #  then the user is already aware of those tools and we don't need to optimize anything.
+                    if helpers.check_command_runs_depcheck_or_npm_check(shell_cmd):
+                        return
+
+                    # Keep track of the first Layer in the Dockerfile that installs node modules.
+                    # Don't exit the loop or add depcheck yet because we must scan entire dockerfile
+                    #  for existence of depcheck or similar tool.
+                    if (
+                        first_install_layer is None
+                        and helpers.check_command_installs_node_modules(shell_cmd)
+                    ):
+                        first_install_layer = layer
+
+        run_depcheck_command = [df.ShellCommand("npx depcheck")]
+        depcheck_layer = df.RunLayer(run_depcheck_command)
+        self.dockerfile.insert_layer_before(first_install_layer, depcheck_layer)
+
+        action = OptimizationAction(
+            rule="use-depcheck",
+            filename="Dockerfile",
+            line=first_install_layer.line_num(),
+            title="Added depcheck to detect unused dependencies",
+            description=f"""Added {os.linesep}{depcheck_layer.text()}{os.linesep} right before {os.linesep}{first_install_layer.text()}{os.linesep}.
+Depcheck flags all dependencies listed in package.json but not actually used in the project.
+If any unused dependencies are found, depcheck exits with a non-0 code, causing the image build to fail.
+You need to either remove these dependencies from package.json or ignore them in depcheck using --ignores.""",
+        )
+        self._add_action_taken(action)
 
     def _dockerfile_exclude_dev_dependencies(self):
         # A developer writing Dockerfile must make sure to never install the devDependencies in node_modules in the final docker image - this just adds unnecessary weight to the image.
@@ -432,8 +477,10 @@ Instead, a fresh installation of only production dependencies here ensures that 
 
         self._dockerfile_finalstage_use_light_baseimage()
         self._dockerfile_exclude_dev_dependencies()
-        self._remove_unused_node_modules()
-        self._remove_unnecessary_files_from_node_modules()
+        self._use_depcheck()
+
+        # TODO(p0)
+        # self._remove_unnecessary_files_from_node_modules()
 
         # TODO
         # self._use_bundler()
