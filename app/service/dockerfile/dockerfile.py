@@ -56,9 +56,9 @@ class Dockerfile:
         """
         pass
 
-    def insert_layer_before(self, layer: Layer, new_layer: Layer):
+    def insert_layer_after(self, layer: Layer, new_layer: Layer):
         """
-        Inserts new_layer right before the given layer.
+        Inserts new_layer right after the given layer.
         :param layer: Layer that already exists in Dockerfile
         :param new_layer: New Layer to be added
         """
