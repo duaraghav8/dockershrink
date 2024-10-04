@@ -1,11 +1,11 @@
 import os
-from typing import Set
+from typing import Set, Optional
 
 
 class Dockerignore:
-    _raw_data: str = None
+    _raw_data: Optional[str] = None
 
-    def __init__(self, contents: str):
+    def __init__(self, contents: Optional[str]):
         self._raw_data = contents
 
     def exists(self) -> bool:
