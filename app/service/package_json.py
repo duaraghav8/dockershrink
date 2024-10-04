@@ -2,9 +2,9 @@ from typing import Optional
 
 
 class PackageJSON:
-    _raw_data = None
+    _raw_data: dict
 
-    def __init__(self, data):
+    def __init__(self, data: dict):
         self._raw_data = data
 
     def get_script(self, name: str) -> Optional[str]:
@@ -18,7 +18,8 @@ class PackageJSON:
           package.json = {"scripts": {"build": "babel ."}}
           returns = "babel ."
         """
-        pass
+        scripts = self._raw_data.get("scripts", {})
+        return scripts.get(name)
 
-    def raw(self) -> str:
+    def raw(self) -> dict:
         return self._raw_data
