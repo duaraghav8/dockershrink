@@ -13,7 +13,10 @@ NODE_ENV_PRODUCTION = "production"
 
 node_dependency_installation_commands = {
     "npm": {
-        "install": {"production": True},
+        "install": {
+            "production": True,
+            "omit": "dev",
+        },
         "ci": {"omit": "dev"},
     },
     "yarn": {
