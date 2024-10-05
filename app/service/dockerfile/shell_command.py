@@ -1,5 +1,7 @@
 from typing import Union, List
 
+from .layer import RunLayer
+
 
 class ShellCommand:
     _text: str
@@ -61,5 +63,28 @@ class ShellCommand:
         If the value is bool and set to True, the option is added as a flag.
           If False, this method exits without making any changes to the command.
           eg- add_option("production", True) -> "npm install --production"
+        """
+        pass
+
+    def layer(self) -> RunLayer:
+        """
+        Returns this shell command's parent Layer (specifically, RunLayer).
+        :return: RunLayer
+        """
+        pass
+
+    def index(self) -> int:
+        """
+        Returns the position of this command inside the RunLayer.
+        ShellCommands are 0-indexed but their indices are unique only within their Layer.
+        eg-
+          FROM ubuntu:latest
+          RUN npm run build \\               (command layer 0)
+              apt-get install foobar \\      (command layer 1)
+              npm start                      (command layer 2)
+
+          RUN npm run build \\               (command layer 0)
+              apt-get install foobar \\      (command layer 1)
+              npm start                      (command layer 2)
         """
         pass

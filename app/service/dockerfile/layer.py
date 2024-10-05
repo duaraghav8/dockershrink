@@ -33,6 +33,28 @@ class Layer:
         """
         pass
 
+    def stage(self) -> Stage:
+        """
+        Returns the Stage this layer is part of
+        :return: Stage
+        """
+        pass
+
+    def index(self) -> int:
+        """
+        Returns the position of this layer inside the Stage.
+        Layers are 0-indexed but their indices are unique only within a stage.
+        eg-
+          FROM ubuntu:latest
+          WORKDIR /app          (layer index 0)
+          RUN npm run build     (layer index 1)
+
+          FROM node:slim
+          COPY . /app           (layer index 0)
+          EXPOSE 5000           (layer index 1)
+        """
+        pass
+
 
 class EnvLayer(Layer):
     def env_vars(self) -> Dict[str, str]:
