@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Union
 
 from .shell_command import ShellCommand
 from .stage import Stage
@@ -12,10 +12,25 @@ class LayerCommand(Enum):
 
 
 class Layer:
+    _index: int
+    _line_num: int
     _command: LayerCommand
+    _text: str
+    _parent_stage: Stage
 
-    def __init__(self, command: LayerCommand):
+    def __init__(
+        self,
+        index: int,
+        line: int,
+        command: LayerCommand,
+        text: str,
+        parent_stage: Stage,
+    ):
+        self._index = index
+        self._line_num = line
         self._command = command
+        self._text = text
+        self._parent_stage = parent_stage
 
     def command(self) -> LayerCommand:
         return self._command
@@ -25,20 +40,20 @@ class Layer:
         Returns the line number in the Dockerfile on which this layer begins.
         :return: int
         """
-        pass
+        return self._line_num
 
     def text(self) -> str:
         """
         :return: The complete contents of the layer as text, ie, command + parameters
         """
-        pass
+        return self._text
 
     def parent_stage(self) -> Stage:
         """
         Returns the Stage this layer is part of
         :return: Stage
         """
-        pass
+        return self._parent_stage
 
     def index(self) -> int:
         """
@@ -53,23 +68,46 @@ class Layer:
           COPY . /app           (layer index 0)
           EXPOSE 5000           (layer index 1)
         """
-        pass
+        return self._index
 
 
 class EnvLayer(Layer):
+    _env_vars: Dict[str, str]
+
+    def __init__(
+        self,
+        index: int,
+        line: int,
+        text: str,
+        parent_stage: Stage,
+        env_vars: Dict[str, str],
+    ):
+        self._env_vars = env_vars
+        super().__init__(index, line, LayerCommand.ENV, text, parent_stage)
+
     def env_vars(self) -> Dict[str, str]:
-        pass
+        return self._env_vars
 
 
 class CopyLayer(Layer):
+    _flags: Dict[str, Union[str, bool]]
     _src: List[str]
     _dest: str
 
-    def __init__(self, src: List[str], dest: str):
+    def __init__(
+        self,
+        index: int,
+        line: int,
+        text: str,
+        parent_stage: Stage,
+        flags: Dict[str, Union[str, bool]],
+        src: List[str],
+        dest: str,
+    ):
+        self._flags = flags
         self._src = src
         self._dest = dest
-
-        super().__init__(LayerCommand.COPY)
+        super().__init__(index, line, LayerCommand.COPY, text, parent_stage)
 
     def copies_from_build_context(self) -> bool:
         """
@@ -79,7 +117,7 @@ class CopyLayer(Layer):
          "COPY --from=build /app /app" -> False
          "COPY node_modules ." -> True
         """
-        pass
+        return "from" not in self._flags
 
     def copies_from_previous_stage(self) -> bool:
         """
@@ -89,7 +127,18 @@ class CopyLayer(Layer):
          "COPY --from=nginx:latest /app /app" -> False
          "COPY node_modules ." -> False
         """
-        pass
+        # TODO: Improve this logic
+        # Right now, if --from is specified, we determine whether its a docker image based on
+        #  whether it contains ":". This is not fool-proof.
+        # Furthermore, if the string doesn't contain ":", we treat it as the name of a
+        #  previous stage, and we're totally ignoring a third type of thing we can
+        #  supply to --from - additional build context.
+        # This is based on the assumption that most dockerfiles out there only use --from to
+        #  refer to a previous stage, so this shouldn't cause much problems.
+        from_value = self._flags.get("from")
+        if (from_value is None) or (":" in from_value):
+            return False
+        return True
 
     def source_stage(self) -> Optional[Stage]:
         """
@@ -98,7 +147,11 @@ class CopyLayer(Layer):
         If this COPY statement doesn't specify "--from" or doesn't specify a stage in --from,
          this method returns None.
         """
-        pass
+        stage_name = self._flags.get("from")
+        if stage_name is None:
+            return None
+        df = self._parent_stage.parent_dockerfile()
+        return df.get_stage_by_name(stage_name)
 
     def src(self) -> List[str]:
         return self._src

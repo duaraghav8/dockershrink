@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from .image import Image
 from .layer import Layer
@@ -55,6 +55,16 @@ class Dockerfile:
         :return: Stage
         """
         return self._stages[-1]
+
+    def get_stage_by_name(self, name: str) -> Optional[Stage]:
+        """
+        Returns the Stage object whose name is passed.
+        If a stage with the given name doesn't exist, None is returned.
+        """
+        for stage in self._stages:
+            if stage.name() == name:
+                return stage
+        return None
 
     def set_stage_baseimage(self, stage: Stage, image: Image):
         i = stage.index()

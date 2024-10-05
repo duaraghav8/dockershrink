@@ -1,7 +1,9 @@
+from . import Dockerfile
 from .image import Image
 
 
 class Stage:
+    _parent_dockerfile: Dockerfile
     _index: int
     _line_num: int
     _baseimage: Image
@@ -9,13 +11,26 @@ class Stage:
     _layers: list
 
     def __init__(
-        self, index: int, line: int, baseimage: Image, layers: list, name: str = ""
+        self,
+        parent_dockerfile: Dockerfile,
+        index: int,
+        line: int,
+        baseimage: Image,
+        layers: list,
+        name: str = "",
     ):
+        self._parent_dockerfile = parent_dockerfile
         self._index = index
         self._line_num = line
         self._baseimage = baseimage
         self._name = name
         self._layers = layers
+
+    def parent_dockerfile(self) -> Dockerfile:
+        """
+        Returns the Dockerfile object this stage is part of.
+        """
+        return self._parent_dockerfile
 
     def index(self) -> int:
         """
@@ -41,7 +56,7 @@ class Stage:
         Returns the base image used in the stage
          eg- "FROM ubuntu:latest" -> returns ubuntu:latest as Image object
         """
-        pass
+        return self._baseimage
 
     def name(self) -> str:
         """
