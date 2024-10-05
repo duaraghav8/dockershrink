@@ -6,41 +6,15 @@ from .shell_command import ShellCommand
 from .stage import Stage
 
 
-# CONTRACT
-# Internally, we operate on the AST structure, not class instances.
-# Only the dockerfile object allows write methods.
-#  All other objects like Layer, ShellCommand, etc only provide read methods
-# Read requests - serve the structure in its current state
-# write request - change the structure and immediately flatten it into new dockerfile, assign to _raw_data.
-#  any writes to dockerfile should reflect immediately in the structure as well as raw dockerfile
-# ideal AST structure:
-# stages = [
-#   {
-#     "name": "",
-#     "layers": [
-#       {
-#         "command": "RUN",
-#         "text": "...",
-#         "shell_commands": [
-#           {
-#             "text": "npm run build --production --foo=bar",
-#             "program": "npm",
-#             "subcommand": "run",
-#             "args": ["build"]
-#             "options": {"production": True, "foo": "bar"}
-#           }
-#         ]
-#       },
-#       {"command": "COPY", "text": "...", "src": "...", "dest": "..."}
-#     ],
-#   },
-# ]
-
-
 class ValidationError(Exception):
     pass
 
 
+# Contract:
+# 1. Only the Dockerfile object allows writes on the Dockerfile.
+# 2. All other objects such as Image, Layer, Stage, etc are read-only.
+# 3. Any write method called on Dockerfile object will change the internal
+#  objects as well as the raw dockerfile immediately.
 class Dockerfile:
     _raw_data: str
     _stages: List[Stage]
@@ -62,9 +36,14 @@ class Dockerfile:
         Updates self._raw_data to reflect the current state of self._stages.
         This method converts stages into a Dockerfile string and assigns to raw_data
         """
+        # TODO
         pass
 
     def get_stage_count(self) -> int:
+        """
+        Returns the number of stages in this dockerfile.
+        This will always be an unsigned integer, ie, >= 0.
+        """
         return len(self._stages)
 
     def get_all_stages(self) -> List[Stage]:
@@ -80,18 +59,25 @@ class Dockerfile:
     def set_stage_baseimage(self, stage: Stage, image: Image):
         i = stage.index()
         if i < 0 or i > (self.get_stage_count() - 1):
-            raise ValidationError(f"Given stage has invalid index value: {i}")
+            raise ValidationError(f"Given stage has invalid index: {i}")
 
-        target = self._stages[i]
-        target.set_baseimage(image)
+        orig_stage = self._stages[i]
+        new_stage = Stage(
+            index=orig_stage.index(),
+            line=orig_stage.line_num(),
+            baseimage=image,
+            name=orig_stage.name(),
+            layers=orig_stage.layers(),
+        )
+        self._stages[i] = new_stage
         self._flatten()
 
     def replace_shell_command(self, original: ShellCommand, new: ShellCommand):
         """
         Replaces a specific shell command inside a RUN layer with a new shell command.
         """
-        layer = original.layer()
-        stage_index = layer.stage().index()
+        layer = original.parent_layer()
+        stage_index = layer.parent_stage().index()
 
         target_stage_layers = self._stages[stage_index].layers()
         target_layer = target_stage_layers[layer.index()]
@@ -105,8 +91,14 @@ class Dockerfile:
         :param layer: the layer that already exists in the dockerfile
         :param new_layers: list of Layer objects to put in pace of the original layer
         """
-        stage_index = layer.stage().index()
-        self._stages[stage_index].layers()
+        stage_index = layer.parent_stage().index()
+        stage_layers = self._stages[stage_index].layers()
+
+        i = layer.index()
+        # Insert the elements of new_layers inside stage layers, right after the to-be-removed layer.
+        stage_layers[i + 1 : i + 1] = new_layers
+        # Remove the layer.
+        stage_layers.pop(i)
 
     def insert_layer_after(self, layer: Layer, new_layer: Layer):
         """
@@ -114,7 +106,9 @@ class Dockerfile:
         :param layer: Layer that already exists in Dockerfile
         :param new_layer: New Layer to be added
         """
-        pass
+        stage_index = layer.parent_stage().index()
+        stage_layers = self._stages[stage_index].layers()
+        stage_layers.insert(layer.index() + 1, new_layer)
 
     def raw(self) -> str:
         return self._raw_data

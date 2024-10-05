@@ -33,7 +33,7 @@ class Layer:
         """
         pass
 
-    def stage(self) -> Stage:
+    def parent_stage(self) -> Stage:
         """
         Returns the Stage this layer is part of
         :return: Stage

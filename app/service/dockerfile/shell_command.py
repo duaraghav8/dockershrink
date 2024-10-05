@@ -66,7 +66,7 @@ class ShellCommand:
         """
         pass
 
-    def layer(self) -> RunLayer:
+    def parent_layer(self) -> RunLayer:
         """
         Returns this shell command's parent Layer (specifically, RunLayer).
         :return: RunLayer
