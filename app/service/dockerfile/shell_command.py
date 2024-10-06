@@ -1,7 +1,5 @@
 from typing import Union, List
 
-from .layer import RunLayer
-
 
 class ShellCommand:
     _text: str
@@ -66,7 +64,7 @@ class ShellCommand:
         """
         pass
 
-    def parent_layer(self) -> RunLayer:
+    def parent_layer(self):
         """
         Returns this shell command's parent Layer (specifically, RunLayer).
         :return: RunLayer
