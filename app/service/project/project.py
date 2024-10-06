@@ -351,7 +351,7 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                 # TODO(p0): We can't directly create layer objects.
                 #  We must call a utility function provided by dockerfile to create new layers
                 layers_install_prod_deps_only = [
-                    df.CopyLayer(src=["package*.json"], dest="./"),
+                    df.CopyLayer(src=["package*.json"], dest="."),
                     df.RunLayer(
                         shell_commands=[
                             df.ShellCommand("npm install --production"),

@@ -15,6 +15,7 @@ class Layer:
     _index: int
     _line_num: int
     _command: LayerCommand
+    _flags: Dict[str, Union[str, bool]]
     _text: str
     _parent_stage: Stage
 
@@ -23,12 +24,14 @@ class Layer:
         index: int,
         line: int,
         command: LayerCommand,
+        flags: Dict[str, Union[str, bool]],
         text: str,
         parent_stage: Stage,
     ):
         self._index = index
         self._line_num = line
         self._command = command
+        self._flags = flags
         self._text = text
         self._parent_stage = parent_stage
 
@@ -78,19 +81,19 @@ class EnvLayer(Layer):
         self,
         index: int,
         line: int,
+        flags: Dict[str, Union[str, bool]],
         text: str,
         parent_stage: Stage,
         env_vars: Dict[str, str],
     ):
         self._env_vars = env_vars
-        super().__init__(index, line, LayerCommand.ENV, text, parent_stage)
+        super().__init__(index, line, LayerCommand.ENV, flags, text, parent_stage)
 
     def env_vars(self) -> Dict[str, str]:
         return self._env_vars
 
 
 class CopyLayer(Layer):
-    _flags: Dict[str, Union[str, bool]]
     _src: List[str]
     _dest: str
 
@@ -104,10 +107,9 @@ class CopyLayer(Layer):
         src: List[str],
         dest: str,
     ):
-        self._flags = flags
         self._src = src
         self._dest = dest
-        super().__init__(index, line, LayerCommand.COPY, text, parent_stage)
+        super().__init__(index, line, LayerCommand.COPY, flags, text, parent_stage)
 
     def copies_from_build_context(self) -> bool:
         """
@@ -164,12 +166,13 @@ class RunLayer(Layer):
         self,
         index: int,
         line: int,
+        flags: Dict[str, Union[str, bool]],
         text: str,
         parent_stage: Stage,
         shell_commands: List[ShellCommand],
     ):
         self._shell_commands = shell_commands
-        super().__init__(index, line, LayerCommand.RUN, text, parent_stage)
+        super().__init__(index, line, LayerCommand.RUN, flags, text, parent_stage)
 
     def shell_commands(self) -> List[ShellCommand]:
         return self._shell_commands
