@@ -1,18 +1,30 @@
-from typing import Union, List
+from typing import Union, List, Dict
 
 
 class ShellCommand:
+    _parent_layer = None
+    _index: int
+    _line: int
     _text: str
+    _program: str
+    _args: List[str]
+    _flags: Dict[str, Union[str, bool]]
 
-    def __init__(self, cmd: str):
+    def __init__(self, index: int, line_num: int, parent_layer, cmd: str):
+        self._parent_layer = parent_layer
+        self._index = index
+        self._line = line_num
         self._text = cmd
+
+        # TODO(p0): parse cmd into program, args, flags and assign
+        # OR parse the command outside and just give to this class
 
     def line_num(self) -> int:
         """
         Returns the line number in the Dockerfile on which is resides.
         :return: int
         """
-        pass
+        return self._line
 
     def program(self) -> str:
         """
@@ -41,12 +53,12 @@ class ShellCommand:
         args = self.args()
         return args[0] if len(args) > 0 else ""
 
-    def options(self) -> dict:
+    def options(self) -> Dict[str, Union[str, bool]]:
         """
         Returns a dict of all options specified in this command.
         eg- "npm install --production --foo=bar --lorem=false" -> {"production": True, "foo": "bar", "lorem": False}
         """
-        pass
+        return self._flags
 
     def text(self) -> str:
         """
@@ -69,7 +81,7 @@ class ShellCommand:
         Returns this shell command's parent Layer (specifically, RunLayer).
         :return: RunLayer
         """
-        pass
+        return self._parent_layer
 
     def index(self) -> int:
         """
@@ -85,4 +97,4 @@ class ShellCommand:
               apt-get install foobar \\      (command layer 1)
               npm start                      (command layer 2)
         """
-        pass
+        return self._index

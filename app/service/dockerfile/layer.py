@@ -160,9 +160,16 @@ class CopyLayer(Layer):
 class RunLayer(Layer):
     _shell_commands: List[ShellCommand]
 
-    def __init__(self, shell_commands: List[ShellCommand]):
+    def __init__(
+        self,
+        index: int,
+        line: int,
+        text: str,
+        parent_stage: Stage,
+        shell_commands: List[ShellCommand],
+    ):
         self._shell_commands = shell_commands
-        super().__init__(LayerCommand.RUN)
+        super().__init__(index, line, LayerCommand.RUN, text, parent_stage)
 
     def shell_commands(self) -> List[ShellCommand]:
         return self._shell_commands

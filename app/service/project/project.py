@@ -144,9 +144,10 @@ This stage only includes the application code, dependencies and any other assets
 
         preferred_image = df.Image("node:alpine")
         if final_stage_baseimage.name() == "node":
-            preferred_image = df.Image(
-                f"node:{final_stage_baseimage.alpine_equivalent_tag()}"
+            tag = helpers.get_node_alpine_equivalent_tag_for_image(
+                final_stage_baseimage
             )
+            preferred_image = df.Image(f"node:{tag}")
 
         if self.dockerfile.get_stage_count() == 1:
             # In case of a single stage, we'll only give a recommendation.
@@ -347,6 +348,8 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                 stage_count = self.dockerfile.get_stage_count()
 
                 # TODO: Make sure this copying is correct. Will package.json be in curr dir only?
+                # TODO(p0): We can't directly create layer objects.
+                #  We must call a utility function provided by dockerfile to create new layers
                 layers_install_prod_deps_only = [
                     df.CopyLayer(src=["package*.json"], dest="./"),
                     df.RunLayer(

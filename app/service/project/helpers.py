@@ -6,6 +6,7 @@ from app.service.dockerfile import (
     CopyLayer,
     Stage,
     LayerCommand,
+    Image,
 )
 from app.service.package_json import PackageJSON
 
@@ -179,11 +180,13 @@ def apply_prod_option_to_installation_command(
     prod_opt_name = list(prod_opts)[0]
     prod_opt_value = prod_opts[prod_opt_name]
 
+    # TODO: we can't do add_option() and modify the object
     from copy import deepcopy
 
     new_cmd = deepcopy(shell_command)
 
     new_cmd.add_option(name=prod_opt_name, value=prod_opt_value)
+
     return new_cmd
 
 
@@ -284,3 +287,37 @@ def check_command_runs_depcheck_or_npm_check(shell_command: ShellCommand) -> boo
         return True
 
     return False
+
+
+def get_node_alpine_equivalent_tag_for_image(image: Image) -> str:
+    """
+    Returns the alpine equivalent tag of the current tag in the given Docker Image.
+    This tag has the same version as the current tag, but is also alpine or slim.
+    eg- current="latest", returns "alpine" | "22.9.0" => "22.9.0-alpine"
+    If the tag already contains "alpine" or "slim", it is returned as response.
+    """
+    # Conversion Rules:
+    # latest = alpine
+    # [word|version] = [word|version]-alpine
+    #   eg- iron = iron-alpine, lts = lts-alpine, hydrogen = hydrogen-alpine,
+    #   20 = 20-alpine, 18.10.3 = 18.10.3-alpine
+    # [word|version]-[<slim-only images>] = [word|version]-[<slim-only images>]-slim
+    #   eg- current-bullseye = current-bullseye-slim, lts-bookworm = lts-bookworm-slim
+
+    # https://github.com/nodejs/docker-node?tab=readme-ov-file#image-variants
+
+    slim_only_image_types = {"bookworm", "bullseye", "buster", "iron"}
+
+    tag = image.tag()
+    if tag == "latest":
+        return "alpine"
+    if "alpine" in tag or "slim" in tag:
+        return tag
+
+    parts = tag.split("-")
+    if len(parts) == 1:
+        return f"{parts[0]}-alpine"
+    if len(parts) == 2 and parts[1] in slim_only_image_types:
+        return f"{parts[0]}-{parts[1]}-slim"
+
+    return "alpine"
