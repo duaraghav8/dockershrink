@@ -1,3 +1,10 @@
+# TODO: Support image digest as well
+# image can also be specified with @ followed by digest hash
+# eg- "FROM node@abhst2783dhu"
+# https://docs.docker.com/reference/dockerfile/#from
+# Add a _digest property and digest() method
+
+
 class Image:
     _name: str
     _tag: str

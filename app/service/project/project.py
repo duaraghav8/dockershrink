@@ -240,14 +240,14 @@ This becomes the base image of the final image produced, reducing the size signi
                         if helpers.check_command_runs_depcheck_or_npm_check(shell_cmd):
                             return
 
-        run_depcheck_commands = [df.ShellCommand("npx depcheck")]
-        depcheck_layer = df.RunLayer(run_depcheck_commands)
-        self.dockerfile.insert_layer_after(last_copy_layer, depcheck_layer)
+        depcheck_layer: df.RunLayer = self.dockerfile.insert_after_layer(
+            last_copy_layer, "RUN npx depcheck"
+        )
 
         action = OptimizationAction(
             rule="use-depcheck",
             filename="Dockerfile",
-            line=last_copy_layer.line_num(),
+            line=depcheck_layer.line_num(),
             title="Added depcheck to detect unused dependencies",
             description=f"""Added {os.linesep}{depcheck_layer.text()}{os.linesep} right after {os.linesep}{last_copy_layer.text()}{os.linesep}.
 Depcheck flags all dependencies listed in package.json but not actually used in the project.
@@ -305,8 +305,8 @@ NOTE: You may need to change where exactly you want to run depcheck within your 
                 new_install_command: df.ShellCommand = (
                     helpers.apply_prod_option_to_installation_command(offending_cmd)
                 )
-                self.dockerfile.replace_shell_command(
-                    offending_cmd, new_install_command
+                new_install_command = self.dockerfile.replace_shell_command(
+                    offending_cmd, new_install_command.text()
                 )
 
                 optimization_action.line = offending_cmd.line_num()
@@ -347,19 +347,13 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
                 stage_count = self.dockerfile.get_stage_count()
 
-                # TODO: Make sure this copying is correct. Will package.json be in curr dir only?
-                # TODO(p0): We can't directly create layer objects.
-                #  We must call a utility function provided by dockerfile to create new layers
+                # TODO(p0): Make sure this copying is correct. Will package.json be in curr dir only?
                 layers_install_prod_deps_only = [
-                    df.CopyLayer(src=["package*.json"], dest="."),
-                    df.RunLayer(
-                        shell_commands=[
-                            df.ShellCommand("npm install --production"),
-                        ],
-                    ),
+                    "COPY package*.json .",
+                    "RUN npm install --production",
                 ]
                 layers_install_prod_deps_only_text = os.linesep.join(
-                    [lyr.text() for lyr in layers_install_prod_deps_only]
+                    layers_install_prod_deps_only
                 )
 
                 # If layer is copying multiple files and directories (and not just node_modules), we cannot simply
@@ -398,7 +392,9 @@ Create a new (final) stage in your Dockerfile, copy the built code into this sta
                         self._add_recommendation(optimization_action)
                         return
 
-                    self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
+                    self.dockerfile.replace_layer_with_statements(
+                        layer, layers_install_prod_deps_only
+                    )
 
                     optimization_action.line = layer.line_num()
                     optimization_action.title = (
@@ -430,7 +426,9 @@ A fresh install of production dependencies here ensures that the final image onl
                     # user is copying node_modules from previous stage, but the previous stage
                     #  installs devDependencies as well.
                     # So replace this COPY layer with prod dep installation
-                    self.dockerfile.replace_layer(layer, layers_install_prod_deps_only)
+                    self.dockerfile.replace_layer_with_statements(
+                        layer, layers_install_prod_deps_only
+                    )
 
                     optimization_action.line = layer.line_num()
                     optimization_action.title = (

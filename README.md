@@ -143,3 +143,20 @@ Optimize this Dockerfile:
 The `npm run build` command in the Dockerfile executes the following code (extracted from package.json):
 `<build script contents>`
 ```
+
+---------------------------
+
+TODO:
+- Implement all objects in the dockerfile package
+  - constructor signatures
+  - write methods' logic
+- Implement the logic to parse dockerfile string and convert it into desired structure
+- Revisit the text() logic for all docker objects and ast's flatten() logic
+  - RUN layers containing multiple shell commands can be spread out over multiple lines depending on the line number of the next layer
+  - try to capture line num info accurately for each layer
+  - when flattening into text, we should honor the line number for each layer as much as possible
+- Change LayerCommand value from int to str and ensure compatibility
+- delete the though process comments from layer.py (add comments to document if needed)
+- Implement AI class
+- Resolve code TODO(p0) items
+- Review code TODOs

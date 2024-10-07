@@ -1,9 +1,13 @@
+import dockerfile
+import dockerfile as parser
+
 from .image import Image
 
 
 class Stage:
     _parent_dockerfile = None
     _index: int
+    _statement: parser.Command
     _line_num: int
     _baseimage: Image
     _name: str
@@ -13,17 +17,18 @@ class Stage:
         self,
         parent_dockerfile,
         index: int,
-        line: int,
-        baseimage: Image,
+        statement: parser.Command,
         layers: list,
-        name: str = "",
     ):
         self._parent_dockerfile = parent_dockerfile
         self._index = index
+        self._statement = statement
+        self._layers = layers
+
+        # TODO(p0): parse statement and fillup these fields
         self._line_num = line
         self._baseimage = baseimage
         self._name = name
-        self._layers = layers
 
     def parent_dockerfile(self):
         """
@@ -70,3 +75,13 @@ class Stage:
         Returns the number of the line on which the stage is declared.
         """
         return self._line_num
+
+    def text(self) -> str:
+        """
+        Returns the dockerfile statement that declares this stage
+        eg- "FROM ubuntu:latest AS build"
+        """
+        return self._statement.original
+
+    def parsed_statement(self) -> dockerfile.Command:
+        return self._statement

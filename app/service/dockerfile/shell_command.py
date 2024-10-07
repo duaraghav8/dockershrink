@@ -1,20 +1,37 @@
-from typing import Union, List, Dict
+from typing import Union, List, Dict, TypeAlias, Tuple
+
+ShellCommandFlagValue: TypeAlias = Union[str, bool]
+ShellCommandFlags: TypeAlias = Dict[str, ShellCommandFlagValue]
+
+
+def split_chained_commands(cmd_string: str) -> list:
+    """
+    Takes a string containing one or more shell commands chained together and splits them into individual commands.
+    Also returns the operator between 2 commands.
+    eg-
+      "echo hello world && npx depcheck || apt-get install foo -y; /scripts/myscript.sh"
+      => ["echo hello world", "&&", "npx depcheck", "||", "apt-get install foo -y", ";", "/scripts/myscript.sh"]
+    """
+    # TODO(p0)
+    # https://github.com/djmattyg007/python-shell-parser
+    # https://github.com/idank/bashlex
+    pass
 
 
 class ShellCommand:
     _parent_layer = None
     _index: int
     _line: int
-    _text: str
+    _cmd: Tuple[str]
     _program: str
     _args: List[str]
-    _flags: Dict[str, Union[str, bool]]
+    _flags: ShellCommandFlags
 
-    def __init__(self, index: int, line_num: int, parent_layer, cmd: str):
+    def __init__(self, index: int, line_num: int, parent_layer, cmd: Tuple[str]):
         self._parent_layer = parent_layer
         self._index = index
         self._line = line_num
-        self._text = cmd
+        self._cmd = cmd
 
         # TODO(p0): parse cmd into program, args, flags and assign
         # OR parse the command outside and just give to this class
@@ -31,7 +48,7 @@ class ShellCommand:
         Returns the main program invoked as part of this command, ie, the first word in the text.
         eg- In "npm install", the program is "npm".
         """
-        pass
+        return self._program
 
     def args(self) -> List[str]:
         """
@@ -40,7 +57,7 @@ class ShellCommand:
           "npm --foo=bar run test --production" -> ["run", "test"]
           "npm" -> []
         """
-        pass
+        return self._args
 
     def subcommand(self) -> str:
         """
@@ -53,7 +70,7 @@ class ShellCommand:
         args = self.args()
         return args[0] if len(args) > 0 else ""
 
-    def options(self) -> Dict[str, Union[str, bool]]:
+    def options(self) -> ShellCommandFlags:
         """
         Returns a dict of all options specified in this command.
         eg- "npm install --production --foo=bar --lorem=false" -> {"production": True, "foo": "bar", "lorem": False}
@@ -66,7 +83,8 @@ class ShellCommand:
         """
         return self._text
 
-    def add_option(self, name: str, value: Union[str, bool]):
+    # TODO(p0): Either remove this or return a new ShellCommand object with modifications
+    def add_option(self, name: str, value: ShellCommandFlagValue):
         """
         Adds the specified option to the command.
           eg- add_option("omit", "dev") -> "npm ci --omit=dev"

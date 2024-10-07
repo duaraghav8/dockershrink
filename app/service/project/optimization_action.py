@@ -11,6 +11,11 @@ class OptimizationAction:
         self.filename = filename
         self.title = title
         self.description = description
+
+        # NOTE: The line number provided in both actions taken and suggestions refers to
+        #  the line in the new files, ie, the updated files returned by dockershrink.
+        # This must also be clarified in the client(s) so the user doesn't think that
+        #  line numbers are for the original files.
         self.line = line
 
     def to_json(self) -> dict:
