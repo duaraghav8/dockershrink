@@ -49,12 +49,29 @@ class Dockerfile:
 
     def _flatten(self):
         """
-        Updates self._raw_data to reflect the current state of self._stages.
-        This method converts stages into a Dockerfile string and assigns to raw_data
+        Ensures that indices and line numbers of all docker objects are set properly.
+        Then updates self._raw_data to reflect the current state of self._stages.
+        This method must be called at the end of every write method in Dockerfile.
         """
+        self._align_indices()
+        self._align_line_numbers()
         self._raw_data = ast.flatten(self._stages)
 
-    def _align_layer_indices(self, stage: Stage):
+    def _align_indices(self):
+        # stages, layers inside stages, shell cmds inside layers
+
+        # Stages
+        for i in range(len(self._stages)):
+            curr_stage = self._stages[i]
+            if not curr_stage.index() == i:
+                updated_stage = Stage(
+                    self, i, curr_stage.parsed_statement(), curr_stage.layers()
+                )
+                self._stages[i] = updated_stage
+
+            self._align_stage_layer_indices(self._stages[i])
+
+    def _align_stage_layer_indices(self, stage: Stage):
         """
         Corrects the indices of all layers inside the given stage.
         eg-
@@ -65,36 +82,34 @@ class Dockerfile:
 
         for i in range(len(layers)):
             curr_layer = layers[i]
-            if curr_layer.index() == i:
+            if not curr_layer.index() == i:
+                # Index is inconsistent, recreate the layer object with the correct index
+                new_layer = ast.create_layer(
+                    i, curr_layer.parsed_statement(), curr_layer.parent_stage
+                )
+                layers[i] = new_layer
+
+            if layers[i].command() == LayerCommand.RUN:
+                self._align_shellcmd_indices(layers[i])
+
+    def _align_shellcmd_indices(self, layer: RunLayer):
+        cmds = layer.shell_commands()
+
+        for i in range(len(cmds)):
+            curr_cmd = cmds[i]
+            if curr_cmd.index() == i:
                 continue
 
-            # Index is inconsistent, recreate the layer object with the correct index
-            if curr_layer.command() == LayerCommand.RUN:
-                updated_layer = RunLayer(
-                    index=i,
-                    parent_stage=curr_layer.parent_stage(),
-                    statement=curr_layer.parsed_statement(),
-                )
-            elif curr_layer.command() == LayerCommand.COPY:
-                updated_layer = CopyLayer(
-                    index=i,
-                    parent_stage=curr_layer.parent_stage(),
-                    statement=curr_layer.parsed_statement(),
-                )
-            elif curr_layer.command() == LayerCommand.ENV:
-                updated_layer = EnvLayer(
-                    index=i,
-                    parent_stage=curr_layer.parent_stage(),
-                    statement=curr_layer.parsed_statement(),
-                )
-            else:
-                updated_layer = Layer(
-                    index=i,
-                    parent_stage=curr_layer.parent_stage(),
-                    statement=curr_layer.parsed_statement(),
-                )
+            new_cmd = ShellCommand(
+                i,
+                curr_cmd.line_num(),
+                curr_cmd.parent_layer(),
+                curr_cmd.parsed_command(),
+            )
+            cmds[i] = new_cmd
 
-            layers[i] = updated_layer
+    def _align_line_numbers(self):
+        pass
 
     def get_stage_count(self) -> int:
         """
@@ -234,6 +249,9 @@ class Dockerfile:
         if len(statements) < 1:
             return []
 
+        # Convert the given statements into AST nodes.
+        # Then add these nodes inside the stage's list of layers, replacing target.
+
         parent_stage = target.parent_stage()
         all_layers = parent_stage.layers()
 
@@ -270,27 +288,22 @@ class Dockerfile:
         for i in range(1, len(new_layers)):
             all_layers.insert(new_layers[i].index(), new_layers[i])
 
-        # TODO(p0)
-        # Update line numbers and indices of all subsequent layers
-        # Indices mut be modified only within the parent stage
-        # but line numbers must be revised for all subsequent statements
-        self._align_layer_indices(parent_stage)
-
         self._flatten()
         return new_layers
 
     def insert_after_layer(self, layer: Layer, statement: str):
         """
-        Inserts statement right after the given layer.
+        Inserts Dockerfile statement right after the given layer.
         :param layer: Layer that already exists in Dockerfile
-        :statement str: statement to add
+        :param statement: statement to add
         """
-        # TODO(p0): create new_layer using statement
-        #  reimplement the write methods
-        stage_index = layer.parent_stage().index()
-        stage_layers = self._stages[stage_index].layers()
-        stage_layers.insert(layer.index() + 1, new_layer)
+        stage = layer.parent_stage()
+        parsed = dockerfile.parse_string(statement)
 
+        new_layer = ast.create_layer(layer.index() + 1, parsed, stage)
+        stage.layers().insert(new_layer.index(), new_layer)
+
+        self._flatten()
         return new_layer
 
     def raw(self) -> str:

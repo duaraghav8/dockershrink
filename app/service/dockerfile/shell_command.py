@@ -116,3 +116,6 @@ class ShellCommand:
               npm start                      (command layer 2)
         """
         return self._index
+
+    def parsed_command(self) -> Tuple[str]:
+        return self._cmd
