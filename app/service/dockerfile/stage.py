@@ -8,7 +8,6 @@ class Stage:
     _parent_dockerfile = None
     _index: int
     _statement: parser.Command
-    _line_num: int
     _baseimage: Image
     _name: str
     _layers: list
@@ -25,10 +24,16 @@ class Stage:
         self._statement = statement
         self._layers = layers
 
-        # TODO(p0): parse statement and fillup these fields
-        self._line_num = line
-        self._baseimage = baseimage
-        self._name = name
+        # The first item in "value" tuple is the full image name
+        self._baseimage = Image(self._statement.value[0])
+
+        # By default, a stage doesn't have a name
+        self._name = ""
+        for i in range(len(self._statement.value)):
+            # If there is a 'AS' in value tuple, the string right after it is the stage's name.
+            if self._statement.value[i].upper() == "AS":
+                self._name = self._statement.value[i + 1]
+                break
 
     def parent_dockerfile(self):
         """
@@ -67,6 +72,9 @@ class Stage:
         Returns the stage name.
         An unnamed stage (eg- final stage or the only stage in dockerfile) has
          its name set to empty string.
+        eg-
+         "FROM ubuntu:latest" => ""
+         "FROM ubuntu:latest AS build" => "build"
         """
         return self._name
 
@@ -74,7 +82,7 @@ class Stage:
         """
         Returns the number of the line on which the stage is declared.
         """
-        return self._line_num
+        return self._statement.start_line
 
     def text(self) -> str:
         """
