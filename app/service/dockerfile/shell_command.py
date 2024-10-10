@@ -18,6 +18,23 @@ def split_chained_commands(cmd_string: str) -> list:
     pass
 
 
+def parse_flags(raw: Tuple[str]) -> ShellCommandFlags:
+    """
+    Parses commandline flags.
+    eg-
+      "--foo --bar=true --bax=false" => {"foo": True, "bar": True}
+      "--mount=type=cache,type=local" => {"mount": "type=cache,type=local"}
+    :param raw:
+    :return:
+    """
+    # TODO(p0)
+    flags = {}
+    for kv in raw:
+        flags[key] = value
+
+    return flags
+
+
 class ShellCommand:
     _parent_layer = None
     _index: int

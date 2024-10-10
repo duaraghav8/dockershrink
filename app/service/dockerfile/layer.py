@@ -3,7 +3,12 @@ from typing import Dict, Optional, List
 
 import dockerfile
 
-from .shell_command import ShellCommand, ShellCommandFlags, split_chained_commands
+from .shell_command import (
+    ShellCommand,
+    ShellCommandFlags,
+    split_chained_commands,
+    parse_flags,
+)
 from .stage import Stage
 
 
@@ -44,10 +49,8 @@ class Layer:
         self._index = index
         self._statement = statement
         self._parent_stage = parent_stage
-
-        # TODO(p0): derive the rest of the info
-        self._command = command
-        self._flags = flags
+        self._command = LayerCommand(self._statement.cmd.upper())
+        self._flags = parse_flags(self._statement.flags)
 
     def command(self) -> LayerCommand:
         return self._command
