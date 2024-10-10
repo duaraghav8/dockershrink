@@ -14,9 +14,9 @@ class ValidationError(Exception):
 ParsedDockerfile: TypeAlias = Tuple[dockerfile.Command]
 
 
-def _create_layer(
+def create_layer(
     curr_layer_index: int, statement: dockerfile.Command, parent_stage: Stage
-):
+) -> Layer:
     """
     Creates a Layer object from the given Dockerfile statement.
     Some layers are explicitly used by the rules, so we create special subclass Layers out of them.
@@ -64,7 +64,7 @@ def _create_layer(
     )
 
 
-def _create_stage(
+def create_stage(
     statements: ParsedDockerfile, start_pos: int, index: int, parent_dockerfile
 ) -> Stage:
     layers = []
@@ -92,7 +92,7 @@ def _create_stage(
             #  layers for the current one.
             break
 
-        layer = _create_layer(curr_layer_index, statements[i], stage)
+        layer = create_layer(curr_layer_index, statements[i], stage)
         layers.append(layer)
 
         curr_layer_index += 1
@@ -157,9 +157,7 @@ def create(statements: ParsedDockerfile, parent_dockerfile) -> List[Stage]:
 
         # Create a new stage when a new FROM statement is encountered.
         if cmd == LayerCommand.FROM:
-            new_stage = _create_stage(
-                statements, i, curr_stage_index, parent_dockerfile
-            )
+            new_stage = create_stage(statements, i, curr_stage_index, parent_dockerfile)
             stages.append(new_stage)
             curr_stage_index += 1
 

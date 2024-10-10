@@ -156,6 +156,7 @@ TODO:
   - try to capture line num info accurately for each layer
   - when flattening into text, we should honor the line number for each layer as much as possible
 - Change LayerCommand value from int to str and ensure compatibility
+- instead of always trying to keep line number consistent, why don't we just compute the line number dynamically when line_num() is called?
 - delete the though process comments from layer.py (add comments to document if needed)
 - Implement AI class
 - Resolve code TODO(p0) items

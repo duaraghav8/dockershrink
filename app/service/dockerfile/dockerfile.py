@@ -1,10 +1,11 @@
+import os
 from typing import List, Optional, Tuple, TypeAlias
 
 import dockerfile
 
 from . import ast
 from .image import Image
-from .layer import Layer, RunLayer
+from .layer import Layer, RunLayer, LayerCommand, CopyLayer, EnvLayer
 from .shell_command import ShellCommand, split_chained_commands
 from .stage import Stage
 
@@ -52,6 +53,48 @@ class Dockerfile:
         This method converts stages into a Dockerfile string and assigns to raw_data
         """
         self._raw_data = ast.flatten(self._stages)
+
+    def _align_layer_indices(self, stage: Stage):
+        """
+        Corrects the indices of all layers inside the given stage.
+        eg-
+          L1(i) = 0, L2(i) = 1, L3(i) = 1, L4(i) = 2
+          => L1(i) = 0, L2(i) = 1, L3(i) = 2, L4(i) = 3
+        """
+        layers = stage.layers()
+
+        for i in range(len(layers)):
+            curr_layer = layers[i]
+            if curr_layer.index() == i:
+                continue
+
+            # Index is inconsistent, recreate the layer object with the correct index
+            if curr_layer.command() == LayerCommand.RUN:
+                updated_layer = RunLayer(
+                    index=i,
+                    parent_stage=curr_layer.parent_stage(),
+                    statement=curr_layer.parsed_statement(),
+                )
+            elif curr_layer.command() == LayerCommand.COPY:
+                updated_layer = CopyLayer(
+                    index=i,
+                    parent_stage=curr_layer.parent_stage(),
+                    statement=curr_layer.parsed_statement(),
+                )
+            elif curr_layer.command() == LayerCommand.ENV:
+                updated_layer = EnvLayer(
+                    index=i,
+                    parent_stage=curr_layer.parent_stage(),
+                    statement=curr_layer.parsed_statement(),
+                )
+            else:
+                updated_layer = Layer(
+                    index=i,
+                    parent_stage=curr_layer.parent_stage(),
+                    statement=curr_layer.parsed_statement(),
+                )
+
+            layers[i] = updated_layer
 
     def get_stage_count(self) -> int:
         """
@@ -180,24 +223,60 @@ class Dockerfile:
         return new_layer.shell_commands()[target.index()]
 
     def replace_layer_with_statements(
-        self, layer: Layer, statements: List[str]
+        self, target: Layer, statements: List[str]
     ) -> List[Layer]:
         """
         Replaces the given layer with a new set of statements.
-        :param layer: the layer that already exists in the dockerfile
-        :param new_layers: list of Layer objects to put in pace of the original layer
+        If an empty list is passed for statements, this method exits without any changes.
+        :param target: the layer that already exists in the dockerfile
+        :param statements: list of dockerfile statements to add in place of the target layer
         """
-        # TODO(p): Create new_layers using statements
-        #  reimplement whole method
-        stage_index = layer.parent_stage().index()
-        stage_layers = self._stages[stage_index].layers()
+        if len(statements) < 1:
+            return []
 
-        i = layer.index()
-        # Insert the elements of new_layers inside stage layers, right after the to-be-removed layer.
-        stage_layers[i + 1 : i + 1] = new_layers
-        # Remove the layer.
-        stage_layers.pop(i)
+        parent_stage = target.parent_stage()
+        all_layers = parent_stage.layers()
 
+        statements_str = os.linesep.join(statements)
+        parsed_statements = dockerfile.parse_string(statements_str)
+        new_layers = []
+
+        curr_layer_index = target.index()
+        curr_layer_line = target.line_num()
+
+        parsed_statement: dockerfile.Command
+        for parsed_statement in parsed_statements:
+            # Update the line number because the parser assigns these new statements
+            #  line numbers starting from 1.
+            updated_parsed_statement = dockerfile.Command(
+                start_line=curr_layer_line,
+                end_line=curr_layer_line,
+                original=parsed_statement.original,
+                value=parsed_statement.value,
+                cmd=parsed_statement.cmd,
+                sub_cmd=parsed_statement.sub_cmd,
+                json=parsed_statement.json,
+                flags=parsed_statement.flags,
+            )
+            new_layers.append(
+                ast.create_layer(
+                    curr_layer_index, updated_parsed_statement, parent_stage
+                )
+            )
+            curr_layer_index += 1
+            curr_layer_line += 1
+
+        all_layers[target.index()] = new_layers[0]
+        for i in range(1, len(new_layers)):
+            all_layers.insert(new_layers[i].index(), new_layers[i])
+
+        # TODO(p0)
+        # Update line numbers and indices of all subsequent layers
+        # Indices mut be modified only within the parent stage
+        # but line numbers must be revised for all subsequent statements
+        self._align_layer_indices(parent_stage)
+
+        self._flatten()
         return new_layers
 
     def insert_after_layer(self, layer: Layer, statement: str):
