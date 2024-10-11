@@ -7,7 +7,7 @@ from .shell_command import (
     ShellCommand,
     ShellCommandFlags,
     split_chained_commands,
-    parse_flags,
+    get_flags_kv,
 )
 from .stage import Stage
 
@@ -50,7 +50,7 @@ class Layer:
         self._statement = statement
         self._parent_stage = parent_stage
         self._command = LayerCommand(self._statement.cmd.upper())
-        self._flags = parse_flags(self._statement.flags)
+        self._flags = get_flags_kv(self._statement.flags)
 
     def command(self) -> LayerCommand:
         return self._command
@@ -287,6 +287,7 @@ class RunLayer(Layer):
         return self._shell_commands
 
 
+# TODO(p0) remove this though process dump
 # CopyLayer, RunLayer constructors will remain this way
 # the user should only have to supply the user-controlled stuff (shell command, src, dest).
 #  Rest should be filled out internally by dockerfile package.

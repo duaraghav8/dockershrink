@@ -18,21 +18,38 @@ def split_chained_commands(cmd_string: str) -> list:
     pass
 
 
-def parse_flags(raw: Tuple[str]) -> ShellCommandFlags:
+def get_flags_kv(flags: Tuple[str]) -> ShellCommandFlags:
     """
-    Parses commandline flags.
+    Converts the given set of flags parsed by dockerfile parser into a dict where
+     flag name is the key and flag value is the dict value.
+    If a flag doesn't have an explicit value, its value is set to True.
     eg-
-      "--foo --bar=true --bax=false" => {"foo": True, "bar": True}
-      "--mount=type=cache,type=local" => {"mount": "type=cache,type=local"}
-    :param raw:
-    :return:
+      ("--foo", "--bar=true", "--bax=false") => {"foo": True, "bar": True, "bax": False}
+      ("--mount=type=cache,type=local") => {"mount": "type=cache,type=local"}
     """
-    # TODO(p0)
-    flags = {}
-    for kv in raw:
-        flags[key] = value
+    response = {}
 
-    return flags
+    for raw_flag in flags:
+        separated = raw_flag.split("=", 1)
+        if len(separated) == 1:
+            # Flag has no value set (eg- "--production")
+            key = separated[0]
+            value = True
+        else:
+            # Flag has a value set (eg "--security=sandbox")
+            key, value = separated
+
+            # Special case: If the value is set to "true" or "false" (or equivalents),
+            #  convert to bool object.
+            if value.lower() == "true":
+                value = True
+            elif value.lower() == "false":
+                value = False
+
+        key = key.removeprefix("--")
+        response[key] = value
+
+    return response
 
 
 class ShellCommand:
