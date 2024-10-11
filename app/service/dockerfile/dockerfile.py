@@ -58,8 +58,6 @@ class Dockerfile:
         self._raw_data = ast.flatten(self._stages)
 
     def _align_indices(self):
-        # stages, layers inside stages, shell cmds inside layers
-
         # Stages
         for i in range(len(self._stages)):
             curr_stage = self._stages[i]
@@ -200,10 +198,9 @@ class Dockerfile:
             existing_cmds = split_chained_commands(parent_layer_statement.value[0])
 
             curr_cmd = 0
-            for i in range(len(existing_cmds)):
-                if i % 2 == 1:
-                    # Skip the operator
-                    continue
+            # Every odd-numbered index contains the operator, we can skip it.
+            # So we only access indices 0,2,4,6...
+            for i in range(0, len(existing_cmds), 2):
                 if curr_cmd == target.index():
                     existing_cmds[i] = new_cmd
                     break
