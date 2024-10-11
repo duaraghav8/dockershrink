@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 
 import dockerfile
 
@@ -132,7 +132,7 @@ class EnvLayer(Layer):
 
 
 class CopyLayer(Layer):
-    _src: List[str]
+    _src: Tuple[str]
     _dest: str
 
     def __init__(
@@ -141,11 +141,11 @@ class CopyLayer(Layer):
         statement: dockerfile.Command,
         parent_stage: Stage,
     ):
-        # TODO(p0): derive the info
-        self._src = src
-        self._dest = dest
-
         super().__init__(index, statement, parent_stage)
+
+        # Last item in value tuple is the destination. All previous items are part of source.
+        self._src = statement.value[:-1]
+        self._dest = statement.value[-1]
 
     def copies_from_build_context(self) -> bool:
         """
@@ -191,7 +191,7 @@ class CopyLayer(Layer):
         df = self._parent_stage.parent_dockerfile()
         return df.get_stage_by_name(stage_name)
 
-    def src(self) -> List[str]:
+    def src(self) -> Tuple[str]:
         return self._src
 
 
