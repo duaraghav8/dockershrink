@@ -119,10 +119,13 @@ class EnvLayer(Layer):
         statement: dockerfile.Command,
         parent_stage: Stage,
     ):
-        # TODO(p0): derive the info
-        self._env_vars = env_vars
-
         super().__init__(index, statement, parent_stage)
+
+        self._env_vars = {}
+        for i in range(0, len(statement.value), 2):
+            key = statement.value[i]
+            value = statement.value[i + 1]
+            self._env_vars[key] = value
 
     def env_vars(self) -> Dict[str, str]:
         return self._env_vars
