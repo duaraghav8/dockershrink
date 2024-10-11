@@ -1,15 +1,13 @@
-# TODO: Support image digest as well
-# image can also be specified with @ followed by digest hash
-# eg- "FROM node@abhst2783dhu"
-# https://docs.docker.com/reference/dockerfile/#from
-# Add a _digest property and digest() method
-
-
 class Image:
     _name: str
     _tag: str
 
     def __init__(self, full_name: str):
+        # TODO: Support image digest as well
+        # image can also be specified with @ followed by digest hash
+        # eg- "FROM node@abhst2783dhu"
+        # https://docs.docker.com/reference/dockerfile/#from
+        # Add a _digest property and digest() method
         components = full_name.split(":")
         self._name = components[0]
         self._tag = components[1] if len(components) > 1 else "latest"

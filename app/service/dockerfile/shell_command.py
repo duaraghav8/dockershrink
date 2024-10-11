@@ -4,7 +4,7 @@ ShellCommandFlagValue: TypeAlias = Union[str, bool]
 ShellCommandFlags: TypeAlias = Dict[str, ShellCommandFlagValue]
 
 
-def split_chained_commands(cmd_string: str) -> list:
+def split_chained_commands(cmd_string: str) -> List[str]:
     """
     Takes a string containing one or more shell commands chained together and splits them into individual commands.
     Also returns the operator between 2 commands.
@@ -12,10 +12,34 @@ def split_chained_commands(cmd_string: str) -> list:
       "echo hello world && npx depcheck || apt-get install foo -y; /scripts/myscript.sh"
       => ["echo hello world", "&&", "npx depcheck", "||", "apt-get install foo -y", ";", "/scripts/myscript.sh"]
     """
-    # TODO(p0)
-    # https://github.com/djmattyg007/python-shell-parser
-    # https://github.com/idank/bashlex
-    pass
+    import bashlex
+
+    parsed = bashlex.parsesingle(cmd_string)
+
+    # Single command, no operators
+    if parsed.kind == "command":
+        return [cmd_string]
+
+    if not parsed.kind == "list":
+        # TODO: raise exception or Log this situation.
+        # We're dealing with an unexpected type of ast node.
+        return []
+
+    # Multiple commands joined by operators
+    commands = []
+
+    for node in parsed.parts:
+        # If current node is an operator, simply add it to the commands list
+        if node.kind == "operator":
+            commands.append(node.op)
+            continue
+        # Otherwise just capture the entire text of the node and add it to
+        # list. This is the entire shell command.
+        start, end = node.pos
+        cmd = cmd_string[start:end]
+        commands.append(cmd)
+
+    return commands
 
 
 def get_flags_kv(flags: Tuple[str]) -> ShellCommandFlags:
