@@ -6,6 +6,7 @@ import dockerfile
 from .shell_command import (
     ShellCommand,
     ShellCommandFlags,
+    DockerShellCommandForm,
     split_chained_commands,
     get_flags_kv,
 )
@@ -235,6 +236,7 @@ class RunLayer(Layer):
                 line_num=statement.start_line,
                 parent_layer=self,
                 cmd=statement.value,
+                cmd_form=DockerShellCommandForm.EXEC,
             )
             self._shell_commands = [sc]
             return
@@ -270,6 +272,7 @@ class RunLayer(Layer):
                 line_num=curr_cmd_line,
                 parent_layer=self,
                 cmd=(curr_cmd,),
+                cmd_form=DockerShellCommandForm.SHELL,
             )
             self._shell_commands.append(sc)
             curr_cmd_index += 1

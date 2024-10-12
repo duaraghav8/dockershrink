@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Union, List, Dict, TypeAlias, Tuple
 
 ShellCommandFlagValue: TypeAlias = Union[str, bool]
@@ -76,23 +77,43 @@ def get_flags_kv(flags: Tuple[str]) -> ShellCommandFlags:
     return response
 
 
+# Dockerfile instructions accept shell commands in 2 different formats:
+# SHELL form: ENTRYPOINT npm run start
+# EXEC form: ENTRYPOINT ["npm", "run", "start"]
+class DockerShellCommandForm(str, Enum):
+    SHELL = "SHELL"
+    EXEC = "EXEC"
+
+
 class ShellCommand:
     _parent_layer = None
     _index: int
     _line: int
-    _cmd: Tuple[str]
+    _command: Tuple[str]
+    _command_form: DockerShellCommandForm
     _program: str
     _args: List[str]
     _flags: ShellCommandFlags
 
-    def __init__(self, index: int, line_num: int, parent_layer, cmd: Tuple[str]):
+    def __init__(
+        self,
+        index: int,
+        line_num: int,
+        parent_layer,
+        cmd: Tuple[str],
+        cmd_form: DockerShellCommandForm,
+    ):
         self._parent_layer = parent_layer
         self._index = index
         self._line = line_num
-        self._cmd = cmd
+        self._command = cmd
+        self._command_form = cmd_form
 
         # TODO(p0): parse cmd into program, args, flags and assign
         # OR parse the command outside and just give to this class
+        self._program = program
+        self._args = args
+        self._flags = flags
 
     def line_num(self) -> int:
         """
@@ -139,6 +160,7 @@ class ShellCommand:
         """
         :return: the complete shell command as a string
         """
+        # TODO(p0)
         return self._text
 
     # TODO(p0): Either remove this or return a new ShellCommand object with modifications
@@ -176,4 +198,7 @@ class ShellCommand:
         return self._index
 
     def parsed_command(self) -> Tuple[str]:
-        return self._cmd
+        return self._command
+
+    def form(self) -> DockerShellCommandForm:
+        return self._command_form

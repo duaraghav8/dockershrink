@@ -103,6 +103,7 @@ class Dockerfile:
                 curr_cmd.line_num(),
                 curr_cmd.parent_layer(),
                 curr_cmd.parsed_command(),
+                curr_cmd.form(),
             )
             cmds[i] = new_cmd
 
