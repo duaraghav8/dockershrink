@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Union, List, Dict, TypeAlias, Tuple
+import bashlex
 
 ShellCommandFlagValue: TypeAlias = Union[str, bool]
 ShellCommandFlags: TypeAlias = Dict[str, ShellCommandFlagValue]
@@ -13,8 +14,6 @@ def split_chained_commands(cmd_string: str) -> List[str]:
       "echo hello world && npx depcheck || apt-get install foo -y; /scripts/myscript.sh"
       => ["echo hello world", "&&", "npx depcheck", "||", "apt-get install foo -y", ";", "/scripts/myscript.sh"]
     """
-    import bashlex
-
     parsed = bashlex.parsesingle(cmd_string)
 
     # Single command, no operators
@@ -78,8 +77,10 @@ def get_flags_kv(flags: Tuple[str]) -> ShellCommandFlags:
 
 
 # Dockerfile instructions accept shell commands in 2 different formats:
-# SHELL form: ENTRYPOINT npm run start
+# SHELL form: "ENTRYPOINT npm run start", "ENTRYPOINT npm run build && npm start"
+#  shell form may contain one or more shell commands
 # EXEC form: ENTRYPOINT ["npm", "run", "start"]
+#  exec form only contains a single shell command
 class DockerShellCommandForm(str, Enum):
     SHELL = "SHELL"
     EXEC = "EXEC"
@@ -109,11 +110,67 @@ class ShellCommand:
         self._command = cmd
         self._command_form = cmd_form
 
-        # TODO(p0): parse cmd into program, args, flags and assign
-        # OR parse the command outside and just give to this class
-        self._program = program
-        self._args = args
-        self._flags = flags
+        self._parse_command()
+
+    def _parse_command(self):
+        """
+        Parses self._command and sets values for own args, program & flags
+        """
+        # TODO: There is ambiguity in a command containing flags.
+        # eg- "foo --option bar"
+        # In this example, we don't know for sure whether to treat "bar" as the value supplied to --option
+        #  or --option is a standalone flag and "bar" is an arg.
+        # A static analyser cannot differentiate without knowledge of a cli program's usage.
+        #
+        # Right now, we use the following Heuristics which work well for most cases:
+        #  word starting with "-" or "--" is captured as a standalone flag
+        #   eg "--production", "--production=true" are captured, but in "--omit dev", only "--omit" gets captured
+        #  word without any "-" at start is captured as args
+        # This technique works well for the following cases:
+        #  "npm run script-name", "npm install --production", "yarn install"
+        #  "npm ci --omit=dev", "npm prune --production", "npx depcheck", "npx npm-check"
+        self._args = []
+        flags: List[str] = []
+
+        if self._command_form == DockerShellCommandForm.EXEC:
+            # In case of exec form, the first item in the array is the program name
+            self._program = self._command[0]
+
+            # Capture the remaining items as either flags or arguments
+            for i in range(1, len(self._command)):
+                word = self._command[i]
+                if word.startswith("-"):
+                    # Capture all flags starting with hyphen ("-r" / "--recursive")
+                    # NOTE: This also captures "--" in something like "npm run test -- --grep=pattern" as flag
+                    flags.append(word)
+                else:
+                    self._args.append(word)
+
+            self._flags = get_flags_kv(tuple(flags))
+            return
+
+        # In case of shell form, we need to parse the command to extract the parts
+        cmd_node = bashlex.parsesingle(self._command[0])
+        if not cmd_node.kind == "command":
+            # TODO: raise exception or Log this situation.
+            # We're dealing with an unexpected type of ast node.
+            return
+
+        self._program = cmd_node.parts[0].word
+
+        for i in range(1, len(cmd_node.parts)):
+            if not cmd_node.parts[i].kind == "word":
+                # If the current part is not a WordNode, it can neither be a flag nor an arg.
+                # So skip it.
+                continue
+
+            word = cmd_node.parts[i].word
+            if word.startswith("-"):
+                flags.append(word)
+            else:
+                self._args.append(word)
+
+        self._flags = get_flags_kv(tuple(flags))
 
     def line_num(self) -> int:
         """
@@ -146,8 +203,7 @@ class ShellCommand:
           For "npm --hello=world install --production --foo=bar ./", the subcommand is "install".
           For "npm", the subcommand is "".
         """
-        args = self.args()
-        return args[0] if len(args) > 0 else ""
+        return self._args[0] if len(self._args) > 0 else ""
 
     def options(self) -> ShellCommandFlags:
         """
