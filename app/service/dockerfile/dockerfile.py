@@ -112,6 +112,7 @@ class Dockerfile:
             cmds[i] = new_cmd
 
     def _align_line_numbers(self):
+        # TODO(p0)
         pass
 
     def get_stage_count(self) -> int:
@@ -155,12 +156,17 @@ class Dockerfile:
         new_values[0] = image.full_name()
         new_values = tuple(new_values)
 
+        # In the original text, replace the original image full name with the new image's full name
+        new_original = statement.original.replace(
+            stage.baseimage().full_name(), image.full_name(), 1
+        )
+
         new_statement = dockerfile.Command(
             value=new_values,
+            original=new_original,
             cmd=statement.cmd,
             sub_cmd=statement.sub_cmd,
             json=statement.json,
-            original=statement.original,
             start_line=statement.start_line,
             end_line=statement.end_line,
             flags=statement.flags,
