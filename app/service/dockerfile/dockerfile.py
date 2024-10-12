@@ -9,7 +9,6 @@ from .layer import Layer, RunLayer, LayerCommand
 from .shell_command import (
     ShellCommand,
     ShellCommandFlagValue,
-    split_chained_commands,
     DockerShellCommandForm,
 )
 from .stage import Stage
