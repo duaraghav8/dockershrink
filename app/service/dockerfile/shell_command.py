@@ -201,7 +201,7 @@ class ShellCommand:
         This method is a wrapper around args()[0]
         eg-
           For "npm --hello=world install --production --foo=bar ./", the subcommand is "install".
-          For "npm", the subcommand is "".
+          For "npm" or "npm --production", the subcommand is "".
         """
         return self._args[0] if len(self._args) > 0 else ""
 
@@ -216,8 +216,11 @@ class ShellCommand:
         """
         :return: the complete shell command as a string
         """
-        # TODO(p0)
-        return self._text
+        if self._command_form == DockerShellCommandForm.SHELL:
+            return self._command[0]
+        # In case of exec form, join all items in the array by space and return as full command
+        # ["npm", "run", "build", "--production"] -> "npm run build --production"
+        return " ".join(self._command)
 
     # TODO(p0): Either remove this or return a new ShellCommand object with modifications
     def add_option(self, name: str, value: ShellCommandFlagValue):
