@@ -222,17 +222,6 @@ class ShellCommand:
         # ["npm", "run", "build", "--production"] -> "npm run build --production"
         return " ".join(self._command)
 
-    # TODO(p0): Either remove this or return a new ShellCommand object with modifications
-    def add_option(self, name: str, value: ShellCommandFlagValue):
-        """
-        Adds the specified option to the command.
-          eg- add_option("omit", "dev") -> "npm ci --omit=dev"
-        If the value is bool and set to True, the option is added as a flag.
-          If False, this method exits without making any changes to the command.
-          eg- add_option("production", True) -> "npm install --production"
-        """
-        pass
-
     def parent_layer(self):
         """
         Returns this shell command's parent Layer (specifically, RunLayer).

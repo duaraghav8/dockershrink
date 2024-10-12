@@ -170,9 +170,13 @@ def check_command_removes_dev_dependencies(
     return False
 
 
-def apply_prod_option_to_installation_command(
-    shell_command: ShellCommand,
-) -> ShellCommand:
+def get_prod_option_for_installation_command(shell_command: ShellCommand) -> (str, str):
+    """
+    Returns the right "production" option for the given installation command.
+    eg- "npm install" => "--production,True" | "npm ci" => "--omit,dev"
+    :param shell_command: The installation command
+    :return str,str: option name, option value
+    """
     program = shell_command.program()
     subcommand = shell_command.subcommand()
     prod_opts = node_dependency_installation_commands[program][subcommand]
@@ -180,14 +184,7 @@ def apply_prod_option_to_installation_command(
     prod_opt_name = list(prod_opts)[0]
     prod_opt_value = prod_opts[prod_opt_name]
 
-    # TODO: we can't do add_option() and modify the object
-    from copy import deepcopy
-
-    new_cmd = deepcopy(shell_command)
-
-    new_cmd.add_option(name=prod_opt_name, value=prod_opt_value)
-
-    return new_cmd
+    return prod_opt_name, prod_opt_value
 
 
 def check_layer_copies_node_modules(layer: CopyLayer) -> bool:

@@ -5,8 +5,13 @@ import dockerfile
 
 from . import ast
 from .image import Image
-from .layer import Layer, RunLayer, LayerCommand, CopyLayer, EnvLayer
-from .shell_command import ShellCommand, split_chained_commands
+from .layer import Layer, RunLayer, LayerCommand
+from .shell_command import (
+    ShellCommand,
+    ShellCommandFlagValue,
+    split_chained_commands,
+    DockerShellCommandForm,
+)
 from .stage import Stage
 
 
@@ -171,69 +176,43 @@ class Dockerfile:
         self._stages[i] = new_stage
         self._flatten()
 
-    def replace_shell_command(self, target: ShellCommand, new_cmd: str) -> ShellCommand:
+    def add_option_to_shell_command(
+        self, command: ShellCommand, key: str, value: ShellCommandFlagValue
+    ) -> ShellCommand:
         """
-        Replaces a specific shell command inside a RUN layer with a new shell command.
-        Note that new_cmd is treated as a single shell command. Don't supply multiple commands.
-        eg- "echo hello" is a good input
-         "echo hello && echo world" is a bad input because there are 2 separate shell commands
-         in this statement.
+        Adds the specified option to the command.
+          eg- fn(cmd("npm ci"), "omit", "dev") -> "npm ci --omit=dev"
+        If the value is bool and set to True, the option is added as a flag.
+          eg- add_option("production", True) -> "npm install --production"
+        If value is bool and set to False, the option is not added to the command at all.
+        If you want false included, supply it as a string (eg- key="foo", value="false").
+
+        This method returns the new ShellCommand containing the specified option.
         """
-        # We cannot simply replace the ShellCommand in the parent layer's ShellCommands list.
-        # The layer also stores the parsed statement, whose values also need to be updated.
-        # So, we must recreate the whole layer object with new parsed statement, then
-        # replace the layer.
-        parent_layer: RunLayer = target.parent_layer()
-        parent_layer_statement = parent_layer.parsed_statement()
+        parent_layer: RunLayer = command.parent_layer()
+        all_commands = parent_layer.shell_commands()
 
-        flags_str = " ".join(parent_layer_statement.flags)
+        to_add = f"--{key}"
+        if type(value) == str:
+            to_add = f"--{key}={value}"
 
-        if parent_layer_statement.json:
-            # Single shell command in Exec form
-            # TODO: Preserve the Exec form.
-            # For now, we're ignoring it and just creating the new command in shell form.
-            new_value = (new_cmd,)
-            new_original = " ".join([parent_layer_statement.cmd, flags_str, new_cmd])
+        new_cmd = list(command.parsed_command())
+        if command.form() == DockerShellCommandForm.EXEC:
+            new_cmd.append(to_add)
         else:
-            # One or more shell commands in Shell form
-            existing_cmds = split_chained_commands(parent_layer_statement.value[0])
+            new_cmd[0] += " " + to_add
 
-            curr_cmd = 0
-            # Every odd-numbered index contains the operator, we can skip it.
-            # So we only access indices 0,2,4,6...
-            for i in range(0, len(existing_cmds), 2):
-                if curr_cmd == target.index():
-                    existing_cmds[i] = new_cmd
-                    break
-                curr_cmd += 1
-
-            new_cmds_string = " ".join(existing_cmds)
-            new_value = (new_cmds_string,)
-            new_original = " ".join(
-                [parent_layer_statement.cmd, flags_str, new_cmds_string]
-            )
-
-        new_statement = dockerfile.Command(
-            original=new_original,
-            value=new_value,
-            cmd=parent_layer_statement.cmd,
-            sub_cmd=parent_layer_statement.sub_cmd,
-            json=parent_layer_statement.json,
-            start_line=parent_layer_statement.start_line,
-            end_line=parent_layer_statement.end_line,
-            flags=parent_layer_statement.flags,
+        new_command = ShellCommand(
+            cmd=tuple(new_cmd),
+            index=command.index(),
+            line_num=command.line_num(),
+            parent_layer=parent_layer,
+            cmd_form=command.form(),
         )
-        new_layer = RunLayer(
-            statement=new_statement,
-            index=parent_layer.index(),
-            parent_stage=parent_layer.parent_stage(),
-        )
-
-        parent_stage_layers = parent_layer.parent_stage().layers()
-        parent_stage_layers[parent_layer.index()] = new_layer
-
+        all_commands[command.index()] = new_command
         self._flatten()
-        return new_layer.shell_commands()[target.index()]
+
+        return new_command
 
     def replace_layer_with_statements(
         self, target: Layer, statements: List[str]

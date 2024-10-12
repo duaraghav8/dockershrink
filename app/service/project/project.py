@@ -302,11 +302,11 @@ NOTE: You may need to change where exactly you want to run depcheck within your 
             # In case of multistage Dockerfile, if any command is found to be installing devDependencies
             #  in the final stage, fix it to only install prod deps instead.
             if self.dockerfile.get_stage_count() > 1:
-                new_install_command: df.ShellCommand = (
-                    helpers.apply_prod_option_to_installation_command(offending_cmd)
+                key, value = helpers.get_prod_option_for_installation_command(
+                    offending_cmd
                 )
-                new_install_command = self.dockerfile.replace_shell_command(
-                    offending_cmd, new_install_command.text()
+                new_install_command = self.dockerfile.add_option_to_shell_command(
+                    command=offending_cmd, key=key, value=value
                 )
 
                 optimization_action.line = offending_cmd.line_num()
