@@ -282,7 +282,7 @@ class Dockerfile:
         stage = layer.parent_stage()
         parsed = dockerfile.parse_string(statement)
 
-        new_layer = ast.create_layer(layer.index() + 1, parsed, stage)
+        new_layer = ast.create_layer(layer.index() + 1, parsed[0], stage)
         stage.layers().insert(new_layer.index(), new_layer)
 
         self._flatten()
