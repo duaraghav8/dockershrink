@@ -10,6 +10,8 @@ from .shell_command import (
     ShellCommand,
     ShellCommandFlagValue,
     DockerShellCommandForm,
+    split_chained_commands,
+    merge_chained_commands,
 )
 from .stage import Stage
 
@@ -23,9 +25,9 @@ ParsedDockerfile: TypeAlias = Tuple[dockerfile.Command]
 
 # Contract:
 # 1. Only the Dockerfile object allows writes on the Dockerfile.
-# 2. All other objects such as Image, Layer, Stage, etc are read-only.
+# 2. All other objects such as Image, Layer, Stage, ShellCommand, etc are read-only.
 # 3. Any write method called on Dockerfile object will change the internal
-#  objects as well as the raw dockerfile immediately.
+#    objects as well as the raw dockerfile immediately.
 class Dockerfile:
     _raw_data: str
     _parsed: ParsedDockerfile
@@ -113,6 +115,7 @@ class Dockerfile:
 
     def _align_line_numbers(self):
         # TODO(p0)
+        #
         pass
 
     def get_stage_count(self) -> int:
@@ -185,39 +188,76 @@ class Dockerfile:
         self, command: ShellCommand, key: str, value: ShellCommandFlagValue
     ) -> ShellCommand:
         """
-        Adds the specified option to the command.
+        Appends the specified option to the given command.
           eg- fn(cmd("npm ci"), "omit", "dev") -> "npm ci --omit=dev"
         If the value is bool and set to True, the option is added as a flag.
-          eg- add_option("production", True) -> "npm install --production"
+          eg- fn(cmd("npm install"), "production", True) -> "npm install --production"
         If value is bool and set to False, the option is not added to the command at all.
-        If you want false included, supply it as a string (eg- key="foo", value="false").
+          So nothing is modified in the Dockerfile.
+        If you want true/false included, supply them as a string (eg- key="foo", value="false").
 
         This method returns the new ShellCommand containing the specified option.
         """
-        parent_layer: RunLayer = command.parent_layer()
-        all_commands = parent_layer.shell_commands()
+        # We need to recreate the Layer, insert new original + value fields into it.
+        # Layer will create the ShellCommand itself.
 
         to_add = f"--{key}"
         if type(value) == str:
             to_add = f"--{key}={value}"
+        elif not value:
+            # value is boolean and set to False, so there's nothing to do
+            return command
 
-        new_cmd = list(command.parsed_command())
+        parent_layer: RunLayer = command.parent_layer()
+        parent_layer_statement = parent_layer.parsed_statement()
+        layer_flags = " ".join(parent_layer_statement.flags)
+
         if command.form() == DockerShellCommandForm.EXEC:
-            new_cmd.append(to_add)
+            # Single shell command
+            new_value = list(parent_layer_statement.value)
+            new_value.append(to_add)
+
+            values_json_array = [f'"{v}"' for v in new_value]
+            values_json_array = ", ".join(values_json_array)
+
+            new_original = (
+                f"{parent_layer_statement.cmd} {layer_flags} [{values_json_array}]"
+            )
         else:
-            new_cmd[0] += " " + to_add
+            # One or more shell commands
+            orig_command = parent_layer_statement.value[0]
+            split_commands = split_chained_commands(orig_command)
 
-        new_command = ShellCommand(
-            cmd=tuple(new_cmd),
-            index=command.index(),
-            line_num=command.line_num(),
-            parent_layer=parent_layer,
-            cmd_form=command.form(),
+            # multiply by 2 because split_commands list contains operators, so it has double the
+            #  items of the actual command list
+            cmd_to_modify = command.index() * 2
+            split_commands[cmd_to_modify] += " " + to_add
+            new_cmds = merge_chained_commands(split_commands)
+
+            new_value = [new_cmds]
+            new_original = f"{parent_layer_statement.cmd} {layer_flags} {new_cmds}"
+
+        new_statement = dockerfile.Command(
+            original=new_original,
+            value=tuple(new_value),
+            cmd=parent_layer_statement.cmd,
+            sub_cmd=parent_layer_statement.sub_cmd,
+            json=parent_layer_statement.json,
+            start_line=parent_layer_statement.start_line,
+            end_line=parent_layer_statement.end_line,
+            flags=parent_layer_statement.flags,
         )
-        all_commands[command.index()] = new_command
-        self._flatten()
+        new_layer = RunLayer(
+            statement=new_statement,
+            index=parent_layer.index(),
+            parent_stage=parent_layer.parent_stage(),
+        )
 
-        return new_command
+        all_layers = parent_layer.parent_stage().layers()
+        all_layers[parent_layer.index()] = new_layer
+
+        self._flatten()
+        return new_layer.shell_commands()[command.index()]
 
     def replace_layer_with_statements(
         self, target: Layer, statements: List[str]

@@ -42,6 +42,24 @@ def split_chained_commands(cmd_string: str) -> List[str]:
     return commands
 
 
+def merge_chained_commands(commands: List[str]) -> str:
+    """
+    Merges the given list of split chained commands back into a single string of shell commands.
+    The main caveat is that ; operator is added right after the word, without any whitespace,
+     while && and || are added with whitespace on both sides.
+    """
+    resp = []
+
+    for cmd_or_op in commands:
+        # In case of the ';' operator, simply attach it to the previous word
+        if cmd_or_op == ";":
+            resp[-1] += cmd_or_op
+        else:
+            resp.append(cmd_or_op)
+
+    return " ".join(resp)
+
+
 def get_flags_kv(flags: Tuple[str]) -> ShellCommandFlags:
     """
     Converts the given set of flags parsed by dockerfile parser into a dict where
