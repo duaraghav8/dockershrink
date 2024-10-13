@@ -89,7 +89,7 @@ class Dockerfile:
             if not curr_layer.index() == i:
                 # Index is inconsistent, recreate the layer object with the correct index
                 new_layer = ast.create_layer(
-                    i, curr_layer.parsed_statement(), curr_layer.parent_stage
+                    i, curr_layer.parsed_statement(), curr_layer.parent_stage()
                 )
                 layers[i] = new_layer
 
@@ -185,7 +185,7 @@ class Dockerfile:
         self._flatten()
 
     def add_option_to_shell_command(
-        self, command: ShellCommand, key: str, value: ShellCommandFlagValue
+        self, command: ShellCommand, key: str, value: ShellCommandFlagValue = True
     ) -> ShellCommand:
         """
         Appends the specified option to the given command.
