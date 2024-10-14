@@ -1,3 +1,4 @@
+import os
 from enum import Enum
 from typing import Dict, Optional, List, Tuple
 
@@ -78,6 +79,13 @@ class Layer:
         #  util we reach statement.end_line. After that, put all commands on that last line.
         return self._statement.original
 
+    def text_pretty(self) -> str:
+        """
+        Returns current layer's text in human-readable form.
+        Child Layer classes must override this method to customize their pretty text representation.
+        """
+        return self._statement.original
+
     def parent_stage(self) -> Stage:
         """
         Returns the Stage this layer is part of
@@ -123,6 +131,28 @@ class EnvLayer(Layer):
 
     def env_vars(self) -> Dict[str, str]:
         return self._env_vars
+
+    def text_pretty(self) -> str:
+        """
+        If this layer contains more than one env var, they're all placed on their own line.
+        eg- "ENV a=b c=d"
+          => ENV a=b \
+                 c=d
+        """
+        if len(self._env_vars) == 1:
+            return self.text()
+
+        spaces = " " * (len(self._statement.cmd) + 1)
+        text = f"{os.linesep}{self._statement.cmd} "
+
+        for i in range(0, len(self._statement.value), 2):
+            key = self._statement.value[i]
+            value = self._statement.value[i + 1]
+            to_add = f"{key}={value} \\{os.linesep}{spaces}"
+            text += to_add
+
+        text = text.rstrip().rstrip("\\").rstrip() + os.linesep
+        return text
 
 
 class CopyLayer(Layer):

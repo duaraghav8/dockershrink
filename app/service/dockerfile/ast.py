@@ -176,8 +176,9 @@ def flatten(stages: List[Stage]) -> str:
 
         layer: Layer
         for layer in stage.layers():
-            dockerfile_contents.append(layer.text())
+            dockerfile_contents.append(layer.text_pretty())
 
+        # Give 2 linebreaks when a Stage finished
         dockerfile_contents.append(os.linesep * 2)
 
     return os.linesep.join(dockerfile_contents)

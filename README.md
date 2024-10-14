@@ -147,17 +147,11 @@ The `npm run build` command in the Dockerfile executes the following code (extra
 ---------------------------
 
 TODO:
-- Implement all objects in the dockerfile package
-  - constructor signatures
-  - write methods' logic
-- Implement the logic to parse dockerfile string and convert it into desired structure
-- Revisit the text() logic for all docker objects and ast's flatten() logic
-  - RUN layers containing multiple shell commands can be spread out over multiple lines depending on the line number of the next layer
-  - try to capture line num info accurately for each layer
-  - when flattening into text, we should honor the line number for each layer as much as possible
-- Change LayerCommand value from int to str and ensure compatibility
-- instead of always trying to keep line number consistent, why don't we just compute the line number dynamically when line_num() is called?
-- delete the though process comments from layer.py (add comments to document if needed)
+- The flattened dockerfile MUST be well-formatted with whitespaces
+- Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
+  - when analysing run statements, checking for NODE_ENV variable, creating new run layers, etc
+  - Also other commands that can use similar syntax
+- Test whole dockerfile package, fix bugs
 - Implement AI class
 - Resolve code TODO(p0) items
-- Review code TODOs
+- Review code TODOs and resolve if needed
