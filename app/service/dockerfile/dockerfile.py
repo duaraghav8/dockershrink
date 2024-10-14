@@ -114,8 +114,22 @@ class Dockerfile:
             cmds[i] = new_cmd
 
     def _align_line_numbers(self):
+        # Every docker statement is on its own line and only occupies 1 line.
+        # This can be bad for statements spanning multiple lines (shell commands, labels, env vars)
+        # parses the newline & backslash char info, so we can't get it in "original"
+        # but original retains the extra space info.
+        # but parser records the start and end line number for the layer
+
+        # how do we handle line num reporting? how do we handle flatten()?
+
+        # Line no exposed to end user needs to be accurate - based on their original file
+        # AST nodes and dockerfile raw must remain consistent at all times
+
         # TODO(p0)
-        #
+        # visit each statement:
+        #  if each statement starts & ends on same line:
+        #    just align the line and exit
+        #  if not, then spread the values over multiple lines (ideal scenario)
         pass
 
     def get_stage_count(self) -> int:
