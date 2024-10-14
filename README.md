@@ -147,11 +147,10 @@ The `npm run build` command in the Dockerfile executes the following code (extra
 ---------------------------
 
 TODO:
-- The flattened dockerfile MUST be well-formatted with whitespaces
+- Test whole dockerfile package, fix bugs
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
   - when analysing run statements, checking for NODE_ENV variable, creating new run layers, etc
   - Also other commands that can use similar syntax
-- Test whole dockerfile package, fix bugs
 - Implement AI class
 - Resolve code TODO(p0) items
 - Review code TODOs and resolve if needed

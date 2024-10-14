@@ -3,7 +3,7 @@ class OptimizationAction:
         self,
         rule: str,
         filename: str,
-        title: str,
+        title: str = "",
         description: str = "",
     ):
         self.rule = rule

@@ -221,6 +221,7 @@ class CopyLayer(Layer):
 
 class RunLayer(Layer):
     _shell_commands: List[ShellCommand]
+    _split_commands_and_operators: Tuple[str]
 
     def __init__(
         self,
@@ -267,10 +268,12 @@ class RunLayer(Layer):
         # This means there may be 1 or more shell commands and value[0] needs to be
         #  split into individual shell commands and have their own ShellCommand object.
         # NOTE: We must also preserve the operator information ("echo hello; echo world && echo hehe")
-        individual_cmds = split_chained_commands(statement.value[0])
+        self._split_commands_and_operators = tuple(
+            split_chained_commands(statement.value[0])
+        )
         curr_cmd_index = 0
 
-        for i in range(len(individual_cmds)):
+        for i in range(len(self._split_commands_and_operators)):
             # Every even-numbered index is a command and every odd-number index is an operator
             # eg- ["echo hello world", "&&", "apt-get install -y", "||", "echo done"]
             # In case of an operator, skip. In case of command, capture.
@@ -281,7 +284,7 @@ class RunLayer(Layer):
                 # When there is, we need to start capturing operators here.
                 continue
 
-            curr_cmd: str = individual_cmds[i]
+            curr_cmd: str = self._split_commands_and_operators[i]
             sc = ShellCommand(
                 index=curr_cmd_index,
                 parent_layer=self,
@@ -295,6 +298,36 @@ class RunLayer(Layer):
 
     def shell_commands(self) -> List[ShellCommand]:
         return self._shell_commands
+
+    def text_pretty(self) -> str:
+        # If the command is in Exec form, no need to prettify
+        if self._statement.json:
+            return self.text()
+
+        # If there's at most 1 flag and 1 shell command, no need to prettify
+        if len(self._statement.flags) < 2 and len(self.shell_commands()) < 2:
+            return self.text()
+
+        spaces = " " * (len(self._statement.cmd) + 1)
+        text = f"{os.linesep}{self._statement.cmd} "
+
+        for flag in self._statement.flags:
+            to_add = f"{flag} \\{os.linesep}{spaces}"
+            text += to_add
+
+        for i in range(len(self._split_commands_and_operators)):
+            if i % 2 == 0:
+                to_add = self._split_commands_and_operators[i]
+            else:
+                op = self._split_commands_and_operators[i]
+                if not op == ";":
+                    op = " " + op
+                to_add = f"{op} \\{os.linesep}{spaces}"
+
+            text += to_add
+
+        text += os.linesep
+        return text
 
 
 class LabelLayer(Layer):
