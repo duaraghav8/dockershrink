@@ -55,8 +55,8 @@ class Dockerfile:
 
     def _flatten(self):
         """
-        Ensures that indices and line numbers of all docker objects are set properly.
-        Then updates self._raw_data to reflect the current state of self._stages.
+        Ensures that all docker objects are orderly indexed.
+        Then updates self._raw_data to reflect dockerfile's current state.
         This method must be called at the end of every write method in Dockerfile.
         """
         self._align_indices()
@@ -105,31 +105,15 @@ class Dockerfile:
                 continue
 
             new_cmd = ShellCommand(
-                i,
-                curr_cmd.line_num(),
-                curr_cmd.parent_layer(),
-                curr_cmd.parsed_command(),
-                curr_cmd.form(),
+                index=i,
+                parent_layer=curr_cmd.parent_layer(),
+                cmd=curr_cmd.parsed_command(),
+                cmd_form=curr_cmd.form(),
             )
             cmds[i] = new_cmd
 
     def _align_line_numbers(self):
-        # Every docker statement is on its own line and only occupies 1 line.
-        # This can be bad for statements spanning multiple lines (shell commands, labels, env vars)
-        # parses the newline & backslash char info, so we can't get it in "original"
-        # but original retains the extra space info.
-        # but parser records the start and end line number for the layer
-
-        # how do we handle line num reporting? how do we handle flatten()?
-
-        # Line no exposed to end user needs to be accurate - based on their original file
-        # AST nodes and dockerfile raw must remain consistent at all times
-
-        # TODO(p0)
-        # visit each statement:
-        #  if each statement starts & ends on same line:
-        #    just align the line and exit
-        #  if not, then spread the values over multiple lines (ideal scenario)
+        # TODO
         pass
 
     def get_stage_count(self) -> int:
@@ -295,8 +279,9 @@ class Dockerfile:
         parsed_statements = dockerfile.parse_string(statements_str)
         new_layers = []
 
+        # Layer's line number is not exposed as a formal API, so we need to get it from the parsed object.
+        curr_layer_line = target.parsed_statement().start_line
         curr_layer_index = target.index()
-        curr_layer_line = target.line_num()
 
         parsed_statement: dockerfile.Command
         for parsed_statement in parsed_statements:

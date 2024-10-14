@@ -56,13 +56,6 @@ class Layer:
     def command(self) -> LayerCommand:
         return self._command
 
-    def line_num(self) -> int:
-        """
-        Returns the line number in the Dockerfile on which this layer begins.
-        :return: int
-        """
-        return self._statement.start_line
-
     def text(self) -> str:
         """
         :return: The complete contents of the layer as text, ie, command + parameters
@@ -233,7 +226,6 @@ class RunLayer(Layer):
             # 'RUN ["echo", "hello", "&&", "foo"]' -> statement.value=("echo", "hello", "&&", "foo",)
             sc = ShellCommand(
                 index=0,
-                line_num=statement.start_line,
                 parent_layer=self,
                 cmd=statement.value,
                 cmd_form=DockerShellCommandForm.EXEC,
@@ -247,13 +239,6 @@ class RunLayer(Layer):
         # NOTE: We must also preserve the operator information ("echo hello; echo world && echo hehe")
         individual_cmds = split_chained_commands(statement.value[0])
         curr_cmd_index = 0
-
-        # TODO: Fix the logic of setting line number for ShellCommand
-        # Instead, we should derive line num based on how the user actually
-        # distributed the commands over single/multiple lines.
-        # But the dockerfile parser removes all extraneous whitespace after
-        # parsing RUN commands, so we lose info about newline characters.
-        curr_cmd_line = statement.start_line
 
         for i in range(len(individual_cmds)):
             # Every even-numbered index is a command and every odd-number index is an operator
@@ -269,20 +254,12 @@ class RunLayer(Layer):
             curr_cmd: str = individual_cmds[i]
             sc = ShellCommand(
                 index=curr_cmd_index,
-                line_num=curr_cmd_line,
                 parent_layer=self,
                 cmd=(curr_cmd,),
                 cmd_form=DockerShellCommandForm.SHELL,
             )
             self._shell_commands.append(sc)
             curr_cmd_index += 1
-
-            # If we've reached the last line number for this RUN layer, we don't
-            #  increase line number for the future ShellCommands created.
-            # This guarantees that we only spread the ShellCommands between
-            #  statement.start_line & statement.end_line.
-            if curr_cmd_line < statement.end_line:
-                curr_cmd_line += 1
 
         return
 

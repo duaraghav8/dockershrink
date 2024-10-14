@@ -107,7 +107,6 @@ class DockerShellCommandForm(str, Enum):
 class ShellCommand:
     _parent_layer = None
     _index: int
-    _line: int
     _command: Tuple[str]
     _command_form: DockerShellCommandForm
     _program: str
@@ -117,14 +116,12 @@ class ShellCommand:
     def __init__(
         self,
         index: int,
-        line_num: int,
         parent_layer,
         cmd: Tuple[str],
         cmd_form: DockerShellCommandForm,
     ):
         self._parent_layer = parent_layer
         self._index = index
-        self._line = line_num
         self._command = cmd
         self._command_form = cmd_form
 
@@ -189,13 +186,6 @@ class ShellCommand:
                 self._args.append(word)
 
         self._flags = get_flags_kv(tuple(flags))
-
-    def line_num(self) -> int:
-        """
-        Returns the line number in the Dockerfile on which is resides.
-        :return: int
-        """
-        return self._line
 
     def program(self) -> str:
         """

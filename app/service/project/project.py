@@ -247,7 +247,6 @@ This becomes the base image of the final image produced, reducing the size signi
         action = OptimizationAction(
             rule="use-depcheck",
             filename="Dockerfile",
-            line=depcheck_layer.line_num(),
             title="Added depcheck to detect unused dependencies",
             description=f"""Added {os.linesep}{depcheck_layer.text()}{os.linesep} right after {os.linesep}{last_copy_layer.text()}{os.linesep}.
 Depcheck flags all dependencies listed in package.json but not actually used in the project.
@@ -309,7 +308,6 @@ NOTE: You may need to change where exactly you want to run depcheck within your 
                     command=offending_cmd, key=key, value=value
                 )
 
-                optimization_action.line = offending_cmd.line_num()
                 optimization_action.title = (
                     "Modified installation command to exclude devDependencies"
                 )
@@ -321,7 +319,6 @@ This ensures that the final image excludes all modules listed in "devDependencie
 
             # In case of single stage dockerfile, we cannot change the command since
             #  it might break build/test processes. So add a recommendation.
-            optimization_action.line = offending_cmd.line_num()
             optimization_action.title = (
                 "Do not install devDependencies in the final image"
             )
@@ -366,7 +363,6 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
                     #  Then we don't need to add recommendation and return from this conditional,
                     #  we can let the algo continue.
                     #  This involves some effort so for now, we just add a recommendation and exit.
-                    optimization_action.line = layer.line_num()
                     optimization_action.title = (
                         "Avoid copying node_modules into the final image"
                     )
@@ -382,7 +378,6 @@ Instead of "COPY", use something like "RUN npm install --production" / "RUN yarn
                     # In case of single-stage dockerfile, don't try to fix this because it might break build/test.
                     # Add a recommendation instead.
                     if stage_count < 2:
-                        optimization_action.line = layer.line_num()
                         optimization_action.title = (
                             "Do not copy node_modules from your local system"
                         )
@@ -396,7 +391,6 @@ Create a new (final) stage in your Dockerfile, copy the built code into this sta
                         layer, layers_install_prod_deps_only
                     )
 
-                    optimization_action.line = layer.line_num()
                     optimization_action.title = (
                         "Perform fresh install of node_modules in the final stage"
                     )
@@ -430,7 +424,6 @@ A fresh install of production dependencies here ensures that the final image onl
                         layer, layers_install_prod_deps_only
                     )
 
-                    optimization_action.line = layer.line_num()
                     optimization_action.title = (
                         "Perform fresh install of node_modules in the final stage"
                     )

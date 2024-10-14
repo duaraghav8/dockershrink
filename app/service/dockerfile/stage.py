@@ -78,12 +78,6 @@ class Stage:
         """
         return self._name
 
-    def line_num(self) -> int:
-        """
-        Returns the number of the line on which the stage is declared.
-        """
-        return self._statement.start_line
-
     def text(self) -> str:
         """
         Returns the dockerfile statement that declares this stage
