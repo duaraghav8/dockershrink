@@ -295,3 +295,27 @@ class RunLayer(Layer):
 
     def shell_commands(self) -> List[ShellCommand]:
         return self._shell_commands
+
+
+class LabelLayer(Layer):
+    def text_pretty(self) -> str:
+        """
+        If this layer contains more than one labels, they're all placed on their own line.
+        eg- "LABEL a=b c=d"
+          => LABEL a=b \
+                   c=d
+        """
+        if len(self._statement.value) <= 2:
+            return self.text()
+
+        spaces = " " * (len(self._statement.cmd) + 1)
+        text = f"{os.linesep}{self._statement.cmd} "
+
+        for i in range(0, len(self._statement.value), 2):
+            key = self._statement.value[i]
+            value = self._statement.value[i + 1]
+            to_add = f"{key}={value} \\{os.linesep}{spaces}"
+            text += to_add
+
+        text = text.rstrip().rstrip("\\").rstrip() + os.linesep
+        return text

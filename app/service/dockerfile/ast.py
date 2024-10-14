@@ -4,7 +4,7 @@ from typing import Tuple, List, TypeAlias
 import dockerfile
 
 from .stage import Stage
-from .layer import LayerCommand, RunLayer, Layer, EnvLayer, CopyLayer
+from .layer import LayerCommand, RunLayer, Layer, EnvLayer, CopyLayer, LabelLayer
 
 
 class ValidationError(Exception):
@@ -52,6 +52,12 @@ def create_layer(
         )
     if cmd == LayerCommand.ENV:
         return EnvLayer(
+            index=curr_layer_index,
+            statement=statement,
+            parent_stage=parent_stage,
+        )
+    if cmd == LayerCommand.LABEL:
+        return LabelLayer(
             index=curr_layer_index,
             statement=statement,
             parent_stage=parent_stage,
