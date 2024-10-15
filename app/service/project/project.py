@@ -458,9 +458,6 @@ Instead, a fresh installation of only production dependencies here ensures that 
         actions = [a.to_json() for a in self._actions_taken]
         return actions
 
-    def generate_docker_image_definition(self, ai=None):
-        pass
-
     def optimize_docker_image(self, ai: AIService = None):
         """
         Given all assets of the current project, this method optimises

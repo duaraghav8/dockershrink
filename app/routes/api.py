@@ -50,58 +50,6 @@ def store_openai_key():
     return jsonify({"message": "OpenAI API key stored successfully"})
 
 
-@api.route("/generate", methods=["POST"])
-@token_required
-def generate(user):
-    """
-    Generates new Docker image definition for the given project, focused on minimizing size.
-    This will create new Dockerfile, .dockerignore and any other assets applicable.
-    """
-    data = request.get_json()
-    if not data:
-        return (
-            jsonify(
-                {"error": "No data provided. At least package.json must be provided."}
-            ),
-            400,
-        )
-
-    package_json = data.get("package.json")
-    if not package_json:
-        return jsonify({"error": "package.json was not provided"}), 400
-
-    ai = None
-    ai_access_key = user.get_openai_api_key()
-    if ai_access_key:
-        ai = AIService(ai_access_key)
-
-    project = Project(package_json=PackageJSON(package_json))
-    try:
-        dockerfile, dockerignore = project.generate_docker_image_definition(ai)
-    except Exception as e:
-        return (
-            jsonify(
-                {"error": f"An error occurred while generating image definition: {e}"}
-            ),
-            400,
-        )
-
-    # TODO: Optimise the generated docker assets
-    #  One way is to add the dockerfile, .dockerignore into a new project and run optimize() on it
-    #  p2 = Project(dockerfile, dockerignore)
-    #  resp = p2.optimize()
-    #  return resp assets
-    # In this case, the generate method only needs to generate a dockerfile with basic rules.
-    # Other rules are taken care of by optimize()
-
-    return jsonify(
-        {
-            "Dockerfile": dockerfile,
-            ".dockerignore": dockerignore,
-        }
-    )
-
-
 @api.route("/optimize", methods=["POST"])
 @token_required
 def optimize(user):

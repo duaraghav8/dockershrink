@@ -147,10 +147,10 @@ The `npm run build` command in the Dockerfile executes the following code (extra
 ---------------------------
 
 TODO:
-- Test whole dockerfile package, fix bugs
+- Implement AI class
+- Review code TODOs and resolve if needed
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
   - when analysing run statements, checking for NODE_ENV variable, creating new run layers, etc
   - Also other commands that can use similar syntax
-- Implement AI class
-- Resolve code TODO(p0) items
-- Review code TODOs and resolve if needed
+  - RunLayer/ShellCommand needs to treat the env vars correctly
+  - text_pretty() needs to distribute them correctly
