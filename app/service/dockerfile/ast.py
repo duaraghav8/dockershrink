@@ -27,7 +27,7 @@ def create_layer(
     cmd = statement.cmd.upper()
 
     if cmd == LayerCommand.RUN:
-        # TODO(p0): Add a hack to parse heredoc
+        # TODO(p1): Upgrade parser so it can support parsing heredoc
         # eg-
         # """
         # RUN <<EOF

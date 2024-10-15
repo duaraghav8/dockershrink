@@ -344,7 +344,12 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
                 stage_count = self.dockerfile.get_stage_count()
 
-                # TODO(p0): Make sure this copying is correct. Will package.json be in curr dir only?
+                # TODO: Make sure that package*.json exists in the build context.
+                # Currently, we simply copy package*.json from build context (local) and paste into the image.
+                # This will work in most cases because "docker build" is run from the root directory, which
+                #  also contains the package*.json files.
+                # But this isn't guaranteed. So a better strategy is to check the dockerfile for other COPY
+                #  statements copying package*.json and make sure we're following similar practice.
                 layers_install_prod_deps_only = [
                     "COPY package*.json .",
                     "RUN npm install --production",
@@ -489,7 +494,7 @@ Instead, a fresh installation of only production dependencies here ensures that 
         self._dockerfile_exclude_dev_dependencies()
         self._dockerfile_use_depcheck()
 
-        # TODO(p0)
+        # TODO(p1)
         # self._use_node_prune()
         #  OR
         # self._remove_unnecessary_files_from_node_modules()
