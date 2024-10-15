@@ -23,6 +23,9 @@ node_dependency_installation_commands = {
     },
     "yarn": {
         "install": {"production": True},
+        "": {
+            "production": True
+        },  # If yarn is invoked without any subcommand, its equivalent to "yarn install"
     },
 }
 node_dev_dependency_removal_commands = {

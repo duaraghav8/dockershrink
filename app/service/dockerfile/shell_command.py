@@ -207,6 +207,7 @@ class ShellCommand:
         """
         Returns the subcommand invoked for the program.
         This method is a wrapper around args()[0]
+        If the command doesn't have a subcommand, this method returns empty string "".
         eg-
           For "npm --hello=world install --production --foo=bar ./", the subcommand is "install".
           For "npm" or "npm --production", the subcommand is "".
