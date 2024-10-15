@@ -18,6 +18,12 @@ curl localhost:5432
 # Create a new database "dockershrink"
 ```
 
+Query the database:
+
+```sql
+select * from public.user;
+```
+
 2. Set the database details (url, credentials, name, etc) in `.env`.
 
 ```shell
@@ -44,6 +50,9 @@ curl -XPOST http://localhost:5000/api/v1/optimize \
   -H "Content-type: application/json" \
   -H "Authorization: <TOKEN>" \
   --data '{"Dockerfile": "FROM ubuntu", ".dockerignore": "node_modules\nnpm_debug.log", "package.json": {"version": "0.4.32"}}'
+
+# Alternatively, run scripts inside test/
+python3 test/end-to-end/end-to-end.py
 ```
 
 3. After adding/modifying dependencies, update `requirements.txt`
