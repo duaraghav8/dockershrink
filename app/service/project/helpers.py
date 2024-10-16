@@ -42,12 +42,12 @@ def extract_npm_scripts_invoked(
     dockerfile: Dockerfile, package_json: PackageJSON
 ) -> List[Dict[str, str]]:
     """
-    Returns a list of scripts invoked in the Dockerfile and the contents (commands) inside these scripts.
+    Returns a list of npm scripts invoked in the dockerfile and their definitions from package.json.
     "npm start" and "npm run start" are treated as the same script.
-    If start is invoked but not defined in package.json, it is treated as "node server.js".
+    If "start" is invoked but not defined in package.json, it is treated as "node server.js".
 
     Example return value:
-    [ {"command": "npm run build", "source": "package.json", "contents": "tsc -f ."} ]
+    [ {"script": "npm run build", "commands": "tsc -f ."} ]
 
     :return: List of scripts invoked in the dockerfile
     """
@@ -69,15 +69,12 @@ def extract_npm_scripts_invoked(
 
                 if subcmd == "start":
                     # This is equivalent to "npm run start"
-                    contents = package_json.get_script("start")
-                    if contents is None:
-                        contents = "node server.js"
+                    commands = package_json.get_script("start")
+                    if commands is None:
+                        commands = "node server.js"
 
                     scripts.append(
-                        {
-                            "command": text,
-                            "script_contents": contents,
-                        },
+                        {"script": text, "commands": commands},
                     )
 
                 elif subcmd in ["run", "run-script"]:
@@ -85,21 +82,18 @@ def extract_npm_scripts_invoked(
                     # args[0] is the subcommand, so args[1] is always the script to invoke
                     script_name = cmd.args()[1]
 
-                    contents = package_json.get_script(script_name)
-                    if contents is None:
+                    commands = package_json.get_script(script_name)
+                    if commands is None:
                         if script_name == "start":
-                            contents = "node server.js"
+                            commands = "node server.js"
                         else:
                             # NOTE: This is symantecally incorrect.
                             # An npm script is invoked, but it doesn't contain a corresponding definition
                             #  in package.json.
-                            contents = "(No Definition found in package.json)"
+                            commands = "(No Definition found in package.json)"
 
                         scripts.append(
-                            {
-                                "command": text,
-                                "script_contents": contents,
-                            },
+                            {"script": text, "commands": commands},
                         )
 
     return scripts
