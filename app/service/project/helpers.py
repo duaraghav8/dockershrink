@@ -51,6 +51,7 @@ def extract_npm_scripts_invoked(
 
     :return: List of scripts invoked in the dockerfile
     """
+    default_start_script_command = "node server.js"
     scripts = []
 
     stage: Stage
@@ -71,7 +72,7 @@ def extract_npm_scripts_invoked(
                     # This is equivalent to "npm run start"
                     commands = package_json.get_script("start")
                     if commands is None:
-                        commands = "node server.js"
+                        commands = default_start_script_command
 
                     scripts.append(
                         {"script": text, "commands": commands},
@@ -85,16 +86,16 @@ def extract_npm_scripts_invoked(
                     commands = package_json.get_script(script_name)
                     if commands is None:
                         if script_name == "start":
-                            commands = "node server.js"
+                            commands = default_start_script_command
                         else:
                             # NOTE: This is symantecally incorrect.
                             # An npm script is invoked, but it doesn't contain a corresponding definition
                             #  in package.json.
                             commands = "(No Definition found in package.json)"
 
-                        scripts.append(
-                            {"script": text, "commands": commands},
-                        )
+                    scripts.append(
+                        {"script": text, "commands": commands},
+                    )
 
     return scripts
 

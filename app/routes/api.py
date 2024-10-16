@@ -82,6 +82,12 @@ def optimize(user):
     pj = None
     package_json = data.get("package.json")
     if package_json is not None:
+        if not type(package_json) == dict:
+            err = {
+                "error": f"package.json must be supplied as a JSON object, current type is {type(package_json)}",
+            }
+            return jsonify(err), 400
+
         pj = PackageJSON(package_json)
 
     project = Project(

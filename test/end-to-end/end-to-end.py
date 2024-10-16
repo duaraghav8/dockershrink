@@ -20,7 +20,9 @@ def main():
     # Read file contents
     dockerfile_content = read_file_contents('Dockerfile')
     dockerignore_content = read_file_contents('.dockerignore')
+
     package_json_content = read_file_contents('package.json')
+    package_json_content = json.loads(package_json_content)
 
     # Prepare the payload
     payload = {
