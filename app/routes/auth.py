@@ -1,7 +1,7 @@
 import uuid
 
 from flask import Blueprint, render_template, redirect, url_for, session, flash
-from flask_login import login_user, login_required, logout_user
+from flask_login import login_user, login_required, logout_user, current_user
 from app import db, oauth
 from app.models.user import User
 
@@ -10,6 +10,9 @@ auth = Blueprint("auth", __name__)
 
 @auth.route("/login")
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
     return render_template("login.html")
 
 

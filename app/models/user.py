@@ -9,18 +9,18 @@ class User(UserMixin, db.Model):
     api_token = db.Column(db.String(64), unique=True, index=True)
     openai_api_key = db.Column(db.String(256))
 
-    def generate_api_token(self):
+    def generate_api_token(self) -> str:
         self.api_token = secrets.token_hex(32)
         db.session.commit()
         return self.api_token
 
-    def get_api_token(self):
+    def get_api_token(self) -> str:
         return self.api_token
 
-    def set_openai_api_key(self, key: str):
+    def set_openai_api_key(self, key: str) -> str:
         self.openai_api_key = key
         db.session.commit()
         return self.openai_api_key
 
-    def get_openai_api_key(self):
+    def get_openai_api_key(self) -> str:
         return self.openai_api_key
