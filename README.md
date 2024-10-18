@@ -80,10 +80,6 @@ black app
 ```
 
 TODO:
-- Client should be able to supply openai api key in /optimize api call (for one-time use)
-  - If openai returns 401, propagate the error to the user
-- Add option to collect feedback from dashboard (ui + api)
-
 - end to end testing
   - Basic case - simple dockerfile with 0 optimizations to see that everything works
   - Real world dockerfiles from OSS nodejs projects

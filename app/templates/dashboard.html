@@ -9,12 +9,24 @@
     <h1>Welcome, {{ user.email }}</h1>
     <p>Your API Token: {{ user.get_api_token() or 'Not generated' }}</p>
     <button onclick="generateToken()">Generate API Token</button>
+
     <br><br>
+
     <form onsubmit="storeOpenAIKey(event)">
         <input type="text" id="openai_key" placeholder="Enter OpenAI API Key">
         <button type="submit">Store OpenAI API Key</button>
     </form>
-    <br>
+
+    <br><br>
+
+    <form onsubmit="storeFeedback(event)">
+        <textarea id="feedback_description" rows="5" cols="50" placeholder="Enter your Feedback here"></textarea>
+        <br>
+        <button type="submit">Send Feedback</button>
+    </form>
+
+    <br><br>
+
     <a href="{{ url_for('auth.logout') }}">Logout</a>
 
     <script>
@@ -29,6 +41,22 @@
             .then(data => {
                 alert('New API Token: ' + data.token);
                 location.reload();
+            });
+        }
+
+        function storeFeedback(event) {
+            event.preventDefault();
+            const description = document.getElementById('feedback_description').value;
+            fetch('/api/v1/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ feedback_description: description }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
             });
         }
 

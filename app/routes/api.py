@@ -31,6 +31,22 @@ def token_required(f):
     return decorated
 
 
+@api.route("/feedback", methods=["POST"])
+@login_required
+def feedback():
+    data = request.get_json()
+
+    description = data.get("feedback_description")
+    if not description:
+        return (
+            jsonify({"error": f"Invalid request: No feedback provided: {description}"}),
+            400,
+        )
+
+    current_user.set_feedback(description)
+    return jsonify({"message": "Thank you for your feedback!"})
+
+
 @api.route("/generate_token", methods=["POST"])
 @login_required
 def generate_token():

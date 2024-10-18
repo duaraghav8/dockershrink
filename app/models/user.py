@@ -8,6 +8,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     api_token = db.Column(db.String(64), unique=True, index=True)
     openai_api_key = db.Column(db.String(256))
+    feedback = db.Column(db.String(5000))
 
     # NOTE: refresh token is currently stored but not used for anything
     # It was originally added to try to stop google from showing consent
@@ -30,3 +31,8 @@ class User(UserMixin, db.Model):
 
     def get_openai_api_key(self) -> str:
         return self.openai_api_key
+
+    def set_feedback(self, feedback: str):
+        self.feedback = feedback
+        db.session.commit()
+        return self.feedback
