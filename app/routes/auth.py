@@ -33,12 +33,6 @@ def google_login():
     )
 
 
-@auth.route("/login/github")
-def github_login():
-    redirect_uri = url_for("auth.github_authorize", _external=True)
-    return oauth.github.authorize_redirect(redirect_uri)
-
-
 @auth.route("/authorize/google")
 def google_authorize():
     token = oauth.google.authorize_access_token()
@@ -61,21 +55,6 @@ def google_authorize():
 
     db.session.commit()
 
-    login_user(user)
-    return redirect(url_for("main.dashboard"))
-
-
-@auth.route("/authorize/github")
-def github_authorize():
-    token = oauth.github.authorize_access_token()
-    resp = oauth.github.get("user")
-    user_info = resp.json()
-    email = user_info["email"]
-    user = User.query.filter_by(email=email).first()
-    if not user:
-        user = User(email=email)
-        db.session.add(user)
-        db.session.commit()
     login_user(user)
     return redirect(url_for("main.dashboard"))
 
