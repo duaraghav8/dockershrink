@@ -90,7 +90,7 @@ commands: `{script["commands"]}`
             messages=messages,
             model=openai_model,
         )
-        response = completion.choices[0].message
+        response = completion.choices[0].message.content
         # gpt-4o always returns code inside backticks "```dockerfile...```".
         # We need to scrub them off and return clean dockerfile code.
         response = response.strip().strip("```").strip()
