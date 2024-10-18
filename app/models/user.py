@@ -9,6 +9,12 @@ class User(UserMixin, db.Model):
     api_token = db.Column(db.String(64), unique=True, index=True)
     openai_api_key = db.Column(db.String(256))
 
+    # NOTE: refresh token is currently stored but not used for anything
+    # It was originally added to try to stop google from showing consent
+    # screen upon every login, but turns out that's standard practice.
+    # TODO: Remove this comment if we start using the refresh token in future.
+    google_refresh_token = db.Column(db.String(256))
+
     def generate_api_token(self) -> str:
         self.api_token = secrets.token_hex(32)
         db.session.commit()

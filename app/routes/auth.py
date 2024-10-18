@@ -18,10 +18,19 @@ def login():
 
 @auth.route("/login/google")
 def google_login():
+    if current_user.is_authenticated:
+        return redirect(url_for("main.dashboard"))
+
     nonce = uuid.uuid4().hex + uuid.uuid1().hex
     session["google_auth_nonce"] = nonce
     redirect_uri = url_for("auth.google_authorize", _external=True)
-    return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
+
+    return oauth.google.authorize_redirect(
+        redirect_uri,
+        nonce=nonce,
+        prompt="select_account",
+        access_type="offline",
+    )
 
 
 @auth.route("/login/github")
@@ -46,7 +55,11 @@ def google_authorize():
     if not user:
         user = User(email=email)
         db.session.add(user)
-        db.session.commit()
+
+    if "refresh_token" in token:
+        user.google_refresh_token = token["refresh_token"]
+
+    db.session.commit()
 
     login_user(user)
     return redirect(url_for("main.dashboard"))

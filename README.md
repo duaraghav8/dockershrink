@@ -67,6 +67,10 @@ pip freeze > requirements.txt
 python -m flask db init
 python -m flask db migrate -m "Initial migration"
 python -m flask db upgrade
+
+# Run subsequent migrations
+python -m flask db migrate -m "What changed?"
+python -m flask db upgrade
 ```
 
 5. Run Black
@@ -75,24 +79,11 @@ python -m flask db upgrade
 black app
 ```
 
-## TODO
-- if I'm already authenticated, then when I open the homepage and click "login", it should directly open my dashboard (check if this is the standard practice)
-- Every time I login with google, it shows me the notice about do I wanna allow (with same email id), which feels like a signup.
-  - I guess we need to differentiate between signup and login
-  - Once signed up, subsequent logins must not be showing the signup notice again. and signup attempt with the same email should simply redirect and log me into my existing account.
-- Understand how the whole authentication & browser cookie thing is working. How do I adjust the cookie timeout?
-- Setup logging in app so we have complete trace of request flows
-- What's the best practice when creating and providing api tokens?
-  - when do we use JWT? and what are the other types of auth tokens possible?
-- "pip install python-dotenv" (and add to requirements.txt) to automatically read .env file
-- docker compose-based local setup
-- understand oauth vs openid
-- read everything shared by claude so far
-
-
 TODO:
-- productionize the backend
 - end to end testing
+  - Basic case - simple dockerfile with 0 optimizations to see that everything works
+  - Real world dockerfiles from OSS nodejs projects
+  - Dockerfiles to test specific rules or edge cases
 - Review code TODOs and resolve if needed
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
   - when analysing run statements, checking for NODE_ENV variable, creating new run layers, etc
