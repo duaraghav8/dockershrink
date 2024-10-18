@@ -20,8 +20,8 @@
     <br><br>
 
     <form onsubmit="storeFeedback(event)">
-        <textarea id="feedback_description" rows="5" cols="50" placeholder="Enter your Feedback here"></textarea>
-        <br>
+        <textarea id="feedback_description" rows="10" cols="50" placeholder="Enter your feedback here">{{ user.get_feedback() or '' }}</textarea>
+        <br><br>
         <button type="submit">Send Feedback</button>
     </form>
 

@@ -36,3 +36,6 @@ class User(UserMixin, db.Model):
         self.feedback = feedback
         db.session.commit()
         return self.feedback
+
+    def get_feedback(self) -> str:
+        return self.feedback

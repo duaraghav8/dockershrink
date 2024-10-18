@@ -39,7 +39,7 @@ def feedback():
     description = data.get("feedback_description")
     if not description:
         return (
-            jsonify({"error": f"Invalid request: No feedback provided: {description}"}),
+            jsonify({"error": f"Invalid request: No feedback provided"}),
             400,
         )
 
