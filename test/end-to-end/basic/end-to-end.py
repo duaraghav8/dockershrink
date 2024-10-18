@@ -1,4 +1,6 @@
 import json
+import os
+
 import requests
 
 # API configuration
@@ -28,7 +30,8 @@ def main():
     payload = {
         "Dockerfile": dockerfile_content,
         ".dockerignore": dockerignore_content,
-        "package.json": package_json_content
+        "package.json": package_json_content,
+        "openai_api_key": os.getenv("OPENAI_API_KEY"),
     }
 
     # Remove None values from payload

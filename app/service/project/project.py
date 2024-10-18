@@ -1,6 +1,8 @@
 import os
 from typing import List
 
+import openai
+
 from app.service import dockerfile as df
 from app.service.ai import AIService
 from app.service.dockerignore import Dockerignore
@@ -66,6 +68,8 @@ Set the \"NODE_ENV\" environment variable to \"production\" and install the depe
             updated_dockerfile_code = ai.add_multistage_builds(
                 dockerfile=self.dockerfile.raw(), scripts=scripts
             )
+        except openai.APIError as e:
+            raise e
         except Exception as e:
             LOG.error(
                 f"AI service failed to add multistage builds to dockerfile: {e}",
@@ -467,7 +471,7 @@ Instead, a fresh installation of only production dependencies here ensures that 
         """
         # Ensure that .dockerignore exists and contains the recommended
         # files & directories
-        # TODO: Add actions for creating and modifying .dockerignore in self._actions_taken
+        # TODO(p0): Add actions for creating and modifying .dockerignore in self._actions_taken
         if not self.dockerignore.exists():
             self.dockerignore.create()
         self.dockerignore.add_if_not_present({"node_modules", "npm_debug.log", ".git"})

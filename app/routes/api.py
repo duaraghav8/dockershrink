@@ -1,5 +1,6 @@
 from functools import wraps
 
+import openai
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from openai import OpenAI
@@ -73,8 +74,11 @@ def optimize(user):
 
     dockerignore = data.get(".dockerignore")
 
+    # TODO: Un-comment below line once we allow the user to store openai api key with us
+    # ai_access_key = user.get_openai_api_key()
+    ai_access_key = data.get("openai_api_key")
+
     ai = None
-    ai_access_key = user.get_openai_api_key()
     if ai_access_key:
         openai_client = OpenAI(api_key=ai_access_key)
         ai = AIService(openai_client)
@@ -95,8 +99,16 @@ def optimize(user):
         dockerignore=Dockerignore(dockerignore),
         package_json=pj,
     )
+
     try:
         resp = project.optimize_docker_image(ai)
+    except openai.APIStatusError as e:
+        return (
+            jsonify({"error": f"Request to OpenAI API failed: {e.body}"}),
+            e.status_code,
+        )
+    except openai.APIError as e:
+        return jsonify({"error": f"Request to OpenAI API failed: {e}"}), 500
     except Exception as e:
         return (
             jsonify({"error": f"An error occurred while optimizing the project: {e}"}),

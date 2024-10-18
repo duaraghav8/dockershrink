@@ -3,7 +3,7 @@ LABEL Name="My Node.js app" Version=0.2.1
 
 WORKDIR /app
 
-RUN npm run foo
+RUN npm run say-hello
 RUN npm start && npm run-script bax
 RUN npm run bazel
 

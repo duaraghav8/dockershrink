@@ -80,10 +80,15 @@ black app
 ```
 
 TODO:
+- Client should be able to supply openai api key in /optimize api call (for one-time use)
+  - If openai returns 401, propagate the error to the user
+- Add option to collect feedback from dashboard (ui + api)
+
 - end to end testing
   - Basic case - simple dockerfile with 0 optimizations to see that everything works
   - Real world dockerfiles from OSS nodejs projects
   - Dockerfiles to test specific rules or edge cases
+  - Dockerfile loaded with lots of code (see dockerfiletest.py)
 - Review code TODOs and resolve if needed
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
   - when analysing run statements, checking for NODE_ENV variable, creating new run layers, etc
