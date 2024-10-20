@@ -12,6 +12,7 @@ from .layer import (
     CopyLayer,
     LabelLayer,
     WorkDirLayer,
+    ExposeLayer,
 )
 
 
@@ -107,6 +108,12 @@ def create_layer(
         )
     if cmd == LayerCommand.WORKDIR:
         return WorkDirLayer(
+            index=curr_layer_index,
+            statement=statement,
+            parent_stage=parent_stage,
+        )
+    if cmd == LayerCommand.EXPOSE:
+        return ExposeLayer(
             index=curr_layer_index,
             statement=statement,
             parent_stage=parent_stage,

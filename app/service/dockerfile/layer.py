@@ -357,3 +357,8 @@ class LabelLayer(Layer):
 class WorkDirLayer(Layer):
     def text_pretty(self) -> str:
         return os.linesep + self.text() + os.linesep
+
+
+class ExposeLayer(Layer):
+    def text_pretty(self) -> str:
+        return os.linesep + self.text()

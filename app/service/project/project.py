@@ -261,35 +261,28 @@ NOTE: You may need to change where exactly you want to run depcheck within your 
         self._add_action_taken(action)
 
     def _dockerfile_exclude_dev_dependencies(self):
-        # A developer writing Dockerfile must make sure to never install the devDependencies in node_modules in the final docker image - this just adds unnecessary weight to the image.
-        # This method checks if the final image produced by the Dockerfile will contain the devDependencies (as specified in package.json). If yes, it applies a fix to only install production dependencies.
-        # Otherwise, no action is required.
-
-        # ALGORITHM TO CHECK FOR devDependencies:
-        # The final stage must only contain prod deps
-        # 1. deps are being installed in final stage
-        #  1.1 look for NODE_ENV = production BEFORE any installation commands are run
-        #  1.2 look for "npm install --production"
-        #  1.3 look for "npm prune --omit=dev" or "npm prune --production"
-        #  1.4 look for "yarn install --production"
-        #  1.5 look for "npm ci --omit=dev"
-        # 2. deps were installed in a previous stage and copied into the final stage
-        #  2.1 Get the name of the stage from which node_modules has been copied
-        #    2.1.1 NOTE: node_modules could be directly named in the COPY statement or it could be copying a directory containing the node_modules.
-        #  2.2 Run step 1 for this stage
-        # 3. Deps are copied from local system
-        #  3.1 Replace this statement with a fresh install instruction (copy package*.json + npm install)
-        # 3. No deps were installed in the final stage at all
-        #  3.1 nothing to do, exit
-
-        # HOW THE FIX WILL BE APPLIED:
-        # For Step 1, the fix is easy. Get the last command that is installing deps.
-        #  Add the appropriate flag to this command.
-        # For step 2
-        #  remove the COPY node_modules statement
-        #  COPY package*.json from the same stage
-        #  RUN npm install --production
-
+        """
+        Checks if the final image produced by the Dockerfile will contain devDependencies (as defined in package.json).
+        If yes, it applies a fix to only install production dependencies.
+        Otherwise, no action is taken.
+        """
+        # SCENARIOS
+        # 1. Deps are being installed in the final stage.
+        #    The installation command should contain an option to exclude dev deps (eg: --production, --omit=dev, etc)
+        #    or NODE_ENV env var must be set to production.
+        #    If these are not present, apply a fix/recommendation.
+        #
+        # 2. Deps are installed in a previous stage and copied into the final stage
+        #    Get the name of the stage in which deps are being installed.
+        #    Perform scenario 1 checks on this stage.
+        #    If the previous stage excludes dev deps, no further action is needed.
+        #    Else, apply a fix.
+        #
+        # 3. Deps are copied from build context (local system)
+        #    Replace this COPY statement with a fresh installation instruction (copy package*.json + npm install)
+        #
+        # 4. No deps are included in the final stage at all.
+        #    In this case, no further action is needed.
         ###########################################################################
         optimization_action = OptimizationAction(
             rule="exclude-devDependencies",
