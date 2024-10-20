@@ -1,0 +1,6 @@
+{
+	"scripts": {
+		"say-hello": "echo hello world!",
+		"bax": "echo hi its me bax :)"
+	}
+}
