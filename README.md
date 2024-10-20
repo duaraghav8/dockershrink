@@ -80,6 +80,7 @@ black app
 ```
 
 TODO:
+- ENV, WORKDIR, LABEL statements to have extra linebreaks around them
 - end to end testing
   - Basic case - simple dockerfile with 0 optimizations to see that everything works
   - Real world dockerfiles from OSS nodejs projects

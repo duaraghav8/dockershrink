@@ -21,6 +21,7 @@ Create a final stage in the Dockerfile which only contains the application sourc
 * If the previous stage contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if you think it is relevant.
 * Comments should be added only in the new stage that you're writing. Don't add any comments in the previous stage unless you need to make an important remark. But don't remove any comments that already exist.
 * If the previous stage contains any `RUN` statements invoking any npm scripts like `npm run build`, the commands in this script will also be shared with you so you can understand its behaviour.
+* Do not delete any statements originally present in the Dockerfile. If you don't understand what they're being used for (like custom scripts), just ignore them. Don't include them to the new stage.
 
 After writing all the code, review it step-by-step and think what the final image would contain to ensure you didn't accidentally leave out anything important.
 
