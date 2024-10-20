@@ -22,6 +22,41 @@ class ValidationError(Exception):
 ParsedDockerfile: TypeAlias = Tuple[dockerfile.Command]
 
 
+def _remove_extra_empty_lines(dockerfile_content: str) -> str:
+    """
+    Removes extra empty lines from the given dockerfile string.
+    If there is more than 1 empty line between any 2 lines of text,
+    they are extra and must be removed.
+    """
+    max_empty_lines = 1
+
+    result = []
+    empty_line_count = 0
+
+    for line in dockerfile_content.splitlines():
+        if line.strip() == "":  # If the line is empty (just a linebreak)
+            empty_line_count += 1
+        else:
+            if empty_line_count > max_empty_lines:
+                # If more than 1 consecutive empty lines were encountered, reduce to 1
+                result.extend([""] * max_empty_lines)
+            else:
+                # Retain up to 1 empty line
+                result.extend([""] * empty_line_count)
+
+            result.append(line)
+            empty_line_count = 0
+
+    # Handle any trailing empty lines at the end of the file
+    if empty_line_count > max_empty_lines:
+        result.extend([""] * max_empty_lines)
+    else:
+        result.extend([""] * empty_line_count)
+
+    # Join the result with new line breaks to form the final cleaned-up string
+    return os.linesep.join(result)
+
+
 def create_layer(
     curr_layer_index: int, statement: dockerfile.Command, parent_stage: Stage
 ) -> Layer:
@@ -202,4 +237,5 @@ def flatten(stages: List[Stage]) -> str:
         # Extra linebreak at the end of a Stage
         dockerfile_contents.append(os.linesep)
 
-    return "".join(dockerfile_contents).strip()
+    flattened = "".join(dockerfile_contents).strip()
+    return _remove_extra_empty_lines(flattened)
