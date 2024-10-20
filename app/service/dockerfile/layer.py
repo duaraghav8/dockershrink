@@ -140,7 +140,7 @@ class EnvLayer(Layer):
                  c=d
         """
         if len(self._env_vars) == 1:
-            return self.text()
+            return os.linesep + self.text() + os.linesep
 
         spaces = " " * (len(self._statement.cmd) + 1)
         text = f"{os.linesep}{self._statement.cmd} "
@@ -333,13 +333,13 @@ class RunLayer(Layer):
 class LabelLayer(Layer):
     def text_pretty(self) -> str:
         """
-        If this layer contains more than one labels, they're all placed on their own line.
+        If this layer contains more than one label, they're all placed on their own line.
         eg- "LABEL a=b c=d"
           => LABEL a=b \
                    c=d
         """
         if len(self._statement.value) <= 2:
-            return self.text()
+            return os.linesep + self.text() + os.linesep
 
         spaces = " " * (len(self._statement.cmd) + 1)
         text = f"{os.linesep}{self._statement.cmd} "
@@ -352,3 +352,8 @@ class LabelLayer(Layer):
 
         text = text.rstrip().rstrip("\\").rstrip() + os.linesep
         return text
+
+
+class WorkDirLayer(Layer):
+    def text_pretty(self) -> str:
+        return os.linesep + self.text() + os.linesep
