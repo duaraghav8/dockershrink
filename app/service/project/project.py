@@ -271,6 +271,7 @@ NOTE: You may need to change where exactly you want to run depcheck within your 
         #    The installation command should contain an option to exclude dev deps (eg: --production, --omit=dev, etc)
         #    or NODE_ENV env var must be set to production.
         #    If these are not present, apply a fix/recommendation.
+        #    If the first stage is also the final stage, ie, no multistage, then only give a recommendation.
         #
         # 2. Deps are installed in a previous stage and copied into the final stage
         #    Get the name of the stage in which deps are being installed.
@@ -341,12 +342,15 @@ Create a new (final) stage in the Dockerfile and install node_modules excluding 
 
                 stage_count = self.dockerfile.get_stage_count()
 
-                # TODO: Make sure that package*.json exists in the build context.
+                # TODO: Specify the path of package*.json relative to project root directory
                 # Currently, we simply copy package*.json from build context (local) and paste into the image.
                 # This will work in most cases because "docker build" is run from the root directory, which
                 #  also contains the package*.json files.
-                # But this isn't guaranteed. So a better strategy is to check the dockerfile for other COPY
-                #  statements copying package*.json and make sure we're following similar practice.
+                # But this isn't guaranteed.
+                #  eg- package.json is supposed to be copied from src/package.json but we just wrote COPY package.json.
+                # 2 good strategies to achieve this:
+                #  - Check previous statements. If any of them copies package*.json, use that same path.
+                #  - Get info about directory structure of the project. Then specify the precise path.
                 layers_install_prod_deps_only = [
                     "COPY package*.json .",
                     "RUN npm install --production",

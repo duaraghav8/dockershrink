@@ -218,9 +218,10 @@ class Dockerfile:
             values_json_array = [f'"{v}"' for v in new_value]
             values_json_array = ", ".join(values_json_array)
 
-            new_original = (
-                f"{parent_layer_statement.cmd} {layer_flags} [{values_json_array}]"
-            )
+            new_original = parent_layer_statement.cmd
+            if layer_flags:
+                new_original += " " + layer_flags
+            new_original += f" [{values_json_array}]"
         else:
             # One or more shell commands
             orig_command = parent_layer_statement.value[0]
@@ -233,7 +234,11 @@ class Dockerfile:
             new_cmds = merge_chained_commands(split_commands)
 
             new_value = [new_cmds]
-            new_original = f"{parent_layer_statement.cmd} {layer_flags} {new_cmds}"
+
+            new_original = parent_layer_statement.cmd
+            if layer_flags:
+                new_original += " " + layer_flags
+            new_original += " " + new_cmds
 
         new_statement = dockerfile.Command(
             original=new_original,
