@@ -24,7 +24,7 @@ Query the database:
 select * from public.user;
 ```
 
-2. Set the database details (url, credentials, name, etc) in `.env`.
+2. Set the database details (url, credentials, name, etc) in `.env`. See [env.example](./env.example).
 
 ```shell
 # Create new virtual environment
@@ -36,10 +36,16 @@ pip install --no-cache-dir -r requirements.txt
 
 # Set the env vars (see file env.example)
 export $(xargs <.env)
+
 export FLASK_ENV=development
 
-# Run the app
+# Run the app in development using one of these commands
 python3 run.py
+flask --app run run
+gunicorn run:app --bind localhost:5000
+
+# Run the app in production
+gunicorn run:app --bind 0.0.0.0:80
 
 # Open the app in browser at http://localhost:5000
 # NOTE: use localhost because only localhost is whitelisted by google oauth callback.
@@ -79,12 +85,22 @@ python -m flask db upgrade
 black app
 ```
 
+6. Build Docker image locally (from project root directory)
+
+```shell
+docker build -t dockershrink .
+```
+
+7. Run Docker container locally
+
+NOTE: in host networking mode, the app port will not be accessible from outside container, even if you publish ports.
+
+```shell
+docker run --env-file .env --rm -it --net=host dockershrink
+```
+
 ## TODOs
-- end to end testing
-  - Basic case - simple dockerfile with 0 optimizations to see that everything works
-  - Real world dockerfiles from OSS nodejs projects
-  - Dockerfiles to test specific rules or edge cases
-  - Dockerfile loaded with lots of code (see dockerfiletest.py)
+- deploy to a free platform to test
 - Review code TODOs and resolve if needed
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
   - when analysing run statements, checking for NODE_ENV variable, creating new run layers, etc
