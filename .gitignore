@@ -163,3 +163,5 @@ cython_debug/
 .vscode/
 
 client_secret.json
+
+.DS_Store

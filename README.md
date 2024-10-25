@@ -100,6 +100,8 @@ docker run --env-file .env --rm -it --net=host dockershrink
 ```
 
 ## TODOs
+- Delete and create fresh openai api key (current key is committed to git)
+- Delet and create fresh google app for login
 - deploy to a free platform to test
 - Review code TODOs and resolve if needed
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
