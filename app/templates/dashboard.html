@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/main.css" />
     <title>Dashboard</title>
 </head>
 <body>
@@ -29,52 +30,7 @@
 
     <a href="{{ url_for('auth.logout') }}">Logout</a>
 
-    <script>
-        function generateToken() {
-            fetch('/api/v1/generate_token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert('New API Token: ' + data.token);
-                location.reload();
-            });
-        }
+    <script src="/static/js/api.js" charset="utf-8"></script>
 
-        function storeFeedback(event) {
-            event.preventDefault();
-            const description = document.getElementById('feedback_description').value;
-            fetch('/api/v1/feedback', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ feedback_description: description }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-            });
-        }
-
-        function storeOpenAIKey(event) {
-            event.preventDefault();
-            const openai_key = document.getElementById('openai_key').value;
-            fetch('/api/v1/store_openai_key', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ openai_key: openai_key }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.message);
-            });
-        }
-    </script>
 </body>
 </html>
