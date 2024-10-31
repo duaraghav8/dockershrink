@@ -12,7 +12,12 @@ oauth = OAuth()
 
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        static_url_path="",
+        static_folder="web/static",
+        template_folder="web/templates",
+    )
     app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "your-secret-key")
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
