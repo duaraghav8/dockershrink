@@ -101,6 +101,14 @@ docker run --env-file .env --rm -it --net=host dockershrink
 
 ## TODOs
 - Frontend
+  - ds logo for web page
+  - Can flask serve static content in the structure webflow provides it in? as-is
+  - Copy button reaction (change to "Copied")
+  - refine CLI instructions
+  - serve from flask
+  - write custom javascript code to interact with backend api (preferably in webflow itself to avoid editing after code download)
+  - ensure all network requests from browser are being served (no errors on frontend)
+  - Build Landing Page
 - Delete and create fresh openai api key for self (current key is committed to git)
 - Delet and create fresh google app for login
 - deploy to a free platform to test
