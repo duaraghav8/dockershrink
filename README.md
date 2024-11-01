@@ -99,18 +99,31 @@ NOTE: in host networking mode, the app port will not be accessible from outside 
 docker run --env-file .env --rm -it --net=host dockershrink
 ```
 
+### Setting up the frontend
+
+All FE assets are kept inside the `web` directory.
+
+- `web/templates` contains HTML files which are also rendered by flask.
+- `web/static` contains all static assets like js, css, etc.
+
+
+1. Download the code assets from Webflow
+2. Replace dummy strings inside dashboard.html with template strings so flask can render them
+   - username
+   - api key
+3. Copy the HTML files inside `web/templates`
+4. Copy all other static assets directories inside `web/static`
+
 ## TODOs
 - Frontend
   - ds logo for web page
-  - Can flask serve static content in the structure webflow provides it in? as-is
-  - Copy button reaction (change to "Copied")
   - refine CLI instructions
-  - serve from flask
-  - write custom javascript code to interact with backend api (preferably in webflow itself to avoid editing after code download)
-  - ensure all network requests from browser are being served (no errors on frontend)
+  - custom javascript code:
+    - to interact with backend api
+    - Copy button reaction (change to "Copied!" when clicked)
   - Build Landing Page
 - Delete and create fresh openai api key for self (current key is committed to git)
-- Delet and create fresh google app for login
+- Delete and create fresh google app for login
 - deploy to a free platform to test
 - Review code TODOs and resolve if needed
 - Handle case where env var is set as part of RUN statement ("RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y")
