@@ -1,4 +1,4 @@
-<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Sun Nov 03 2024 07:01:17 GMT+0000 (Coordinated Universal Time)  -->
+<!DOCTYPE html><!--  This site was created in Webflow. https://webflow.com  --><!--  Last Published: Sun Nov 03 2024 08:30:02 GMT+0000 (Coordinated Universal Time)  -->
 <html data-wf-page="67208d16af4d12410d3dc20e" data-wf-site="67208d15af4d12410d3dc1c1">
 <head>
   <meta charset="utf-8">
@@ -34,7 +34,7 @@
           <div class="header-right-side-container">
             <div class="hidden-on-mbl">
               <div class="buttons-row gap-column-12px">
-                <a id="button-logout" data-w-id="da732deb-5db6-156b-08c9-e9fd059bc4b3" href="#" class="btn-primary w-inline-block">
+                <a id="button-logout" data-w-id="da732deb-5db6-156b-08c9-e9fd059bc4b3" href="/logout" class="btn-primary w-inline-block">
                   <div class="flex-horizontal gap-column-4px">
                     <div>Logout</div><img src="images/primary-button-icon-right-dashflow-webflow-template.svg" loading="eager" alt="" class="link-icon arrow-right">
                   </div>
@@ -61,7 +61,7 @@
               <div class="api-key"><code id="api-key">{{ user.get_api_token() or 'Not generated' }}</code></div>
               <a id="button-copy-api-key" data-w-id="b72cee02-0f5d-3de8-3ba1-f902506c1b35" href="#" class="btn-secondary w-inline-block">
                 <div class="flex-horizontal gap-column-4px">
-                  <div>Copy</div>
+                  <div id="button-copy-api-key-text">Copy</div>
                 </div>
               </a>
               <a id="button-generate-api-key" data-w-id="ed449be3-e1c6-30ee-393b-24dd1b489ab8" href="#" class="btn-primary w-inline-block">
@@ -145,13 +145,22 @@ function submitUserFeedback(event) {
             });
         }
 function copyAPIKeyToClipboard() {
-  // TODO
-  alert("haan karha hun copy");
+  var apiKey = document.getElementById('api-key').textContent;
+  navigator.clipboard.writeText(apiKey);
+  document.getElementById('button-copy-api-key-text').textContent = "Copied!";
+}
+function resetCopyAPIKeyBtnText() {
+  textElement = document.getElementById('button-copy-api-key-text');
+  if (textElement.textContent !== "Copy") {
+    textElement.textContent = "Copy";
+  }
 }
   // Ensure the DOM is fully loaded
   document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('button-generate-api-key').addEventListener('click', generateAPIKey);
-    document.getElementById('button-copy-api-key').addEventListener('click', copyAPIKeyToClipboard);
+    btnCopyAPIKey = document.getElementById('button-copy-api-key');
+    btnCopyAPIKey.addEventListener('click', copyAPIKeyToClipboard);
+    btnCopyAPIKey.addEventListener('mouseout', resetCopyAPIKeyBtnText);
   });
   // Override the default webflow-provided behaviour of feedback form
   function convertFormToJSON(form) {
