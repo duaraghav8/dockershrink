@@ -116,12 +116,12 @@ All FE assets are kept inside the `web` directory.
 
 ## TODOs
 - Frontend
+  - custom javascript code:
+    - Copy button reaction (change to "Copied!" when clicked)
   - ds logo for web page
   - refine CLI instructions
-  - custom javascript code:
-    - to interact with backend api
-    - Copy button reaction (change to "Copied!" when clicked)
   - Build Landing Page
+- Build the CLI
 - Delete and create fresh openai api key for self (current key is committed to git)
 - Delete and create fresh google app for login
 - deploy to a free platform to test
