@@ -117,7 +117,6 @@ All FE assets are kept inside the `web` directory.
 ## TODOs
 - Frontend
   - refine CLI instructions
-  - ds logo for web page
   - Build Landing Page
 - Build the CLI
 - Delete and create fresh openai api key for self (current key is committed to git)
