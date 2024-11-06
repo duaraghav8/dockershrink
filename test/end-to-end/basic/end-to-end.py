@@ -5,7 +5,7 @@ import requests
 
 # API configuration
 API_URL = "http://localhost:5000/api/v1/optimize"
-API_TOKEN = "dc31d08b89c3f8156e8bac693a4047173f9da7c6aab7b29bda7a44a2ee9f9879"
+API_TOKEN = "cbc649c96a4a0fe92b277aed50b5f20f5abdbed7689b6875e2ccd095136afed1"
 
 
 def read_file_contents(filename):
