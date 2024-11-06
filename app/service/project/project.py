@@ -160,7 +160,7 @@ This stage only includes the application code, dependencies and any other assets
                 rule=rule,
                 filename=filename,
                 title="Use a smaller base image for the final image produced",
-                description=f"""Use {preferred_image.full_name()} instead of {final_stage_baseimage.full_name()} as the base image.
+                description=f"""Use \'{preferred_image.full_name()}\' instead of \'{final_stage_baseimage.full_name()}\' as the base image.
 This will significantly decrease the final image's size.
 This practice is best combined with Multistage builds. The final stage of your Dockerfile must use a slim base image.
 Since all testing and build processes take place in a previous stage, dev dependencies and a heavy distro isn't really needed in the final image.
@@ -183,7 +183,7 @@ Enable AI to generate code for multistage build.""",
             rule=rule,
             filename=filename,
             title="Used a new and smaller base image for the final stage in Multistage Dockerfile",
-            description=f"""Used {preferred_image.full_name()} instead of {final_stage_baseimage.full_name()} as the base image of the final stage.
+            description=f"""Used \'{preferred_image.full_name()}\' instead of \'{final_stage_baseimage.full_name()}\' as the base image of the final stage.
 This becomes the base image of the final image produced, reducing the size significantly.""",
         )
         self._add_action_taken(action)
@@ -252,7 +252,7 @@ This becomes the base image of the final image produced, reducing the size signi
             rule="use-depcheck",
             filename="Dockerfile",
             title="Added depcheck to detect unused dependencies",
-            description=f"""Added {os.linesep}{depcheck_layer.text()}{os.linesep} right after {os.linesep}{last_copy_layer.text()}{os.linesep}.
+            description=f"""Added{os.linesep}```{os.linesep}{depcheck_layer.text()}{os.linesep}```{os.linesep}right after{os.linesep}```{os.linesep}{last_copy_layer.text()}{os.linesep}```{os.linesep}
 Depcheck flags all dependencies listed in package.json but not actually used in the project.
 If any unused dependencies are found, depcheck exits with a non-zero code, causing "docker build" to fail.
 You need to either remove these dependencies from package.json or ignore them in depcheck using the --ignores option.
