@@ -116,18 +116,19 @@ All FE assets are kept inside the `web` directory.
 
 ## TODO (p0)
 - CLI
-  - Test functionality thoroughly
-  - Read all logic for optimize
   - Test that all binaries are working on respective platforms
-  - Refine all content (readme, descriptions, help messages, etc) - this will be a public repo
-  - Remove unnecessary comments from the code
-  - remove deprecated code usage
+  - publish all binaries in the releases page
 - Frontend
-  - refine CLI instructions
+  - refine CLI setup instructions
   - Build Landing Page
 - Delete and create fresh openai api key for self (current key is committed to git)
 - Delete and create fresh google app for login
 - deploy to render
+- LAUNCH
+  - Make release with binaries on cli repo
+  - Make repos public - homebrew tap repo, dockershrink-cli repo
+  - Take necessary steps to ensure cli is available on brew and can be installed on any mac via brew
+  - announcements
 
 ## TODO
 - Review code TODOs and resolve if needed
