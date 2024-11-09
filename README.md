@@ -115,19 +115,20 @@ All FE assets are kept inside the `web` directory.
 4. Copy all other static assets directories inside `web/static`
 
 ## TODO (p0)
-- CLI
-  - Test that all binaries are working on respective platforms
-  - publish all binaries in the releases page
 - Frontend
-  - refine CLI setup instructions
   - Build Landing Page
 - Delete and create fresh openai api key for self (current key is committed to git)
 - Delete and create fresh google app for login
 - deploy to render
 - LAUNCH
-  - Make release with binaries on cli repo
+  - Make v0.1.0 release with binaries on cli repo
   - Make repos public - homebrew tap repo, dockershrink-cli repo
-  - Take necessary steps to ensure cli is available on brew and can be installed on any mac via brew
+  - Test end-to-end
+    - Installation
+    - All binaries working on respective platforms
+    - Authentication (init)
+    - optimize
+    - Homepage, User Dashboard
   - announcements
 
 ## TODO
