@@ -117,6 +117,16 @@ All FE assets are kept inside the `web` directory.
 ## TODO (p0)
 - Frontend
   - Build Landing Page
+- (TBD) FIX the "basic" test case (we show this in landing page)
+  - basic case: single stage which installs dependencies -> copies code into image -> runs the app
+  - for basic case, there is NO need for multistage build so don't force it. non-ai already works fine for basic, but ai messes it up.
+  - Level 2 case is: user is doing some additional stuff in basic (like run tests). In this case, we should put multistage builds.
+  - the final stage of an image should only install prod deps + copy code + run app. If the first stage is only doing this, there's no need for multistage.
+  - the moment we can determine that a single-stage image does NOT need multistage, we can apply the rest of our optimizations in that single stage itself!
+  - Strategies:
+    - Tell the LLM to NOT add multistage if stage 1 only does the 3 essential steps. Then handle this in response.
+    - Programmatically determine whether multi is needed (not sure if possible)
+  - COUNTER ARG: we are adding "npx depcheck" in the original stage in case we add multistage, so multistage is justified
 - Delete and create fresh openai api key for self (current key is committed to git)
 - Delete and create fresh google app for login
 - deploy to render
