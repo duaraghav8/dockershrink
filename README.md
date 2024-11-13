@@ -77,6 +77,10 @@ python -m flask db upgrade
 # Run subsequent migrations
 python -m flask db migrate -m "What changed?"
 python -m flask db upgrade
+
+# To setup a new Database:
+export DATABASE_URL=...
+python -m flask db upgrade
 ```
 
 5. Run Black
