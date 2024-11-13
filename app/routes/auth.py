@@ -8,14 +8,6 @@ from app.models.user import User
 auth = Blueprint("auth", __name__)
 
 
-@auth.route("/login")
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for("main.dashboard"))
-
-    return render_template("login.html")
-
-
 @auth.route("/login/google")
 def google_login():
     if current_user.is_authenticated:
