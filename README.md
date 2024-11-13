@@ -117,8 +117,6 @@ All FE assets are kept inside the `web` directory.
 5. Copy all other static assets directories inside `web/static`
 
 ## TODO (p0)
-- Frontend
-  - Fix homepage URLs (don't link to .html pages, just / or /dashboard)
 - (TBD) FIX the "basic" test case (we show this in landing page)
   - basic case: single stage which installs dependencies -> copies code into image -> runs the app
   - for basic case, there is NO need for multistage build so don't force it. non-ai already works fine for basic, but ai messes it up.
