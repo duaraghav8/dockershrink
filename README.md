@@ -109,10 +109,12 @@ All FE assets are kept inside the `web` directory.
 
 1. Download the code assets from Webflow
 2. Replace dummy strings inside dashboard.html with template strings so flask can render them
-   - username
-   - api key
-3. Copy the HTML files inside `web/templates`
-4. Copy all other static assets directories inside `web/static`
+   - api key quotes
+3. If links are incorrect fix them.
+   - "index.html" -> "/"
+   - "dashboard.html" -> "/dashboard"
+4. Copy the HTML files inside `web/templates`
+5. Copy all other static assets directories inside `web/static`
 
 ## TODO (p0)
 - Frontend
