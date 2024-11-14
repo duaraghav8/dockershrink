@@ -5,7 +5,7 @@ import requests
 
 # API configuration
 API_URL = "http://localhost:5000/api/v1/optimize"
-API_TOKEN = "df30dceb79d588a2689fe9ab08bfed868fed458082137026b4a0a051711eafe6"
+API_TOKEN = os.getenv("DOCKERSHRINK_API_TOKEN")
 
 
 def read_file_contents(filename):
