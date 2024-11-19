@@ -131,19 +131,14 @@ All FE assets are kept inside the `web` directory.
     - Tell the LLM to NOT add multistage if stage 1 only does the 3 essential steps. Then handle this in response.
     - Programmatically determine whether multi is needed (not sure if possible)
   - COUNTER ARG: we are adding "npx depcheck" in the original stage in case we add multistage, so multistage is justified
-- Delete and create fresh openai api key for self (current key is committed to git)
-- Delete and create fresh google app for login
-- deploy to render
 - LAUNCH
-  - Make v0.1.0 release with binaries on cli repo
-  - Make repos public - homebrew tap repo, dockershrink-cli repo
   - Test end-to-end
     - Installation
     - All binaries working on respective platforms
     - Authentication (init)
     - optimize
     - Homepage, User Dashboard
-  - announcements
+  - start reaching out to people
 
 ## TODO
 - Review code TODOs and resolve if needed
