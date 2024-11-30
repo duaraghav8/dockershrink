@@ -1,9 +1,0 @@
-MAIN
-====
-- Start
-- If the image contains only 1 stage:
-  # Rule should only run in case multistage is already being used.
-  # In that case, we want to ensure that the final stage doesn't contain devDependencies
-  # (this is a lot easier in post-build than pre-build)
-  - exit(0)
-- End

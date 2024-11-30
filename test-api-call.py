@@ -1,8 +1,5 @@
-from functools import wraps
-
 import openai
 from flask import Blueprint, jsonify, request
-from flask_login import login_required, current_user
 from openai import OpenAI
 
 from app.service.ai import AIService
@@ -10,65 +7,11 @@ from app.service.dockerfile.dockerfile import Dockerfile
 from app.service.dockerignore import Dockerignore
 from app.service.package_json import PackageJSON
 from app.service.project import Project
-from app.models.user import User
 
 api = Blueprint("api", __name__)
 
 
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        api_token = request.headers.get("Authorization")
-        if not api_token:
-            return jsonify({"error": "API token is missing"}), 401
-
-        user = User.query.filter_by(api_token=api_token).first()
-        if not user:
-            return jsonify({"error": "Invalid API token"}), 401
-
-        return f(user, *args, **kwargs)
-
-    return decorated
-
-
-@api.route("/feedback", methods=["POST"])
-@login_required
-def feedback():
-    data = request.get_json()
-
-    description = data.get("feedback_description")
-    if not description:
-        return (
-            jsonify({"error": f"Invalid request: No feedback provided"}),
-            400,
-        )
-
-    current_user.set_feedback(description)
-    return jsonify({"message": "Thank you for your feedback!"})
-
-
-@api.route("/generate_token", methods=["POST"])
-@login_required
-def generate_token():
-    token = current_user.generate_api_token()
-    return jsonify({"token": token})
-
-
-@api.route("/store_openai_key", methods=["POST"])
-@login_required
-def store_openai_key():
-    data = request.get_json()
-
-    openai_key = data.get("openai_key")
-    if not openai_key:
-        return jsonify({"error": "OpenAI API key is required"}), 400
-
-    current_user.set_openai_api_key(openai_key)
-    return jsonify({"message": "OpenAI API key stored successfully"})
-
-
 @api.route("/optimize", methods=["POST"])
-@token_required
 def optimize(user):
     data = request.get_json()
     if not data:
