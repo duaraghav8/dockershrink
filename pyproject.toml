@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dockershrink"
+version = "0.1.0"
+description = "Commandline tool to reduce the size of your Docker Images"
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE"}
+keywords = [
+    "docker", "container", "image-size", "optimization", "nodejs", "cli", "ai"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+authors = [
+    {name = "Raghav Dua", email = "dockershrink@gmail.com"}
+]
+dependencies = [
+    "colorama >=0.4.4",
+    "openai >=1.47.0",
+    "dockerfile >=3.3.1",
+    "bashlex >=0.18",
+]
+
+[project.scripts]
+dockershrink = "dockershrink.cli:main"
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.10.0",
+]
+
+[project.urls]
+homepage = "https://github.com/duaraghav8/dockershrink"
+repository = "https://github.com/duaraghav8/dockershrink"
+documentation = "https://github.com/duaraghav8/dockershrink#readme"
