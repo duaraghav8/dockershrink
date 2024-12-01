@@ -19,7 +19,10 @@ VERSION = "0.1.0"
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Dockershrink optimizes your NodeJS Docker images."
+        description="""Dockershrink is a CLI tool that helps you reduce the size of your NodeJS Docker images.
+It applies best practices and optimizations to your Dockerfile and related code files.
+The CLI is the primary way to interact with Dockershrink's functionality.
+""",
     )
 
     # Subcommands
@@ -28,37 +31,43 @@ def main():
 
     # Version subcommand
     version_parser = subparsers.add_parser(
-        "version", help="Show the version of Dockershrink"
+        "version", help="Display Dockershrink Version Information"
     )
     version_parser.set_defaults(func=version_command)
 
     # Optimize subcommand
     optimize_parser = subparsers.add_parser(
-        "optimize", help="Optimize your Docker project"
+        "optimize", help="Optimize your NodeJS Docker project to reduce image size"
     )
     optimize_parser.add_argument(
-        "--dockerfile", type=str, default="Dockerfile", help="Path to the Dockerfile"
+        "--dockerfile",
+        type=str,
+        default="Dockerfile",
+        help="Path to Dockerfile (default: ./Dockerfile)",
     )
     optimize_parser.add_argument(
         "--dockerignore",
         type=str,
         default=".dockerignore",
-        help="Path to the .dockerignore file",
+        help="Path to .dockerignore (default: ./.dockerignore)",
     )
     optimize_parser.add_argument(
-        "--package-json", type=str, default=None, help="Path to the package.json file"
+        "--package-json",
+        type=str,
+        default=None,
+        help="Path to package.json (default: ./package.json or ./src/package.json)",
     )
     optimize_parser.add_argument(
         "--output-dir",
         type=str,
         default="dockershrink.optimized",
-        help="Directory to save optimized files",
+        help="Directory to save optimized files (default: ./dockershrink.optimized)",
     )
     optimize_parser.add_argument(
         "--openai-api-key",
         type=str,
         default=None,
-        help="OpenAI API key for AI-powered optimizations",
+        help="Your OpenAI API key to enable Generative AI features (alternatively, set the OPENAI_API_KEY environment variable)",
     )
     optimize_parser.set_defaults(func=optimize_command)
 
