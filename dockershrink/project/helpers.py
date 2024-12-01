@@ -1,6 +1,6 @@
 from typing import Optional, Dict, List
 
-from app.service.dockerfile import (
+from dockershrink.dockerfile import (
     Dockerfile,
     ShellCommand,
     CopyLayer,
@@ -8,7 +8,7 @@ from app.service.dockerfile import (
     LayerCommand,
     Image,
 )
-from app.service.package_json import PackageJSON
+from dockershrink.package_json import PackageJSON
 
 NODE_ENV_PRODUCTION = "production"
 

@@ -3,11 +3,11 @@ from typing import List
 
 import openai
 
-from app.service import dockerfile as df
-from app.service.ai import AIService
-from app.service.dockerignore import Dockerignore
-from app.service.package_json import PackageJSON
-from app.utils.log import LOG
+from dockershrink import dockerfile as df
+from dockershrink.ai import AIService
+from dockershrink.dockerignore import Dockerignore
+from dockershrink.package_json import PackageJSON
+from dockershrink.utils.log import LOG
 
 from . import helpers
 from .optimization_action import OptimizationAction
