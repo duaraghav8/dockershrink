@@ -3,14 +3,16 @@ import json
 import sys
 import os
 from pathlib import Path
-from pickletools import optimize
 
 import openai
 
 import dockershrink
 from openai import OpenAI
 
-from dockershrink import Dockerfile
+from colorama import init, Fore, Style
+
+# Initialize colorama
+init(autoreset=True)
 
 VERSION = "0.0.1"  # Update this as needed
 
@@ -68,7 +70,7 @@ def main():
 
 
 def version_command(args):
-    print(f"Dockershrink CLI version {VERSION}")
+    print(f"{Fore.CYAN}Dockershrink CLI version {VERSION}")
 
 
 def optimize_command(args):
@@ -84,10 +86,10 @@ def optimize_command(args):
 
     dockerfile_path = Path(args.dockerfile)
     if not dockerfile_path.is_file():
-        print(f"Error: Dockerfile not found at {dockerfile_path}")
+        print(f"{Fore.RED}Error: Dockerfile not found at {dockerfile_path}")
         sys.exit(1)
 
-    print(f"Using {dockerfile_path}")
+    print(f"{Fore.GREEN}Using {dockerfile_path}")
     with open(dockerfile_path, "r") as f:
         dockerfile_content = f.read()
         dockerfile = dockershrink.Dockerfile(dockerfile_content)
@@ -95,11 +97,11 @@ def optimize_command(args):
     # Read optional .dockerignore
     dockerignore_path = Path(args.dockerignore)
     if dockerignore_path.is_file():
-        print(f"Using {dockerignore_path}")
+        print(f"{Fore.GREEN}Using {dockerignore_path}")
         with open(dockerignore_path, "r") as f:
             dockerignore_content = f.read()
     else:
-        print(f"No .dockerignore found at {dockerignore_path}")
+        print(f"{Fore.YELLOW}No .dockerignore found at {dockerignore_path}")
         dockerignore_content = None
 
     dockerignore = dockershrink.Dockerignore(dockerignore_content)
@@ -115,24 +117,26 @@ def optimize_command(args):
 
     for path in package_json_paths:
         if path.is_file():
-            print(f"Using {path}")
+            print(f"{Fore.GREEN}Using {path}")
 
             try:
                 with open(path, "r") as f:
                     package_json_data = json.load(f)
             except json.JSONDecodeError as e:
-                print(f"Error decoding JSON from {path}: {e}")
+                print(f"{Fore.RED}Error decoding JSON from {path}: {e}")
                 sys.exit(1)
 
             if not type(package_json_data) == dict:
-                print(f"{path}: expected dict, received {type(package_json_data)}")
+                print(
+                    f"{Fore.RED}{path}: expected dict, received {type(package_json_data)}"
+                )
                 sys.exit(1)
 
             package_json = dockershrink.PackageJSON(package_json_data)
 
             break
         else:
-            print("No package.json found in the default paths")
+            print(f"{Fore.YELLOW}No package.json found in the default paths")
 
     project = dockershrink.Project(
         dockerfile=dockerfile,
@@ -143,13 +147,15 @@ def optimize_command(args):
     try:
         response = project.optimize_docker_image(ai_service)
     except openai.APIStatusError as e:
-        print(f"Request to OpenAI API failed with Status {e.status_code}: {e.body}")
+        print(
+            f"{Fore.RED}Error: Request to OpenAI API failed with Status {e.status_code}: {e.body}"
+        )
         sys.exit(1)
     except openai.APIError as e:
-        print(f"Request to OpenAI API failed: {e}")
+        print(f"{Fore.RED}Error: Request to OpenAI API failed: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"An error occured while optimizing the project: {e}")
+        print(f"{Fore.RED}An error occured while optimizing the project: {e}")
         sys.exit(1)
 
     actions_taken = response["actions_taken"]
@@ -164,23 +170,27 @@ def optimize_command(args):
         output_path = output_dir / filename
         with open(output_path, "w") as f:
             f.write(content)
-        print(f"Optimized {filename} saved to {output_path}")
+        print(f"{Fore.GREEN}Optimized {filename} saved to {output_path}")
 
     # Display actions taken and recommendations
     if actions_taken:
-        print("\nActions Taken:")
+        print(f"\n{Style.BRIGHT}Actions Taken:")
         for action in actions_taken:
             print(
-                f"- {action['title']} ({action['filename']}): {action['description']}"
+                f"{Fore.BLUE}- {action['title']} ({action['filename']}): {action['description']}"
             )
 
     if recommendations:
-        print("\nRecommendations:")
+        print(f"\n{Style.BRIGHT}Recommendations:")
         for rec in recommendations:
-            print(f"- {rec['title']} ({rec['filename']}): {rec['description']}")
+            print(
+                f"{Fore.CYAN}- {rec['title']} ({rec['filename']}): {rec['description']}"
+            )
 
     if not actions_taken and not recommendations:
-        print("Docker image is already optimized; no further actions were taken.")
+        print(
+            f"{Fore.GREEN}Docker image is already optimized; no further actions were taken."
+        )
 
 
 if __name__ == "__main__":
