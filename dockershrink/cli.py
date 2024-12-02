@@ -174,25 +174,24 @@ def optimize_command(args):
     recommendations = response["recommendations"]
     optimized_project = response["modified_project"]
 
-    # Save optimized files
-    output_dir = Path(args.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if actions_taken:
+        # Save optimized files
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-    for filename, content in optimized_project.items():
-        output_path = output_dir / filename
-        with open(output_path, "w") as f:
-            if filename == "package.json":
-                # package.json content is a python dict, must be written
-                # as json string
-                json.dump(content, f, indent=4)
-            else:
-                f.write(content)
+        for filename, content in optimized_project.items():
+            output_path = output_dir / filename
+            with open(output_path, "w") as f:
+                if filename == "package.json":
+                    # package.json content is a python dict, must be written
+                    # as json string
+                    json.dump(content, f, indent=4)
+                else:
+                    f.write(content)
 
-    if len(optimized_project.items()) > 0:
         print(f"{Fore.GREEN}* Optimized files saved to {output_dir}/")
 
-    # Display actions taken and recommendations
-    if actions_taken:
+        # Display actions taken
         print(
             f"{os.linesep}{Style.BRIGHT}============ {len(actions_taken)} Action(s) Taken ============"
         )
@@ -205,6 +204,7 @@ def optimize_command(args):
             )
             print("---------------------------------")
 
+    # Display Recommendations
     if recommendations:
         print(
             f"{os.linesep*2}{Style.BRIGHT}============ {len(recommendations)} Recommendation(s) ============"
@@ -220,7 +220,7 @@ def optimize_command(args):
 
     if not actions_taken and not recommendations:
         print(
-            f"{Fore.GREEN}{Style.BRIGHT}Docker image is already optimized; no further actions were taken."
+            f"{Fore.GREEN}{Style.BRIGHT}Docker image is already optimized, no further actions were taken."
         )
 
 
