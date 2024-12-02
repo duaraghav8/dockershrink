@@ -181,7 +181,13 @@ def optimize_command(args):
     for filename, content in optimized_project.items():
         output_path = output_dir / filename
         with open(output_path, "w") as f:
-            f.write(content)
+            if filename == "package.json":
+                # package.json content is a python dict, must be written
+                # as json string
+                json.dump(content, f, indent=4)
+            else:
+                f.write(content)
+
         print(f"{Fore.GREEN}{Style.DIM}* Optimized {filename} saved to {output_path}")
 
     # Display actions taken and recommendations
