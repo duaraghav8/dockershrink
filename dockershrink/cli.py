@@ -95,7 +95,7 @@ def optimize_command(args):
 
     dockerfile_path = Path(args.dockerfile)
     if not dockerfile_path.is_file():
-        print(f"{Fore.RED}{Style.BRIGHT}Error: Dockerfile not found")
+        print(f"{Fore.RED}Error: Dockerfile not found")
         sys.exit(1)
 
     print(f"{Fore.LIGHTGREEN_EX}{Style.DIM}* Reading {dockerfile_path}")
@@ -134,12 +134,12 @@ def optimize_command(args):
             with open(path, "r") as f:
                 package_json_data = json.load(f)
         except json.JSONDecodeError as e:
-            print(f"{Fore.RED}{Style.BRIGHT}Error decoding JSON from {path}: {e}")
+            print(f"{Fore.RED}Error decoding JSON from {path}: {e}")
             sys.exit(1)
 
         if not type(package_json_data) == dict:
             print(
-                f"{Fore.RED}{Style.BRIGHT}Error: {path}: expected dict, received {type(package_json_data)}"
+                f"{Fore.RED}Error: {path}: expected dict, received {type(package_json_data)}"
             )
             sys.exit(1)
 
@@ -160,14 +160,14 @@ def optimize_command(args):
         response = project.optimize_docker_image(ai_service)
     except openai.APIStatusError as e:
         print(
-            f"{Fore.RED}{Style.BRIGHT}Error: Request to OpenAI API failed with Status {e.status_code}: {e.body}"
+            f"{Fore.RED}Error: Request to OpenAI API failed with Status {e.status_code}: {e.body}"
         )
         sys.exit(1)
     except openai.APIError as e:
-        print(f"{Fore.RED}{Style.BRIGHT}Error: Request to OpenAI API failed: {e}")
+        print(f"{Fore.RED}Error: Request to OpenAI API failed: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"{Fore.RED}{Style.BRIGHT}Error: Failed to optimize the project: {e}")
+        print(f"{Fore.RED}Error: Failed to optimize the project: {e}")
         sys.exit(1)
 
     actions_taken = response["actions_taken"]
