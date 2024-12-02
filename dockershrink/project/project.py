@@ -510,6 +510,5 @@ Instead, a fresh installation of only production dependencies here ensures that 
             "modified_project": {
                 "Dockerfile": self.dockerfile.raw(),
                 ".dockerignore": self.dockerignore.raw(),
-                "package.json": self.package_json.raw(),
             },
         }
