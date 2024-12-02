@@ -1,16 +1,17 @@
 import logging
 import json
 import datetime
+import os
 
 
 class CustomLogger:
-    def __init__(self, name="app"):
+    def __init__(self, name: str, level: str):
         self.logger = logging.getLogger(name)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(level)
 
         # Create console handler and set level to debug
         ch = logging.StreamHandler()
-        ch.setLevel(logging.DEBUG)
+        ch.setLevel(level)
 
         # Create formatter
         formatter = logging.Formatter("%(message)s")
@@ -45,4 +46,6 @@ class CustomLogger:
         self._log(logging.DEBUG, msg, data)
 
 
-LOG = CustomLogger()
+LOG = CustomLogger(
+    name="app", level=os.environ.get("DOCKERSHRINK_CLI_LOGLEVEL", "WARNING")
+)
