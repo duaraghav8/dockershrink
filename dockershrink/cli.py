@@ -98,7 +98,7 @@ def optimize_command(args):
         print(f"{Fore.RED}{Style.BRIGHT}Error: Dockerfile not found")
         sys.exit(1)
 
-    print(f"{Fore.LIGHTMAGENTA_EX}{Style.DIM}* Reading {dockerfile_path}")
+    print(f"{Fore.LIGHTGREEN_EX}{Style.DIM}* Reading {dockerfile_path}")
     with open(dockerfile_path, "r") as f:
         dockerfile_content = f.read()
         dockerfile = dockershrink.Dockerfile(dockerfile_content)
@@ -106,11 +106,11 @@ def optimize_command(args):
     # Read optional .dockerignore
     dockerignore_path = Path(args.dockerignore)
     if dockerignore_path.is_file():
-        print(f"{Fore.LIGHTMAGENTA_EX}{Style.DIM}* Reading {dockerignore_path}")
+        print(f"{Fore.LIGHTGREEN_EX}{Style.DIM}* Reading {dockerignore_path}")
         with open(dockerignore_path, "r") as f:
             dockerignore_content = f.read()
     else:
-        print(f"{Fore.YELLOW}No .dockerignore file found")
+        print(f"{Fore.YELLOW}{Style.DIM}* No .dockerignore file found")
         dockerignore_content = None
 
     dockerignore = dockershrink.Dockerignore(dockerignore_content)
@@ -128,7 +128,7 @@ def optimize_command(args):
         if not path.is_file():
             continue
 
-        print(f"{Fore.LIGHTMAGENTA_EX}{Style.DIM}* Reading {path}")
+        print(f"{Fore.LIGHTGREEN_EX}{Style.DIM}* Reading {path}")
 
         try:
             with open(path, "r") as f:
@@ -146,7 +146,7 @@ def optimize_command(args):
         package_json = dockershrink.PackageJSON(package_json_data)
 
     if package_json is None:
-        print(f"{Fore.YELLOW}No package.json found in the default paths")
+        print(f"{Fore.YELLOW}{Style.DIM}* No package.json found in the default paths")
 
     print(os.linesep)
 
@@ -188,22 +188,33 @@ def optimize_command(args):
             else:
                 f.write(content)
 
-        print(f"{Fore.GREEN}{Style.DIM}* Optimized {filename} saved to {output_path}")
+    if len(optimized_project.items()) > 0:
+        print(f"{Fore.GREEN}* Optimized files saved to {output_dir}/")
 
     # Display actions taken and recommendations
     if actions_taken:
-        print(f"{os.linesep}{Style.BRIGHT}============Actions Taken============")
+        print(
+            f"{os.linesep}{Style.BRIGHT}============ {len(actions_taken)} Action(s) Taken ============"
+        )
         for action in actions_taken:
+            print(f"{Fore.LIGHTBLACK_EX}File: " + f"{Fore.BLUE}{action['filename']}")
+            print(f"{Fore.LIGHTBLACK_EX}Title: " + f"{Fore.GREEN}{action['title']}")
             print(
-                f"{Fore.BLUE}- {action['title']} ({action['filename']}): {action['description']}"
+                f"{Fore.LIGHTBLACK_EX}Description: "
+                + f"{Fore.WHITE}{action['description']}"
             )
             print("---------------------------------")
 
     if recommendations:
-        print(f"{os.linesep}{Style.BRIGHT}============Recommendations============")
+        print(
+            f"{os.linesep*2}{Style.BRIGHT}============ {len(recommendations)} Recommendation(s) ============"
+        )
         for rec in recommendations:
+            print(f"{Fore.LIGHTBLACK_EX}File: " + f"{Fore.BLUE}{rec['filename']}")
+            print(f"{Fore.LIGHTBLACK_EX}Title: " + f"{Fore.GREEN}{rec['title']}")
             print(
-                f"{Fore.CYAN}- {rec['title']} ({rec['filename']}): {rec['description']}"
+                f"{Fore.LIGHTBLACK_EX}Description: "
+                + f"{Fore.WHITE}{rec['description']}"
             )
             print("---------------------------------")
 
