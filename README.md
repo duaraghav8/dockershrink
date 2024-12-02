@@ -1,5 +1,110 @@
 # DockerShrink
 
+![Typical interaction with dockershrink CLI](./assets/images/dockershrink-how-it-works.gif)
+
+**Dockershrink is an Open Source Commandline Tool that helps you reduce the size of your Docker images.**
+
+It combines the power of traditional Rule-based analysis with Generative AI to apply state-of-the-art optimizations to your Image configurations :brain:
+
+Dockershrink can automatically apply techniques like Multi-Stage builds, switching to Lighter base images like alpine and running dependency checks. PLUS a lot more is on the roadmap :rocket:
+
+Currently, the tool only works for [NodeJS](https://nodejs.org/en) applications.
+
+
+> [!IMPORTANT]
+> Dockershrink is **BETA** software.
+> 
+> We would love to hear what you think! You can provide your feedback by [Creating an Issue](https://github.com/duaraghav8/dockershrink-cli/issues) in this repository.
+
+
+## Why does dockershrink exist?
+Every org using containers in development or production environments understands the pain of managing hundreds or even thousands of BLOATED Docker images in their infrastructure.
+
+But not everyone realizes that by just implementing some basic techniques, they can reduce the size of a 1GB Docker image down to **as little as 100 MB**!
+
+([I also made a video on how to do this.](https://youtu.be/vHBHxQfK6cM))
+
+Imagine the costs saved in storage & data transfer, decrease in build times AND the productivity gains for developers :exploding_head:
+
+Dockershrink aims to auomatically apply advanced optimization techniques such as Multistage builds, Light base images, removing unused dependencies, etc. so that developers & devops engineers don't have to waste time doing so and everybody still reaps the benefits!
+
+You're welcome :wink:
+
+
+
+## How it works
+Currently, the CLI is the primary way to interact with dockershrink.
+
+When you invoke it on your project, it analyzes code files.
+
+Currently, the files Dockershrink looks for are:
+
+:point_right: `Dockerfile` (Required)
+
+:point_right: `package.json` (Optional)
+
+:point_right: `.dockerignore` (Optional, created if doesn't already exist)
+
+It then creates a new directory (default name: `dockershrink.optimized`) inside the project, which contains modified versions of your files that will result in a smaller Docker Image.
+
+The CLI outputs a list of actions it took over your files.
+
+It may also include suggestions on further improvements you could make.
+
+
+## Installation
+**TODO**
+
+
+## Usage
+
+Navigate into the root directory of one of your Node.js projects and run a simple command:
+
+```bash
+dockershrink optimize
+```
+
+Dockershrink will create a new directory with the optimized files and output the actions taken and (maybe) some more suggestions.
+
+For more information on the `optimize` command, run
+```bash
+dockershrink help optimize
+```
+
+
+### Using AI Features
+
+> [!NOTE]
+> Using AI features is optional, but **highly recommended** for more customized and powerful optimizations.
+>
+> Currently, you need to supply your own openai api key, so even though Dockershrink itself is free, openai usage might incur some cost for you.
+
+By default, dockershrink only runs rule-based analysis to optimize your image definition.
+
+If you want to enable AI, you must supply your own [OpenAI API Key](https://openai.com/index/openai-api/).
+
+```bash
+dockershrink optimize --openai-api-key <your openai api key>
+
+# Alternatively, you can supply the key as an environment variable
+export OPENAI_API_KEY=<your openai api key>
+dockershrink optimize
+```
+
+> [!NOTE]
+> Dockershrink does not store your OpenAI API Key.
+>
+> So you must provide your key every time you want "optimize" to enable AI features.
+
+### Default file paths
+By default, the CLI looks for the files to optimize in the current directory.
+
+You can also specify the paths to all files using options (see `dockershrink help optimize` for the available options).
+
+
+## Development
+
+
 ## Development environment setup
 
 1. Run a new PostgreSQL at localhost:5432 & PGAdmin (optional)
