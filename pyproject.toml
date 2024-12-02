@@ -38,3 +38,6 @@ dev = [
 homepage = "https://github.com/duaraghav8/dockershrink"
 repository = "https://github.com/duaraghav8/dockershrink"
 documentation = "https://github.com/duaraghav8/dockershrink#readme"
+
+[tool.setuptools.packages.find]
+include = ["dockershrink"]
