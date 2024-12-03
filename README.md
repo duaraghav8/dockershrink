@@ -109,6 +109,7 @@ You can also specify the paths to all files using options (see `dockershrink opt
 ## Development
 
 > [!NOTE]
+> This section is for authors and contributors.
 > If you're simply interested in using Dockershrink, you can skip this section.
 
 1. Clone this repository
@@ -138,3 +139,28 @@ black .
 ```bash
 pip freeze > requirements.txt
 ```
+
+### Release
+Once all code changes have been made for the next release, upgrade the version in [pyproject.toml](./pyproject.toml) and [cli.py](./dockershrink/cli.py).
+
+Then proceed to follow these steps to release new dockershrink version on PyPI:
+
+1. Build dockershrink from source
+```bash
+python -m build
+```
+2. Upload to testpypi
+```bash
+twine upload --repository testpypi dist/*
+```
+3. The new version of the package should now be available in [TestPyPI](https://test.pypi.org/project/dockershrink/).
+4. Try installing the test package
+```bash
+pip install --index-url https://test.pypi.org/simple/ --no-deps dockershrink
+```
+5. Upload the package to PyPI
+```bash
+twine upload dist/*
+```
+6. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
+
