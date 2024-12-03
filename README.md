@@ -168,3 +168,13 @@ twine upload dist/*
 ```
 6. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
 
+
+### (Desired) ROADMAP
+Here is a list of things I'd like to add to dockershrink, hopefully with help from the community!
+
+1. Enable installation via brew (`brew install dockershrink`)
+2. Evaluate porting the whole codebase to Golang for easier binary distribution
+3. Resolve the `TODO`s inside the codebase
+4. Gather community feedback and make dockershrink rule engine more mature.
+5. Improve LLM Prompts
+6. Add more AI analysis rules
