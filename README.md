@@ -183,3 +183,6 @@ Here is a list of things I'd like to add to dockershrink, hopefully with help fr
 5. Improve LLM Prompts
 6. Add more AI analysis rules
 7. Improve code quality (not required if we decide to port code to Go)
+8. Add support for other programming languages (especially Python, Golang
+9. Using dockershrink as a library
+10. Allow dockershrink to be used in CI/CD pipelines
