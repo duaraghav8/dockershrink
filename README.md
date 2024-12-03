@@ -146,7 +146,9 @@ pip freeze > requirements.txt
 ```
 
 ### Release :rocket:
-Once all code changes have been made for the next release, upgrade the version in [pyproject.toml](./pyproject.toml) and [cli.py](./dockershrink/cli.py).
+Once all code changes have been made for the next release:
+- Upgrade the version in [pyproject.toml](./pyproject.toml) and [cli.py](./dockershrink/cli.py)
+- Make sure that dependencies and their versions are updated in [requirements.txt](./requirements.txt) and pyproject.toml
 
 Then proceed to follow these steps to release new dockershrink version on PyPI:
 
@@ -163,11 +165,12 @@ twine upload --repository testpypi dist/*
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --no-deps dockershrink
 ```
-5. Upload the package to PyPI
+5. [Create a new release](https://github.com/duaraghav8/dockershrink/releases/new) in this repository
+6. Upload the package to PyPI
 ```bash
 twine upload dist/*
 ```
-6. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
+7. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/) 
 
 
 ### (Desired) ROADMAP :world_map:
