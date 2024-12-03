@@ -55,7 +55,18 @@ It may also include suggestions on further improvements you could make.
 
 
 ## Installation
-**TODO**
+You can install dockershrink using PIP or PIPX
+```bash
+$ pip install dockershrink
+```
+```bash
+$ pipx install dockershrink
+```
+
+If you're using MacOS or Linux, you can also use Homebrew to install dockershrink
+```bash
+brew install dockershrink
+```
 
 
 ## Usage
