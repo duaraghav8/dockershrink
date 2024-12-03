@@ -63,12 +63,6 @@ $ pip install dockershrink
 $ pipx install dockershrink
 ```
 
-If you're using MacOS or Linux, you can also use Homebrew to install dockershrink
-```bash
-brew install dockershrink
-```
-
-
 ## Usage
 
 Navigate into the root directory of one of your Node.js projects and invoke dockershrink with the `optimize` command:

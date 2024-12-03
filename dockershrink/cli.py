@@ -14,7 +14,7 @@ from colorama import init, Fore, Style
 # Initialize colorama
 init(autoreset=True)
 
-VERSION = "0.1.2"
+VERSION = "0.1.3"
 
 
 def main():
