@@ -16,7 +16,7 @@ Currently, the tool only supports [NodeJS](https://nodejs.org/en) applications.
 > [!IMPORTANT]
 > Dockershrink is **BETA** software.
 > 
-> We would love to hear what you think! You can provide your feedback by [creating an Issue](https://github.com/duaraghav8/dockershrink/issues) in this repository.
+> You can provide your feedback by [creating an Issue](https://github.com/duaraghav8/dockershrink/issues) in this repository.
 
 
 ## Why does dockershrink exist?
@@ -35,9 +35,7 @@ You're welcome :wink:
 
 
 ## How it works
-Currently, the CLI is the primary way to interact with dockershrink.
-
-When you invoke it on your project, it analyzes code files.
+When you invoke the dockershrink CLI on your project, it analyzes code files.
 
 Dockershrink looks for the following files:
 
@@ -45,9 +43,9 @@ Dockershrink looks for the following files:
 
 :point_right: `package.json` (Optional)
 
-:point_right: `.dockerignore` (Optional, created if doesn't already exist)
+:point_right: `.dockerignore` (Optional, created if it doesn't already exist)
 
-It then creates a new directory (default: `dockershrink.optimized`) inside the project, which contains modified versions of your files that will result in a smaller Docker Image.
+It then creates a new directory (default: `dockershrink.optimized`) inside the project, which contains modified versions of your configuration files that will result in a smaller Docker Image.
 
 The CLI outputs a list of actions it took over your files.
 
@@ -103,6 +101,7 @@ dockershrink optimize
 > Dockershrink does not store your OpenAI API Key.
 >
 > So you must provide your key every time you want "optimize" to use AI features.
+> This is to avoid any unexpected costs.
 
 
 ### Default file paths
