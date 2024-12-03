@@ -20,10 +20,10 @@ authors = [
     {name = "Raghav Dua", email = "dockershrink@gmail.com"}
 ]
 dependencies = [
-    "colorama >=0.4.4",
-    "openai >=1.47.0",
-    "dockerfile >=3.3.1",
-    "bashlex >=0.18",
+    "colorama ==0.4.4",
+    "openai ==1.55.3",
+    "dockerfile ==3.3.1",
+    "bashlex ==0.18",
 ]
 
 [project.scripts]
