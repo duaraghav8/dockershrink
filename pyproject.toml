@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dockershrink"
-version = "0.1.0"
+version = "0.1.1"
 description = "Commandline tool to reduce the size of your Docker Images"
 readme = "README.md"
 requires-python = ">=3.6"
