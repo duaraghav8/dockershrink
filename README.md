@@ -179,3 +179,4 @@ Here is a list of things I'd like to add to dockershrink, hopefully with help fr
 4. Gather community feedback and make dockershrink rule engine more mature.
 5. Improve LLM Prompts
 6. Add more AI analysis rules
+7. Improve code quality (not required if we decide to port code to Go)
