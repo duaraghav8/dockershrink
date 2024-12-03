@@ -109,8 +109,9 @@ By default, the CLI looks for the files to optimize in the current directory.
 
 You can also specify the paths to all files using options (see `dockershrink optimize --help` for the available options).
 
+---
 
-## Development
+## Development :computer:
 
 > [!NOTE]
 > This section is for authors and contributors.
@@ -144,7 +145,7 @@ black .
 pip freeze > requirements.txt
 ```
 
-### Release
+### Release :rocket:
 Once all code changes have been made for the next release, upgrade the version in [pyproject.toml](./pyproject.toml) and [cli.py](./dockershrink/cli.py).
 
 Then proceed to follow these steps to release new dockershrink version on PyPI:
@@ -169,7 +170,7 @@ twine upload dist/*
 6. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
 
 
-### (Desired) ROADMAP
+### (Desired) ROADMAP :world_map:
 Here is a list of things I'd like to add to dockershrink, hopefully with help from the community!
 
 1. Enable installation via brew (`brew install dockershrink`)
