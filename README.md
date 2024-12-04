@@ -22,13 +22,18 @@ Currently, the tool only supports [NodeJS](https://nodejs.org/en) applications.
 ## Why does dockershrink exist?
 Every org using containers in development or production environments understands the pain of managing hundreds or even thousands of bloated Docker images in their infrastructure.
 
+High data storage and transfer costs, long build times, underprodctive developers - we've seen it all.
+
+The issue becomes even more painful and costly with interpreted languages such as Nodejs & Python.
+Apps written in these languages need to pack the interpreters and all their dependencies inside their container images, significantly increasing their size.
+
 But not everyone realizes that by just implementing some basic techniques, they can reduce the size of a 1GB Docker image down to **as little as 100 MB**!
 
 ([I also made a video on how to do this.](https://youtu.be/vHBHxQfK6cM))
 
 Imagine the costs saved in storage & data transfer, decrease in build times AND the productivity gains for developers :exploding_head:
 
-Dockershrink aims to auomatically apply advanced optimization techniques so engineers don't have to waste time on it and the organization still reaps the benefits!
+Dockershrink aims to automatically apply advanced optimization techniques so engineers don't have to waste time on it and the organization still saves :moneybag:!
 
 You're welcome :wink:
 
