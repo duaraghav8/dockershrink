@@ -191,3 +191,4 @@ Here is a list of things I'd like to add to dockershrink, hopefully with help fr
 8. Add support for other programming languages (especially Python, Golang
 9. Using dockershrink as a library
 10. Allow dockershrink to be used in CI/CD pipelines
+11. Support multiple LLMs and let the users select the LLM they want to use
