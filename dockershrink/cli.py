@@ -2,6 +2,7 @@ import argparse
 import json
 import sys
 import os
+import traceback
 from pathlib import Path
 
 import openai
@@ -68,6 +69,12 @@ The CLI is the primary way to interact with Dockershrink's functionality.
         type=str,
         default=None,
         help="Your OpenAI API key to enable Generative AI features (alternatively, set the OPENAI_API_KEY environment variable)",
+    )
+    optimize_parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print complete stack trace in case of failures",
     )
     optimize_parser.set_defaults(func=optimize_command)
 
@@ -162,12 +169,18 @@ def optimize_command(args):
         print(
             f"{Fore.RED}Error: Request to OpenAI API failed with Status {e.status_code}: {e.body}"
         )
+        if args.verbose:
+            print(os.linesep + traceback.format_exc())
         sys.exit(1)
     except openai.APIError as e:
         print(f"{Fore.RED}Error: Request to OpenAI API failed: {e}")
+        if args.verbose:
+            print(os.linesep + traceback.format_exc())
         sys.exit(1)
     except Exception as e:
         print(f"{Fore.RED}Error: Failed to optimize the project: {e}")
+        if args.verbose:
+            print(os.linesep + traceback.format_exc())
         sys.exit(1)
 
     actions_taken = response["actions_taken"]

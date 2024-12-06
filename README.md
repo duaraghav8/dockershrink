@@ -82,6 +82,18 @@ For detailed information about the `optimize` command, run
 dockershrink optimize --help
 ```
 
+You can also use the `--verbose` option to get stack traces in case of failures:
+
+```bash
+$ dockershrink optimize --verbose
+```
+
+To enable `DEBUG` logs, you can set the environment variable
+
+```bash
+export DOCKERSHRINK_CLI_LOGLEVEL=DEBUG
+dockershrink optimize
+```
 
 ### Using AI Features
 
