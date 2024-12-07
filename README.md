@@ -190,19 +190,3 @@ pip install --index-url https://test.pypi.org/simple/ --no-deps dockershrink
 twine upload dist/*
 ```
 7. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/) 
-
-
-### (Desired) ROADMAP :world_map:
-Here is a list of things I'd like to add to dockershrink, hopefully with help from the community!
-
-1. Enable installation via brew (`brew install dockershrink`)
-2. Evaluate porting the whole codebase to Golang for easier binary distribution
-3. Resolve the `TODO`s inside the codebase
-4. Gather community feedback and make dockershrink rule engine more mature.
-5. Improve LLM Prompts
-6. Add more AI analysis rules
-7. Improve code quality (not required if we decide to port code to Go)
-8. Add support for other programming languages (especially Python, Golang
-9. Using dockershrink as a library
-10. Allow dockershrink to be used in CI/CD pipelines
-11. Support multiple LLMs and let the users select the LLM they want to use
