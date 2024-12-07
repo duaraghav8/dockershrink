@@ -1,5 +1,7 @@
 # DockerShrink
 
+[Join our Slack](https://join.slack.com/t/dockershrink/shared_invite/zt-2vwkeqw0k-JXmHBNCQnG4X1BBf1t3xyg)
+
 **Dockershrink is an AI-powered Commandline Tool that helps you reduce the size of your Docker images.**
 
 
