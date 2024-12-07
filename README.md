@@ -1,12 +1,12 @@
 # DockerShrink
 
-[Join our Slack](https://join.slack.com/t/dockershrink/shared_invite/zt-2vwkeqw0k-JXmHBNCQnG4X1BBf1t3xyg)
+[Join us on Slack](https://join.slack.com/t/dockershrink/shared_invite/zt-2vwkeqw0k-JXmHBNCQnG4X1BBf1t3xyg) **|** [Vote for Feature Requests](https://github.com/duaraghav8/dockershrink/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request)
 
-**Dockershrink is an AI-powered Commandline Tool that helps you reduce the size of your Docker images.**
+
+Dockershrink is an AI-powered Commandline Tool that helps you reduce the size of your Docker images
 
 
 ![Typical interaction with dockershrink CLI](./assets/images/dockershrink-how-it-works.gif)
-
 
 It combines the power of traditional Rule-based analysis with Generative AI to apply state-of-the-art optimizations to your Image configurations :brain:
 
