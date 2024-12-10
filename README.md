@@ -184,9 +184,14 @@ twine upload --repository testpypi dist/*
 ```bash
 pip install --index-url https://test.pypi.org/simple/ --no-deps dockershrink
 ```
-5. [Create a new release](https://github.com/duaraghav8/dockershrink/releases/new) in this repository
-6. Upload the package to PyPI
+5. Create a new Tag and push it
+```bash
+git tag -a <VERSION> -m "Tag version <VERSION>"
+git push origin <VERSION>
+```
+6. [Create a new release](https://github.com/duaraghav8/dockershrink/releases/new) in this repository
+7. Upload the package to PyPI
 ```bash
 twine upload dist/*
 ```
-7. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/) 
+8. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
