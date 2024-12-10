@@ -244,6 +244,13 @@ This becomes the base image of the final image produced, reducing the size signi
                         if helpers.check_command_runs_depcheck_or_npm_check(shell_cmd):
                             return
 
+        if last_copy_layer is None:
+            # If there are no COPY layers that copy from build context OR
+            #  there are simply no COPY layers at all, then we don't need
+            #  to add depcheck because we assume that the user hasn't included
+            #  any package*json files and doesn't intend to download any deps.
+            return
+
         depcheck_layer: df.RunLayer = self.dockerfile.insert_after_layer(
             last_copy_layer, "RUN npx depcheck"
         )
