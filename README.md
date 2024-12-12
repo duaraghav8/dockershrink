@@ -68,6 +68,13 @@ $ pip install dockershrink
 $ pipx install dockershrink
 ```
 
+Alternatively, you can also install it using [Homebrew](https://brew.sh/):
+```bash
+brew install duaraghav8/tap/dockershrink
+```
+
+But you should prefer to use `pip` instead because installation via brew takes a lot longer and occupies significanlty more space on your system (see [this issue](https://github.com/duaraghav8/homebrew-dockershrink/issues/3))
+
 ## Usage
 
 Navigate into the root directory of one of your Node.js projects and invoke dockershrink with the `optimize` command:
@@ -195,3 +202,4 @@ git push origin <VERSION>
 twine upload dist/*
 ```
 8. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
+9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
