@@ -473,12 +473,33 @@ Instead, a fresh installation of only production dependencies here ensures that 
 
         :return:
         """
-        # Ensure that .dockerignore exists and contains the recommended
-        # files & directories
-        # TODO(p0): Add actions for creating and modifying .dockerignore in self._actions_taken
+        # Ensure that .dockerignore exists and contains the recommended entries
         if not self.dockerignore.exists():
             self.dockerignore.create()
-        self.dockerignore.add_if_not_present({"node_modules", "npm_debug.log", ".git"})
+            action = OptimizationAction(
+                rule="create-dockerignore",
+                filename=".dockerignore",
+                title="Created .dockerignore file",
+                description="Created a new .dockerignore file to exclude unnecessary files from the Docker build context.",
+            )
+            self._add_action_taken(action)
+
+        # Add recommended entries if not already present
+        entries = {"node_modules", "npm_debug.log", ".git"}
+        original_entries = set(
+            map(str.strip, self.dockerignore.raw().strip().splitlines())
+        )
+        to_be_added = entries - original_entries
+
+        if to_be_added:
+            self.dockerignore.add_if_not_present(entries)
+            action = OptimizationAction(
+                rule="update-dockerignore",
+                filename=".dockerignore",
+                title="Updated .dockerignore file",
+                description=f"Added the following entries to .dockerignore to exclude them from the Docker build context:\n{os.linesep.join(sorted(to_be_added))}",
+            )
+            self._add_action_taken(action)
 
         # We prefer to run the AI-powered rules first, then the rule engine.
         # Always run the deterministic checks AFTER the non-deterministic ones to get better results.
