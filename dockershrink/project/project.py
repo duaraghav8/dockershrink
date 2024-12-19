@@ -484,20 +484,14 @@ Instead, a fresh installation of only production dependencies here ensures that 
             )
             self._add_action_taken(action)
 
-        # Add recommended entries if not already present
         entries = {"node_modules", "npm_debug.log", ".git"}
-        original_entries = set(
-            map(str.strip, self.dockerignore.raw().strip().splitlines())
-        )
-        to_be_added = entries - original_entries
-
-        if to_be_added:
-            self.dockerignore.add_if_not_present(entries)
+        added = self.dockerignore.add_if_not_present(entries)
+        if added:
             action = OptimizationAction(
                 rule="update-dockerignore",
                 filename=".dockerignore",
                 title="Updated .dockerignore file",
-                description=f"Added the following entries to .dockerignore to exclude them from the Docker build context:\n{os.linesep.join(sorted(to_be_added))}",
+                description=f"Added the following entries to .dockerignore to exclude them from the Docker build context:\n{os.linesep.join(sorted(added))}",
             )
             self._add_action_taken(action)
 
