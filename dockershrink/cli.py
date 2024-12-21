@@ -4,7 +4,7 @@ import sys
 import os
 import traceback
 from pathlib import Path
-import openai
+from openai import OpenAI
 
 import dockershrink
 
@@ -174,6 +174,7 @@ def optimize_command(args):
 
     try:
         response = project.optimize_docker_image(ai_service)
+ 
     except (openai.APIStatusError, openai.APIError) as e:
         handle_api_error(e, args.verbose)
     except Exception as e:
