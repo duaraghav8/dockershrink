@@ -3,3 +3,4 @@ from .dockerignore import Dockerignore
 from .project import Project
 from .dockerfile import Dockerfile
 from .ai import AIService
+from .generator import Generator

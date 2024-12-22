@@ -97,3 +97,79 @@ commands: `{script["commands"]}`
         response = response.strip().strip("```").strip()
 
         return response
+    
+    def generate_dockerfile(self, package_json_analysis: Dict) -> str:
+        """Generate a Dockerfile with dependency validation"""
+        system_prompt = """You are an expert DevOps engineer specializing in Docker and NodeJS applications.
+        Generate an optimized multi-stage Dockerfile that:
+        - Uses alpine/slim base images
+        - Implements multi-stage builds
+        - Sets NODE_ENV=production
+        - Installs only production dependencies
+        - Runs 'npx depcheck' after installing dependencies to verify no unused packages
+        - Fails build if unused dependencies found
+        - Includes helpful comments"""
+
+        project_info = f"""
+        Package name: {package_json_analysis['name']}
+        Entry point: {package_json_analysis['main']}
+        Has build script: {package_json_analysis['has_build_script']}
+        Has start script: {package_json_analysis['has_start_script']}
+        Scripts available: {list(package_json_analysis['scripts'].keys())}
+        Dependencies: {list(package_json_analysis.get('dependencies', {}).keys())}
+        """
+
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": project_info,
+            },
+        ]
+        completion = self._client.chat.completions.create(
+            messages=messages,
+            model=openai_model,
+        )
+        response = completion.choices[0].message.content
+        response = response.strip().strip("```").strip()
+        return response
+    def generate_dockerignore(self, package_json_analysis: Dict) -> str:
+        """
+        Generate a .dockerignore file based on the analysis of package.json file.
+        """
+        system_prompt = """
+        You are an expert DevOps engineer specializing in Docker and NodeJS applications.
+        Generate a .dockerignore file for a NodeJS application that:
+        - Ignores unnecessary files and directories
+        - Optimizes the Docker build context
+        """
+        project_info = f"""
+        Package name: {package_json_analysis['name']}
+        Entry point: {package_json_analysis['main']}
+        Has build script: {package_json_analysis['has_build_script']}
+        Has start script: {package_json_analysis['has_start_script']}
+        Scripts available: {list(package_json_analysis['scripts'].keys())}
+        """
+
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": project_info,
+            },
+        ]
+        completion = self._client.chat.completions.create(
+            messages=messages,
+            model=openai_model,
+        )
+        response = completion.choices[0].message.content
+        response = response.strip().strip("```").strip()
+        return response
+    
+

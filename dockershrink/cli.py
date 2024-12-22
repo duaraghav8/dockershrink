@@ -126,7 +126,7 @@ def main():
     args = parser.parse_args()
     args.func(args)
 
-def version_command(args):
+def version_command():
     print(f"{Fore.CYAN}Dockershrink CLI version {VERSION}")
 
 def optimize_command(args):
