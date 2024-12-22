@@ -46,6 +46,7 @@ def add_common_arguments(parser):
 def setup_ai_service(args):
     """Initialize OpenAI client if API key is provided"""
     openai_api_key = args.openai_api_key or os.getenv("OPENAI_API_KEY")
+    
     if openai_api_key:
         return dockershrink.AIService(OpenAI(api_key=openai_api_key))
     return None
@@ -229,10 +230,11 @@ def generate_command(args):
     if not package_json:
         print(f"{Fore.RED}Error: package.json required for generate command")
         sys.exit(1)
+    analysis = package_json.analyze()
 
     try:
         generator = dockershrink.Generator(ai_service)
-        files = generator.generate_docker_files(package_json)
+        files = generator.generate_docker_files(analysis)
         
         # Save generated files
         output_dir = Path(args.output_dir)
