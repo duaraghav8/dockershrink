@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from openai import OpenAI
 
-openai_model = "gpt-4o"
+openai_model = "gpt-4o-2024-08-06"
 
 _multistage_system_prompt = """
 You are an expert software and DevOps engineer who specializes in Docker and NodeJS backend applications.
