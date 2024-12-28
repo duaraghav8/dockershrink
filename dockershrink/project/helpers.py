@@ -316,7 +316,3 @@ def get_node_alpine_equivalent_tag_for_image(image: Image) -> str:
         return f"{parts[0]}-{parts[1]}-slim"
 
     return "alpine"
-
-
-
-    

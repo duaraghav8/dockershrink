@@ -16,6 +16,7 @@ init(autoreset=True)
 
 VERSION = "0.1.4"
 
+
 def add_common_arguments(parser):
     """Add arguments shared between commands"""
     parser.add_argument(
@@ -43,13 +44,15 @@ def add_common_arguments(parser):
         help="Print complete stack trace in case of failures",
     )
 
+
 def setup_ai_service(args):
     """Initialize OpenAI client if API key is provided"""
     openai_api_key = args.openai_api_key or os.getenv("OPENAI_API_KEY")
-    
+
     if openai_api_key:
         return dockershrink.AIService(OpenAI(api_key=openai_api_key))
     return None
+
 
 def read_package_json(paths):
     """Read and parse package.json from given paths"""
@@ -69,6 +72,7 @@ def read_package_json(paths):
             sys.exit(1)
     return None
 
+
 def handle_api_error(e, verbose=False):
     """Handle OpenAI API errors"""
     if isinstance(e, openai.APIStatusError):
@@ -78,6 +82,7 @@ def handle_api_error(e, verbose=False):
     if verbose:
         print(os.linesep + traceback.format_exc())
     sys.exit(1)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -92,8 +97,7 @@ def main():
 
     # Optimize command
     optimize_parser = subparsers.add_parser(
-        "optimize", 
-        help="Optimize existing Dockerfile and related files"
+        "optimize", help="Optimize existing Dockerfile and related files"
     )
     optimize_parser.add_argument(
         "--dockerfile",
@@ -119,7 +123,7 @@ def main():
         - Optimized multi-stage Dockerfile
         - .dockerignore file
         - Build instructions
-        """
+        """,
     )
     add_common_arguments(generate_parser)
     generate_parser.set_defaults(func=generate_command)
@@ -127,8 +131,10 @@ def main():
     args = parser.parse_args()
     args.func(args)
 
+
 def version_command():
     print(f"{Fore.CYAN}Dockershrink CLI version {VERSION}")
+
 
 def optimize_command(args):
     ai_service = setup_ai_service(args)
@@ -156,10 +162,11 @@ def optimize_command(args):
     dockerignore = dockershrink.Dockerignore(dockerignore_content)
 
     # Read package.json
-    package_json_paths = [Path(args.package_json)] if args.package_json else [
-        Path("package.json"), 
-        Path("src/package.json")
-    ]
+    package_json_paths = (
+        [Path(args.package_json)]
+        if args.package_json
+        else [Path("package.json"), Path("src/package.json")]
+    )
     package_json = read_package_json(package_json_paths)
     if not package_json:
         print(f"{Fore.YELLOW}{Style.DIM}* No package.json found")
@@ -175,7 +182,7 @@ def optimize_command(args):
 
     try:
         response = project.optimize_docker_image(ai_service)
- 
+
     except (openai.APIStatusError, openai.APIError) as e:
         handle_api_error(e, args.verbose)
     except Exception as e:
@@ -219,13 +226,15 @@ def optimize_command(args):
     if not response["actions_taken"] and not response["recommendations"]:
         print(f"{Fore.GREEN}{Style.BRIGHT}Docker image is already optimized.")
 
+
 def generate_command(args):
     ai_service = setup_ai_service(args)
-    
-    package_json_paths = [Path(args.package_json)] if args.package_json else [
-        Path("package.json"), 
-        Path("src/package.json")
-    ]
+
+    package_json_paths = (
+        [Path(args.package_json)]
+        if args.package_json
+        else [Path("package.json"), Path("src/package.json")]
+    )
     package_json = read_package_json(package_json_paths)
     if not package_json:
         print(f"{Fore.RED}Error: package.json required for generate command")
@@ -235,10 +244,10 @@ def generate_command(args):
     try:
         generator = dockershrink.Generator(ai_service)
         files = generator.generate_docker_files(analysis)
-        
+
         # Save generated files
-        output_dir = Path(args.output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+        output_dir = Path(".")
+        # output_dir.mkdir(parents=True, exist_ok=True)
 
         for filename, content in files.items():
             output_path = output_dir / filename
@@ -254,6 +263,7 @@ def generate_command(args):
         if args.verbose:
             print(os.linesep + traceback.format_exc())
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
