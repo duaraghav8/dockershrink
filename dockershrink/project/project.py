@@ -495,6 +495,35 @@ Instead, a fresh installation of only production dependencies here ensures that 
             )
             self._add_action_taken(action)
 
+        if ai:
+            # construct the prompt, send to llm, get response, apply changes, report them
+
+            system_prompt = LLMSystemInstructions()
+
+            # If the Dockerfile contains multiple stages already, it means
+            #  the user is already aware Multistage builds, so don't try to add it.
+            # In case of single stage, let the LLM decide whether to add multistage
+            #  or not.
+            if self.dockerfile.get_stage_count() == 1:
+                system_prompt.enable_multistage_builds()
+
+            response = ai.optimize_dockerfile(
+                system_instructions=system_prompt.construct(),
+                dockerfile=self.dockerfile.raw(),
+                package_json=self.package_json.raw(),
+                dir_structure=self._directory_structure,  # TODO
+            )
+            # extract modified dockerfile, actions taken and recommendations from response
+            # construct final response and return
+        else:
+            # call rule engine to apply deterministic rules
+
+            self._dockerfile_use_depcheck()
+            self._dockerfile_exclude_dev_dependencies()
+
+        # call the rules that should be run regardless of AI being available or not
+        self._dockerfile_finalstage_use_light_baseimage()
+
         # We prefer to run the AI-powered rules first, then the rule engine.
         # Always run the deterministic checks AFTER the non-deterministic ones to get better results.
         if ai:
