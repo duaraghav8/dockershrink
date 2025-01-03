@@ -1,14 +1,17 @@
 # DockerShrink
 
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/duaraghav8)
+
 [Talk to us on Slack](https://join.slack.com/t/dockershrink/shared_invite/zt-2vwkeqw0k-JXmHBNCQnG4X1BBf1t3xyg) **|** [Vote for Feature Requests](https://github.com/duaraghav8/dockershrink/issues?q=is%3Aopen+is%3Aissue+label%3Afeature-request)
 
+---
 
 Dockershrink is an AI-powered Commandline Tool that helps you reduce the size of your Docker images
 
 
 ![Typical interaction with dockershrink CLI](./assets/images/dockershrink-how-it-works.gif)
 
-It combines the power of traditional Rule-based analysis with Generative AI to apply state-of-the-art optimizations to your Image configurations :brain:
+It combines the power of algorithmic analysis with Generative AI to apply state-of-the-art optimizations to your Image configurations :brain:
 
 Dockershrink can automatically apply techniques like Multi-Stage builds, switching to Lighter base images like alpine and running dependency checks. PLUS a lot more is on the roadmap :rocket:
 
