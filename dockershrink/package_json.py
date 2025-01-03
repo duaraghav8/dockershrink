@@ -23,3 +23,23 @@ class PackageJSON:
 
     def raw(self) -> dict:
         return self._raw_data
+
+    def analyze(self) -> dict:
+        """
+        Analyze package.json and return the analysis results.
+        project_info = f
+            # Package name: {package_json_analysis['name']}
+            # Entry point: {package_json_analysis['main']}
+            # Has build script: {package_json_analysis['has_build_script']}
+            # Has start script: {package_json_analysis['has_start_script']}
+            # Scripts available: {list(package_json_analysis['scripts'].keys())}
+            #
+        """
+        return {
+            "name": self.raw().get("name", ""),
+            "main": self.raw().get("main", ""),
+            "has_build_script": "build" in self.raw().get("scripts", {}),
+            "has_start_script": "start" in self.raw().get("scripts", {}),
+            "scripts": self.raw().get("scripts", {}),
+            "dependencies": self.raw().get("dependencies", {}),
+        }
