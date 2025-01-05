@@ -52,6 +52,9 @@ def setup_ai_service(args):
 
     if openai_api_key:
         return dockershrink.AIService(OpenAI(api_key=openai_api_key))
+    else:
+        print(f"{Fore.RED}OpenAI API key not provided")
+        sys.exit(1)
 
 
 def read_package_json(paths):

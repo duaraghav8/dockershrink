@@ -169,7 +169,9 @@ commands: `{script["commands"]}`
         Generate a .dockerignore file for a NodeJS application that:
         - Ignores unnecessary files and directories
         - Optimizes the Docker build context
-        - Ensure package-lock.json is not included in the dockerignore
+        - No need to have package-lock.json in the .dockerignore file
+        - Return only the Dockerignore content without any formatting or markdown.
+
         """
         project_info = f"""
         Package name: {package_json_analysis['name']}

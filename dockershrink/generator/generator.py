@@ -9,7 +9,7 @@ class Generator:
 
     def generate_docker_files(self, analysis: Dict) -> Dict[str, str]:
         """Generate new optimized Docker files"""
-
+        
         dockerfile = self.ai.generate_dockerfile(analysis)
         dockerignore = self.ai.generate_dockerignore(analysis)
 
