@@ -5,6 +5,7 @@ import os
 import traceback
 from pathlib import Path
 from openai import OpenAI
+import openai
 
 import dockershrink
 
@@ -51,29 +52,38 @@ def setup_ai_service(args):
 
     if openai_api_key:
         return dockershrink.AIService(OpenAI(api_key=openai_api_key))
-    return None
 
 
 def read_package_json(paths):
     """Read and parse package.json from given paths"""
+    pj_path: Path = None
     for path in paths:
-        if not path.is_file():
-            continue
-        print(f"{Fore.LIGHTGREEN_EX}{Style.DIM}* Reading {path}")
-        try:
-            with open(path, "r") as f:
-                data = json.load(f)
-                if not isinstance(data, dict):
-                    print(f"{Fore.RED}Error: {path}: expected dict, got {type(data)}")
-                    sys.exit(1)
-                return dockershrink.PackageJSON(data)
-        except json.JSONDecodeError as e:
-            print(f"{Fore.RED}Error decoding JSON from {path}: {e}")
-            sys.exit(1)
-    return None
+        if path.is_file():
+            pj_path = path
+            break
+
+    if pj_path is None:
+        print(
+            f"{Fore.RED}Error: No package.json found in paths: {', '.join(str(p) for p in paths)}"
+        )
+        return None
+
+    try:
+        with open(pj_path, "r") as f:
+            data = json.load(f)
+            if not isinstance(data, dict):
+                print(f"{Fore.RED}Error: {pj_path}: expected dict, got {type(data)}")
+                sys.exit(1)
+            return dockershrink.PackageJSON(data)
+    except json.JSONDecodeError as e:
+        print(f"{Fore.RED}Error decoding JSON from {pj_path}: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"{Fore.RED}Error reading {pj_path}: {e}")
+        sys.exit(1)
 
 
-def handle_api_error(e, verbose=False):
+def handle_openai_api_error(e, verbose=False):
     """Handle OpenAI API errors"""
     if isinstance(e, openai.APIStatusError):
         print(f"{Fore.RED}Error: OpenAI API Status {e.status_code}: {e.body}")
@@ -132,7 +142,7 @@ def main():
     args.func(args)
 
 
-def version_command():
+def version_command(args):
     print(f"{Fore.CYAN}Dockershrink CLI version {VERSION}")
 
 
@@ -184,7 +194,7 @@ def optimize_command(args):
         response = project.optimize_docker_image(ai_service)
 
     except (openai.APIStatusError, openai.APIError) as e:
-        handle_api_error(e, args.verbose)
+        handle_openai_api_error(e, args.verbose)
     except Exception as e:
         print(f"{Fore.RED}Error: Failed to optimize project: {e}")
         if args.verbose:
@@ -257,7 +267,8 @@ def generate_command(args):
 
         print(f"\n{Fore.CYAN}Files generated successfully in {output_dir}/")
         print(f"{Fore.CYAN}Build instructions added as comments in Dockerfile")
-
+    except (openai.APIStatusError, openai.APIError) as e:
+        handle_openai_api_error(e, args.verbose)
     except Exception as e:
         print(f"{Fore.RED}Error generating Docker files: {e}")
         if args.verbose:
