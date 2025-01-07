@@ -1,4 +1,4 @@
-package package_json
+package packagejson
 
 type PackageJSON struct {
 }
