@@ -1,5 +1,11 @@
 package project
 
+type OptimizationResponse struct {
+	ActionsTaken    []OptimizationAction
+	Recommendations []OptimizationAction
+	ModifiedProject map[string]string
+}
+
 type OptimizationAction struct {
 	Rule        string
 	Filename    string
