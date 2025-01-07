@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/duaraghav8/dockershrink/ai"
-	"github.com/duaraghav8/dockershrink/dockerfile"
-	"github.com/duaraghav8/dockershrink/dockerignore"
-	"github.com/duaraghav8/dockershrink/packagejson"
+	"github.com/duaraghav8/dockershrink/internal/ai"
+	"github.com/duaraghav8/dockershrink/internal/dockerfile"
+	"github.com/duaraghav8/dockershrink/internal/dockerignore"
+	"github.com/duaraghav8/dockershrink/internal/packagejson"
 )
 
 type OptimizationResponse struct {

@@ -5,11 +5,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/duaraghav8/dockershrink/ai"
-	"github.com/duaraghav8/dockershrink/dockerfile"
-	"github.com/duaraghav8/dockershrink/dockerignore"
-	"github.com/duaraghav8/dockershrink/packagejson"
-	"github.com/duaraghav8/dockershrink/project"
+	"github.com/duaraghav8/dockershrink/internal/ai"
+	"github.com/duaraghav8/dockershrink/internal/dockerfile"
+	"github.com/duaraghav8/dockershrink/internal/dockerignore"
+	"github.com/duaraghav8/dockershrink/internal/packagejson"
+	"github.com/duaraghav8/dockershrink/internal/project"
 	"github.com/fatih/color"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -77,7 +77,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		}
 		dockerignoreContent = string(content)
 	} else {
-		color.Yellow("No .dockerignore file found at %s", dockerignorePath)
+		color.Yellow("* No .dockerignore file found at %s", dockerignorePath)
 	}
 	dockerignore, err := dockerignore.NewDockerignore(dockerignoreContent)
 
@@ -105,7 +105,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 			}
 		}
 		if packageJson == nil {
-			color.Yellow("No package.json found in the default paths")
+			color.Yellow("* No package.json found in the default paths")
 		}
 	}
 
