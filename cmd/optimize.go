@@ -8,7 +8,7 @@ import (
 	"github.com/duaraghav8/dockershrink/ai"
 	"github.com/duaraghav8/dockershrink/dockerfile"
 	"github.com/duaraghav8/dockershrink/dockerignore"
-	"github.com/duaraghav8/dockershrink/package_json"
+	"github.com/duaraghav8/dockershrink/packagejson"
 	"github.com/duaraghav8/dockershrink/project"
 	"github.com/fatih/color"
 	"github.com/openai/openai-go"
@@ -18,8 +18,10 @@ import (
 
 var optimizeCmd = &cobra.Command{
 	Use:   "optimize",
-	Short: "Optimize your NodeJS Docker project to reduce image size",
-	Run:   runOptimize,
+	Short: "Optimizes the Docker image definition for a project",
+	Long: `Optimizes the Dockerfile and .dockerignore files and provides recommendations where applicable.
+NOTE: This command currently only supports NodeJS projects.`,
+	Run: runOptimize,
 }
 
 var (
@@ -32,11 +34,11 @@ var (
 )
 
 func init() {
-	optimizeCmd.Flags().StringVar(&dockerfilePath, "dockerfile", "Dockerfile", "Path to Dockerfile (default: ./Dockerfile)")
-	optimizeCmd.Flags().StringVar(&dockerignorePath, "dockerignore", ".dockerignore", "Path to .dockerignore (default: ./.dockerignore)")
+	optimizeCmd.Flags().StringVar(&dockerfilePath, "dockerfile", "Dockerfile", "Path to Dockerfile")
+	optimizeCmd.Flags().StringVar(&dockerignorePath, "dockerignore", ".dockerignore", "Path to .dockerignore")
 	optimizeCmd.Flags().StringVar(&packageJsonPath, "package-json", "", "Path to package.json (default: ./package.json or ./src/package.json)")
-	optimizeCmd.Flags().StringVar(&outputDir, "output-dir", "dockershrink.optimized", "Directory to save optimized files (default: ./dockershrink.optimized)")
-	optimizeCmd.Flags().StringVar(&openaiApiKey, "openai-api-key", "", "Your OpenAI API key to enable Generative AI features (alternatively, set the OPENAI_API_KEY environment variable)")
+	optimizeCmd.Flags().StringVar(&outputDir, "output-dir", "dockershrink.optimized", "Directory to save optimized files")
+	optimizeCmd.Flags().StringVar(&openaiApiKey, "openai-api-key", "", "OpenAI API key to enable Generative AI features (alternatively, set the OPENAI_API_KEY environment variable)")
 	optimizeCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Print complete stack trace in case of failures")
 
 	rootCmd.AddCommand(optimizeCmd)
@@ -75,21 +77,21 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		}
 		dockerignoreContent = string(content)
 	} else {
-		color.Yellow("No .dockerignore file found")
+		color.Yellow("No .dockerignore file found at %s", dockerignorePath)
 	}
 	dockerignore, err := dockerignore.NewDockerignore(dockerignoreContent)
 
 	// Read package.json
-	var packageJson *package_json.PackageJSON
+	var packageJson *packagejson.PackageJSON
 	if packageJsonPath != "" {
 		content, err := os.ReadFile(packageJsonPath)
 		if err != nil {
-			color.Red("Error reading package.json: %v", err)
+			color.Red("Error reading package.json at %s: %v", packageJsonPath, err)
 			os.Exit(1)
 		}
-		packageJson = package_json.NewPackageJSON(string(content))
+		packageJson = packagejson.NewPackageJSON(string(content))
 	} else {
-		// Default paths searched: current directory and ./src
+		// Search default paths
 		paths := []string{"package.json", "src/package.json"}
 		for _, path := range paths {
 			if _, err := os.Stat(path); err == nil {
@@ -98,7 +100,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 					color.Red("Error reading package.json: %v", err)
 					os.Exit(1)
 				}
-				packageJson = package_json.NewPackageJSON(string(content))
+				packageJson = packagejson.NewPackageJSON(string(content))
 				break
 			}
 		}

@@ -7,7 +7,7 @@ import (
 	"github.com/duaraghav8/dockershrink/ai"
 	"github.com/duaraghav8/dockershrink/dockerfile"
 	"github.com/duaraghav8/dockershrink/dockerignore"
-	"github.com/duaraghav8/dockershrink/package_json"
+	"github.com/duaraghav8/dockershrink/packagejson"
 )
 
 type OptimizationResponse struct {
@@ -19,13 +19,13 @@ type OptimizationResponse struct {
 type Project struct {
 	Dockerfile   *dockerfile.Dockerfile
 	Dockerignore *dockerignore.Dockerignore
-	PackageJSON  *package_json.PackageJSON
+	PackageJSON  *packagejson.PackageJSON
 
 	Recommendations []OptimizationAction
 	ActionsTaken    []OptimizationAction
 }
 
-func NewProject(dockerfile *dockerfile.Dockerfile, dockerignore *dockerignore.Dockerignore, packageJson *package_json.PackageJSON) *Project {
+func NewProject(dockerfile *dockerfile.Dockerfile, dockerignore *dockerignore.Dockerignore, packageJson *packagejson.PackageJSON) *Project {
 	return &Project{
 		Dockerfile:      dockerfile,
 		Dockerignore:    dockerignore,
