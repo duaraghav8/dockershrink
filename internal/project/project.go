@@ -10,12 +10,6 @@ import (
 	"github.com/duaraghav8/dockershrink/internal/packagejson"
 )
 
-type OptimizationResponse struct {
-	ActionsTaken    []OptimizationAction
-	Recommendations []OptimizationAction
-	ModifiedProject map[string]string
-}
-
 type Project struct {
 	Dockerfile   *dockerfile.Dockerfile
 	Dockerignore *dockerignore.Dockerignore
