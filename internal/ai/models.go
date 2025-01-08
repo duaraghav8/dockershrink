@@ -6,6 +6,8 @@ type OptimizeRequest struct {
 	Dockerfile   string
 	Dockerignore string
 	PackageJSON  string
+
+	StageCount uint
 }
 
 type OptimizeResponse struct {

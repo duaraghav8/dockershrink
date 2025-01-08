@@ -32,7 +32,7 @@ func (d *Dockerfile) Raw() string {
 	return ""
 }
 
-func (d *Dockerfile) GetStageCount() int {
+func (d *Dockerfile) GetStageCount() uint {
 	// Implementation to return the number of stages in the Dockerfile
 	return 0
 }
@@ -55,4 +55,8 @@ func (d *Dockerfile) GetShellCommands() []*ShellCommand {
 func (d *Dockerfile) GetImages() []*Image {
 	// Implementation to get all images in the Dockerfile
 	return nil
+}
+
+func (d *Dockerfile) SetStageBaseImage(stage *Stage, image *Image) {
+	// Implementation to set the base image for a stage
 }

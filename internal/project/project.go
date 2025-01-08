@@ -55,24 +55,26 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 		p.addActionTaken(action)
 	}
 
-	var newDockerfile *dockerfile.Dockerfile
+	originalDockerfile := p.dockerfile
 
-	if aiService == nil {
-		newDockerfile = p.dockerfile
-	} else {
+	if aiService != nil {
 		req := &ai.OptimizeRequest{
 			Dockerfile:   p.dockerfile.Raw(),
 			Dockerignore: p.dockerignore.Raw(),
 			PackageJSON:  p.packageJSON.String(),
+
+			StageCount: p.dockerfile.GetStageCount(),
 		}
 		resp, err := aiService.OptimizeDockerfile(req)
 		if err != nil {
 			return nil, fmt.Errorf("AI service failed to optimize Dockerfile: %w", err)
 		}
-		newDockerfile, err = dockerfile.NewDockerfile(strings.NewReader(resp.Dockerfile))
+
+		p.dockerfile, err = dockerfile.NewDockerfile(strings.NewReader(resp.Dockerfile))
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse Dockerfile returned by AI service: %w", err)
 		}
+
 		for _, r := range resp.Recommendations {
 			p.addRecommendation(r)
 		}
@@ -81,18 +83,19 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 		}
 	}
 
-	origStageCount := p.dockerfile.GetStageCount()
-	newStageCount := newDockerfile.GetStageCount()
-	origFinalStageBaseImage := p.dockerfile.GetFinalStage().BaseImage()
-	newFinalStageBaseImage := newDockerfile.GetFinalStage().BaseImage()
-
 	// Only check for the final stage's base image if it was not changed by AI
+
+	origStageCount := originalDockerfile.GetStageCount()
+	newStageCount := p.dockerfile.GetStageCount()
+	origFinalStageBaseImage := originalDockerfile.GetFinalStage().BaseImage()
+	newFinalStageBaseImage := p.dockerfile.GetFinalStage().BaseImage()
+
 	if origStageCount == newStageCount && origFinalStageBaseImage.Equals(newFinalStageBaseImage) {
 		p.finalStageLightBaseImage()
 	}
 
 	return &OptimizationResponse{
-		Dockerfile:      newDockerfile.Raw(),
+		Dockerfile:      p.dockerfile.Raw(),
 		Dockerignore:    p.dockerignore.Raw(),
 		ActionsTaken:    p.actionsTaken,
 		Recommendations: p.recommendations,
