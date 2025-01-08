@@ -63,7 +63,7 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 			Dockerignore: p.dockerignore.Raw(),
 			PackageJSON:  p.packageJSON.String(),
 
-			StageCount: p.dockerfile.GetStageCount(),
+			DockerfileStageCount: p.dockerfile.GetStageCount(),
 		}
 		resp, err := aiService.OptimizeDockerfile(req)
 		if err != nil {

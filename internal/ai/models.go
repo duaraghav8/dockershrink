@@ -7,7 +7,8 @@ type OptimizeRequest struct {
 	Dockerignore string
 	PackageJSON  string
 
-	StageCount uint
+	DockerfileStageCount uint
+	ProjectDirectory     *RestrictedFilesystem
 }
 
 type OptimizeResponse struct {
