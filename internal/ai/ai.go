@@ -18,7 +18,7 @@ func NewAIService(client *openai.Client) *AIService {
 	}
 }
 
-func (ai *AIService) OptimizeDockerfile(dockerfileContent string, scripts []map[string]string) (string, error) {
+func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse, error) {
 	userPrompt := fmt.Sprintf(_multistageUserPrompt, dockerfileContent)
 
 	if len(scripts) > 0 {

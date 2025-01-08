@@ -6,7 +6,8 @@ import (
 )
 
 type PackageJSON struct {
-	rawData map[string]interface{}
+	rawData    map[string]interface{}
+	rawDataStr string
 }
 
 func NewPackageJSON(content string) (*PackageJSON, error) {
@@ -15,7 +16,7 @@ func NewPackageJSON(content string) (*PackageJSON, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &PackageJSON{rawData: data}, nil
+	return &PackageJSON{rawData: data, rawDataStr: content}, nil
 }
 
 func (p *PackageJSON) GetScript(name string) (string, error) {
@@ -32,4 +33,8 @@ func (p *PackageJSON) GetScript(name string) (string, error) {
 
 func (p *PackageJSON) Raw() map[string]interface{} {
 	return p.rawData
+}
+
+func (p *PackageJSON) String() string {
+	return p.rawDataStr
 }

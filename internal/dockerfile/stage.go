@@ -8,7 +8,7 @@ type Stage struct {
 	parentDockerfile *Dockerfile
 	index            int
 	statement        *parser.Node
-	baseImage        Image
+	baseImage        *Image
 	name             string
 	layers           []Layer
 }
@@ -49,7 +49,7 @@ func (s *Stage) Layers() []Layer {
 	return s.layers
 }
 
-func (s *Stage) BaseImage() Image {
+func (s *Stage) BaseImage() *Image {
 	return s.baseImage
 }
 

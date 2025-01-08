@@ -37,17 +37,22 @@ func (d *Dockerfile) GetStageCount() int {
 	return 0
 }
 
-func (d *Dockerfile) GetStages() []Stage {
+func (d *Dockerfile) GetStages() []*Stage {
 	// Implementation to get all stages in the Dockerfile
-	return []Stage{}
+	return nil
 }
 
-func (d *Dockerfile) GetShellCommands() []ShellCommand {
+// GetFinalStage returns the last stage in the Dockerfile
+func (d *Dockerfile) GetFinalStage() *Stage {
+	return d.GetStages()[d.GetStageCount()-1]
+}
+
+func (d *Dockerfile) GetShellCommands() []*ShellCommand {
 	// Implementation to get all shell commands in the Dockerfile
-	return []ShellCommand{}
+	return nil
 }
 
-func (d *Dockerfile) GetImages() []Image {
+func (d *Dockerfile) GetImages() []*Image {
 	// Implementation to get all images in the Dockerfile
-	return []Image{}
+	return nil
 }
