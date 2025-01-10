@@ -8,7 +8,10 @@ import (
 	"github.com/openai/openai-go"
 )
 
-const MaxLLMCalls = 10
+const (
+	OpenAIPreferredModel = openai.ChatModelGPT4o2024_11_20
+	MaxLLMCalls          = 10
+)
 
 type AIService struct {
 	client *openai.Client
@@ -27,6 +30,12 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(systemInstructions),
 		openai.UserMessage(userQuery),
+	}
+	responseFormat := openai.ResponseFormatJSONSchemaJSONSchemaParam{
+		Name:        openai.F("modifications"),
+		Description: openai.F("Optimized assets for the project along with the actions taken and further recommendations"),
+		Schema:      openai.F(optimizeResponseSchema),
+		Strict:      openai.Bool(true),
 	}
 	availableTools := []openai.ChatCompletionToolParam{
 		{
@@ -54,7 +63,13 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		params := openai.ChatCompletionNewParams{
 			Messages: openai.F(messages),
 			Tools:    openai.F(availableTools),
-			Model:    openai.F(openai.ChatModelGPT4o),
+			ResponseFormat: openai.F[openai.ChatCompletionNewParamsResponseFormatUnion](
+				openai.ResponseFormatJSONSchemaParam{
+					Type:       openai.F(openai.ResponseFormatJSONSchemaTypeJSONSchema),
+					JSONSchema: openai.F(responseFormat),
+				},
+			),
+			Model: openai.F(OpenAIPreferredModel),
 		}
 		response, err := ai.client.Chat.Completions.New(context.Background(), params)
 		if err != nil {
@@ -64,7 +79,12 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		toolCalls := response.Choices[0].Message.ToolCalls
 		if len(toolCalls) == 0 {
 			// no tool calls, the optimized Dockerfile has been returned by the LLM
-			// TODO
+			optimizeResponse := OptimizeResponse{}
+			err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &optimizeResponse)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse final response from LLM: %w", err)
+			}
+			return &optimizeResponse, nil
 		} else {
 			// add the tool call message back to the ongoing conversation with LLM
 			params.Messages.Value = append(params.Messages.Value, response.Choices[0].Message)
