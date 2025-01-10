@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+// RestrictedFilesystem is a filesystem that limits access to files and folders inside a specific root directory.
+// It is used to prevent access to files outside the root directory - whether intentional or accidental.
 type RestrictedFilesystem struct {
 	rootDir string
 }

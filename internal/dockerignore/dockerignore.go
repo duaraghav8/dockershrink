@@ -8,8 +8,8 @@ type Dockerignore struct {
 	rawData string
 }
 
-func NewDockerignore(content string) *Dockerignore {
-	return &Dockerignore{rawData: content}
+func NewDockerignore(content string) (*Dockerignore, error) {
+	return &Dockerignore{rawData: content}, nil
 }
 
 func (d *Dockerignore) Exists() bool {
