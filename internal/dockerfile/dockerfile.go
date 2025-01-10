@@ -1,62 +1,90 @@
 package dockerfile
 
 import (
-	"io"
+	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 )
 
+const (
+	CmdFrom string = "FROM"
+	CmdRun         = "RUN"
+	CmdCopy        = "COPY"
+)
+
+const Linebreak = "\n"
+
 type Dockerfile struct {
-	AST *parser.Node
+	code string
+	ast  *parser.Node
 }
 
-func NewDockerfile(file io.Reader) (*Dockerfile, error) {
-	result, err := parser.Parse(file)
+func NewDockerfile(contents string) (*Dockerfile, error) {
+	if len(strings.TrimSpace(contents)) == 0 {
+		return nil, errors.New("Dockerfile is empty")
+	}
+	result, err := parser.Parse(strings.NewReader(contents))
 	if err != nil {
 		return nil, err
 	}
-
-	return &Dockerfile{AST: result.AST}, nil
-}
-
-func (d *Dockerfile) AddLayer(layer string) {
-	// Implementation to add a new layer
-}
-
-func (d *Dockerfile) ReplaceLayer(oldLayer, newLayer string) {
-	// Implementation to replace an existing layer
+	return &Dockerfile{
+		code: contents,
+		ast:  result.AST,
+	}, nil
 }
 
 func (d *Dockerfile) Raw() string {
-	// Implementation to return the raw Dockerfile content
-	return ""
+	return d.code
 }
 
 func (d *Dockerfile) GetStageCount() uint {
-	// Implementation to return the number of stages in the Dockerfile
-	return 0
-}
-
-func (d *Dockerfile) GetStages() []*Stage {
-	// Implementation to get all stages in the Dockerfile
-	return nil
+	count := 0
+	for _, child := range d.ast.Children {
+		if child.Value == CmdFrom {
+			count++
+		}
+	}
+	return uint(count)
 }
 
 // GetFinalStage returns the last stage in the Dockerfile
-func (d *Dockerfile) GetFinalStage() *Stage {
-	return d.GetStages()[d.GetStageCount()-1]
-}
+func (d *Dockerfile) GetFinalStage() (*Stage, error) {
+	var lastStageNode *parser.Node
+	lastStageNodeIndex := -1
+	lastStageIndex := -1
 
-func (d *Dockerfile) GetShellCommands() []*ShellCommand {
-	// Implementation to get all shell commands in the Dockerfile
-	return nil
-}
-
-func (d *Dockerfile) GetImages() []*Image {
-	// Implementation to get all images in the Dockerfile
-	return nil
+	for i, child := range d.ast.Children {
+		if child.Value == CmdFrom {
+			lastStageNode = child
+			lastStageIndex++
+			lastStageNodeIndex = i
+		}
+	}
+	if lastStageNodeIndex < 0 || lastStageIndex < 0 {
+		return nil, fmt.Errorf("No stages found in Dockerfile: %s", d.code)
+	}
+	return &Stage{
+		nodeIndex:  uint(lastStageNodeIndex),
+		stageIndex: uint(lastStageIndex),
+		astNode:    lastStageNode,
+	}, nil
 }
 
 func (d *Dockerfile) SetStageBaseImage(stage *Stage, image *Image) {
-	// Implementation to set the base image for a stage
+	// Find the exact string in the Dockerfile that specifies the Image name for the stage
+	// Replace the image name with the new image name.
+	codeLines := strings.Split(d.code, Linebreak)
+
+	origImageNode := stage.astNode.Next
+	stageDeclarationCode := codeLines[stage.astNode.StartLine-1]
+
+	codeLines[stage.astNode.StartLine-1] = strings.Replace(stageDeclarationCode, origImageNode.Value, image.FullName(), 1)
+
+	modifiedCode := strings.Join(codeLines, Linebreak)
+	parsed, _ := parser.Parse(strings.NewReader(modifiedCode))
+
+	d.code = modifiedCode
+	d.ast = parsed.AST
 }

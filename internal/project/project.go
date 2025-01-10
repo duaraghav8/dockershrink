@@ -23,7 +23,12 @@ type Project struct {
 	directory *restrictedfilesystem.RestrictedFilesystem
 }
 
-func NewProject(dockerfile *dockerfile.Dockerfile, dockerignore *dockerignore.Dockerignore, packageJson *packagejson.PackageJSON, directory *restrictedfilesystem.RestrictedFilesystem) *Project {
+func NewProject(
+	dockerfile *dockerfile.Dockerfile,
+	dockerignore *dockerignore.Dockerignore,
+	packageJson *packagejson.PackageJSON,
+	directory *restrictedfilesystem.RestrictedFilesystem,
+) *Project {
 	return &Project{
 		dockerfile:      dockerfile,
 		dockerignore:    dockerignore,
@@ -74,7 +79,7 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 			return nil, fmt.Errorf("AI service failed to optimize Dockerfile: %w", err)
 		}
 
-		p.dockerfile, err = dockerfile.NewDockerfile(strings.NewReader(resp.Dockerfile))
+		p.dockerfile, err = dockerfile.NewDockerfile(resp.Dockerfile)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to parse Dockerfile returned by AI service: %w", err)
 		}
@@ -88,13 +93,21 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 	}
 
 	// Only check for the final stage's base image if it was not changed by AI
-
 	origStageCount := originalDockerfile.GetStageCount()
 	newStageCount := p.dockerfile.GetStageCount()
-	origFinalStageBaseImage := originalDockerfile.GetFinalStage().BaseImage()
-	newFinalStageBaseImage := p.dockerfile.GetFinalStage().BaseImage()
 
-	if origStageCount == newStageCount && origFinalStageBaseImage.Equals(newFinalStageBaseImage) {
+	origFinalStage, err := originalDockerfile.GetFinalStage()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get final stage of original Dockerfile: %w", err)
+	}
+	newFinalStage, err := p.dockerfile.GetFinalStage()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get final stage of AI-modified Dockerfile: %w", err)
+	}
+	origFinalStageBaseImage := origFinalStage.BaseImage()
+	newFinalStageBaseImage := newFinalStage.BaseImage()
+
+	if (origStageCount == newStageCount) && (origFinalStageBaseImage.FullName() == newFinalStageBaseImage.FullName()) {
 		p.finalStageLightBaseImage()
 	}
 

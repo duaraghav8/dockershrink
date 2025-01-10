@@ -2,36 +2,39 @@ package dockerfile
 
 import "strings"
 
+const (
+	DefaultTag = "latest"
+	NameTagSep = ":"
+)
+
 type Image struct {
 	name string
 	tag  string
 }
 
 func NewImage(fullName string) *Image {
-	parts := strings.Split(fullName, ":")
+	parts := strings.Split(fullName, NameTagSep)
 	if len(parts) == 1 {
-		return &Image{name: parts[0], tag: "latest"}
+		return &Image{name: parts[0], tag: DefaultTag}
 	}
 	return &Image{name: parts[0], tag: parts[1]}
 }
 
+// Name returns the name of the image.
+// This is not the full name.
+// For example, for the image "node:alpine", the name is "node".
 func (i *Image) Name() string {
 	return i.name
 }
 
+// Tag returns the tag of the image.
+// For example, for the image "node:alpine", the tag is "alpine".
 func (i *Image) Tag() string {
 	return i.tag
 }
 
-// Equals checks if two images are the same
-func (i *Image) Equals(other *Image) bool {
-	return i.Name() == other.Name() && i.Tag() == other.Tag()
-}
-
-func (i *Image) IsAlpineOrSlim() bool {
-	return true
-}
-
+// FullName returns the full name of the image.
+// For example, for the image "node:alpine", the full name is "node:alpine".
 func (i *Image) FullName() string {
-	return i.name + ":" + i.tag
+	return i.name + NameTagSep + i.tag
 }
