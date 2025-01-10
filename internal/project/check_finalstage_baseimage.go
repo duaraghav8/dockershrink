@@ -3,19 +3,38 @@ package project
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/duaraghav8/dockershrink/internal/dockerfile"
 	"github.com/duaraghav8/dockershrink/internal/models"
 )
 
+func getNodeAlpineEquivalentTagForImage(image *dockerfile.Image) string {
+	tag := image.Tag()
+	if strings.Contains(tag, "alpine") {
+		return tag
+	}
+
+	parts := strings.Split(tag, ".")
+	if len(parts) > 0 {
+		return parts[0] + "-alpine"
+	}
+
+	return "alpine"
+}
+
+func isAlpineOrSlim(image *dockerfile.Image) bool {
+	return strings.Contains(image.Tag(), "alpine") || strings.Contains(image.Tag(), "slim")
+}
+
 func (p *Project) finalStageLightBaseImage() {
 	rule := "final-stage-slim-baseimage"
 	filename := "Dockerfile"
 
-	finalStage := p.dockerfile.GetFinalStage()
+	finalStage, _ := p.dockerfile.GetFinalStage()
 	finalStageBaseImage := finalStage.BaseImage()
 
-	if finalStageBaseImage.IsAlpineOrSlim() {
+	if isAlpineOrSlim(finalStageBaseImage) {
 		// a light image is already being used, nothing to do, exit
 		return
 	}

@@ -59,14 +59,13 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	}
 
 	// Read Dockerfile
-	dockerfileFd, err := os.Open(dockerfilePath)
+	dockerfileContents, err := os.ReadFile(dockerfilePath)
 	if err != nil {
-		color.Red("Error accessing Dockerfile: %v", err)
+		color.Red("Error reading %s: %v", dockerfilePath, err)
 		os.Exit(1)
 	}
-	defer dockerfileFd.Close()
 
-	dockerfile, err := dockerfile.NewDockerfile(dockerfileFd)
+	dockerfileObject, err := dockerfile.NewDockerfile(string(dockerfileContents))
 
 	// Read .dockerignore
 	var dockerignoreContent string
@@ -125,7 +124,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	}
 	projectDirFS := restrictedfilesystem.NewRestrictedFilesystem(cwd)
 
-	proj := project.NewProject(dockerfile, dockerignore, packageJson, projectDirFS)
+	proj := project.NewProject(dockerfileObject, dockerignore, packageJson, projectDirFS)
 
 	response, err := proj.OptimizeDockerImage(aiService)
 	if err != nil {
