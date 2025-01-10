@@ -2,6 +2,7 @@ package ai
 
 import (
 	"github.com/duaraghav8/dockershrink/internal/models"
+	"github.com/duaraghav8/dockershrink/internal/restrictedfilesystem"
 	"github.com/invopop/jsonschema"
 )
 
@@ -11,7 +12,7 @@ type OptimizeRequest struct {
 	PackageJSON  string
 
 	DockerfileStageCount uint
-	ProjectDirectory     *RestrictedFilesystem
+	ProjectDirectory     *restrictedfilesystem.RestrictedFilesystem
 }
 
 type OptimizeResponse struct {

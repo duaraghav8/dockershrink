@@ -9,6 +9,7 @@ import (
 	"github.com/duaraghav8/dockershrink/internal/dockerignore"
 	"github.com/duaraghav8/dockershrink/internal/models"
 	"github.com/duaraghav8/dockershrink/internal/packagejson"
+	"github.com/duaraghav8/dockershrink/internal/restrictedfilesystem"
 )
 
 type Project struct {
@@ -18,13 +19,16 @@ type Project struct {
 
 	recommendations []*models.OptimizationAction
 	actionsTaken    []*models.OptimizationAction
+
+	directory *restrictedfilesystem.RestrictedFilesystem
 }
 
-func NewProject(dockerfile *dockerfile.Dockerfile, dockerignore *dockerignore.Dockerignore, packageJson *packagejson.PackageJSON) *Project {
+func NewProject(dockerfile *dockerfile.Dockerfile, dockerignore *dockerignore.Dockerignore, packageJson *packagejson.PackageJSON, directory *restrictedfilesystem.RestrictedFilesystem) *Project {
 	return &Project{
 		dockerfile:      dockerfile,
 		dockerignore:    dockerignore,
 		packageJSON:     packageJson,
+		directory:       directory,
 		recommendations: []*models.OptimizationAction{},
 		actionsTaken:    []*models.OptimizationAction{},
 	}
@@ -59,10 +63,10 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 
 	if aiService != nil {
 		req := &ai.OptimizeRequest{
-			Dockerfile:   p.dockerfile.Raw(),
-			Dockerignore: p.dockerignore.Raw(),
-			PackageJSON:  p.packageJSON.String(),
-
+			Dockerfile:           p.dockerfile.Raw(),
+			Dockerignore:         p.dockerignore.Raw(),
+			PackageJSON:          p.packageJSON.String(),
+			ProjectDirectory:     p.directory,
 			DockerfileStageCount: p.dockerfile.GetStageCount(),
 		}
 		resp, err := aiService.OptimizeDockerfile(req)

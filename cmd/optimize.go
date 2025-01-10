@@ -10,6 +10,7 @@ import (
 	"github.com/duaraghav8/dockershrink/internal/dockerignore"
 	"github.com/duaraghav8/dockershrink/internal/packagejson"
 	"github.com/duaraghav8/dockershrink/internal/project"
+	"github.com/duaraghav8/dockershrink/internal/restrictedfilesystem"
 	"github.com/fatih/color"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -109,7 +110,14 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	proj := project.NewProject(dockerfile, dockerignore, packageJson)
+	cwd, err := os.Getwd()
+	if err != nil {
+		color.Red("Error getting current working directory: %v", err)
+		os.Exit(1)
+	}
+	projectDirFS := restrictedfilesystem.NewRestrictedFilesystem(cwd)
+
+	proj := project.NewProject(dockerfile, dockerignore, packageJson, projectDirFS)
 
 	response, err := proj.OptimizeDockerImage(aiService)
 	if err != nil {
