@@ -62,7 +62,7 @@ SYSTEM INSTRUCTIONS (limit: 256K characters):
 - only work by the book. if a certain situation is not described in the prompt, don't make assumptions and don't optimize that part.
 - if user is running custom script in dockerfile, ask to view the script and understand its purpose before proceeding
 - examples of before-after optimizations for each technique, language
-- describe each optimization technique / rule from the rule engine
+- describe each optimization technique / rule from the rule engine + provide its metadata (rule name, target file, etc)
   - (Generic Docker optimizations) multistage, slim base image
   - (NodeJS specific) NODE_ENV=production, fresh install of dependencies, exclude devDependencies, use depcheck
 
