@@ -1,6 +1,9 @@
 package ai
 
-import "github.com/duaraghav8/dockershrink/internal/models"
+import (
+	"github.com/duaraghav8/dockershrink/internal/models"
+	"github.com/invopop/jsonschema"
+)
 
 type OptimizeRequest struct {
 	Dockerfile   string
@@ -12,7 +15,23 @@ type OptimizeRequest struct {
 }
 
 type OptimizeResponse struct {
-	Dockerfile      string
-	Recommendations []*models.OptimizationAction
-	ActionsTaken    []*models.OptimizationAction
+	Dockerfile string `json:"dockerfile" jsonschema_description:"The optimized Dockerfile"`
+
+	Recommendations []*models.OptimizationAction `json:"recommendations" jsonschema_description:"List of Recommendations for further the Dockerfile or whole project"`
+	ActionsTaken    []*models.OptimizationAction `json:"actions_taken" jsonschema_description:"List of modifictions made in the Dockerfile"`
 }
+
+func GenerateSchema[T any]() interface{} {
+	// Structured Outputs uses a subset of JSON schema
+	// These flags are necessary to comply with the subset
+	reflector := jsonschema.Reflector{
+		AllowAdditionalProperties: false,
+		DoNotReference:            true,
+	}
+	var v T
+	schema := reflector.Reflect(v)
+	return schema
+}
+
+// Generate the JSON schema at initialization time
+var optimizeResponseSchema = GenerateSchema[OptimizeResponse]()
