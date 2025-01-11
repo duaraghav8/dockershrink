@@ -57,7 +57,6 @@ func getNodeAlpineEquivalentTagForImage(image *dockerfile.Image) string {
 
 func (p *Project) finalStageLightBaseImage() {
 	rule := "final-stage-slim-baseimage"
-	filename := "Dockerfile"
 
 	finalStage, _ := p.dockerfile.GetFinalStage()
 	finalStageBaseImage := finalStage.BaseImage()
@@ -78,7 +77,7 @@ func (p *Project) finalStageLightBaseImage() {
 		// This is because this stage is probably building and/or testing, and we don't want to cause limitations in that.
 		rec := &models.OptimizationAction{
 			Rule:        rule,
-			Filename:    filename,
+			Filepath:    p.directory.GetDockerfileFilePath(),
 			Title:       "Use a smaller base image for the final image produced",
 			Description: fmt.Sprintf("Use '%s' instead of '%s' as the base image. This will significantly decrease the final image's size. This practice is best combined with Multistage builds. The final stage of your Dockerfile must use a slim base image. Since all testing and build processes take place in a previous stage, dev dependencies and a heavy distro isn't really needed in the final image. Enable AI to generate code for multistage build.", preferredImage.FullName(), finalStageBaseImage.FullName()),
 		}
@@ -92,7 +91,7 @@ func (p *Project) finalStageLightBaseImage() {
 
 	action := &models.OptimizationAction{
 		Rule:        rule,
-		Filename:    filename,
+		Filepath:    p.directory.GetDockerfileFilePath(),
 		Title:       "Used a new, smaller base image for the final stage in Multistage Dockerfile",
 		Description: fmt.Sprintf("Used '%s' instead of '%s' as the base image of the final stage. This becomes the base image of the final image produced, reducing the size significantly.", preferredImage.FullName(), finalStageBaseImage.FullName()),
 	}

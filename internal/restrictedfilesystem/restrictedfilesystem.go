@@ -11,11 +11,24 @@ import (
 // RestrictedFilesystem is a filesystem that limits access to files and folders inside a specific root directory.
 // It is used to prevent access to files outside the root directory - whether intentional or accidental.
 type RestrictedFilesystem struct {
-	rootDir string
+	rootDir          string
+	dockerfilePath   string
+	dockerignorePath string
+	dirTree          string
 }
 
-func NewRestrictedFilesystem(rootDir string) *RestrictedFilesystem {
-	return &RestrictedFilesystem{rootDir: rootDir}
+func NewRestrictedFilesystem(
+	rootDir string,
+	rootDirTree string,
+	dockerfilePath string,
+	dockerinorePath string,
+) *RestrictedFilesystem {
+	return &RestrictedFilesystem{
+		rootDir:          rootDir,
+		dirTree:          rootDirTree,
+		dockerfilePath:   dockerfilePath,
+		dockerignorePath: dockerinorePath,
+	}
 }
 
 func (rfs *RestrictedFilesystem) ReadFiles(filepaths []string) (map[string]string, error) {
@@ -40,4 +53,18 @@ func (rfs *RestrictedFilesystem) ReadFiles(filepaths []string) (map[string]strin
 		result[path] = string(content)
 	}
 	return result, nil
+}
+
+func (rfs *RestrictedFilesystem) DirTree() string {
+	return rfs.dirTree
+}
+
+// GetDockerignoreFilePath returns the path to the .dockerignore file inside the project.
+// If the file doesn't exist, an empty string is returned.
+func (rfs *RestrictedFilesystem) GetDockerignoreFilePath() string {
+	return rfs.dockerignorePath
+}
+
+func (rfs *RestrictedFilesystem) GetDockerfileFilePath() string {
+	return rfs.dockerfilePath
 }
