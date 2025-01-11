@@ -3,28 +3,56 @@ package project
 import (
 	"fmt"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/duaraghav8/dockershrink/internal/dockerfile"
 	"github.com/duaraghav8/dockershrink/internal/models"
 )
 
-func getNodeAlpineEquivalentTagForImage(image *dockerfile.Image) string {
+const (
+	imageTagAlpine = "alpine"
+	imageTagSlim   = "slim"
+)
+
+func isAlpineOrSlim(image *dockerfile.Image) bool {
 	tag := image.Tag()
-	if strings.Contains(tag, "alpine") {
+	return strings.Contains(tag, imageTagAlpine) || strings.Contains(tag, imageTagSlim)
+}
+
+// getNodeAlpineEquivalentTagForImage returns the alpine equivalent tag for a given nodjes docker image.
+// eg. node:14 -> node:14-alpine (so "14-alpine" is returned as response)
+func getNodeAlpineEquivalentTagForImage(image *dockerfile.Image) string {
+	/*
+		Conversion Rules:
+		latest = alpine
+		[word|version] = [word|version]-alpine
+		  eg- iron = iron-alpine, lts = lts-alpine, hydrogen = hydrogen-alpine,
+		  20 = 20-alpine, 18.10.3 = 18.10.3-alpine
+		[word|version]-[<slim-only images>] = [word|version]-[<slim-only images>]-slim
+		  eg- current-bullseye = current-bullseye-slim, lts-bookworm = lts-bookworm-slim
+
+		https://github.com/nodejs/docker-node?tab=readme-ov-file#image-variants
+	*/
+	slimOnlyImageTypes := []string{"bullseye", "bookworm", "buster", "iron"}
+
+	tag := image.Tag()
+	if tag == dockerfile.DefaultTag {
+		return imageTagAlpine
+	}
+	if isAlpineOrSlim(image) {
 		return tag
 	}
 
-	parts := strings.Split(tag, ".")
-	if len(parts) > 0 {
-		return parts[0] + "-alpine"
+	parts := strings.Split(tag, "-")
+	if len(parts) == 1 {
+		return parts[0] + "-" + imageTagAlpine
+	}
+	if len(parts) == 2 && slices.Contains(slimOnlyImageTypes, parts[1]) {
+		return parts[0] + "-" + parts[1] + "-" + imageTagSlim
 	}
 
-	return "alpine"
-}
-
-func isAlpineOrSlim(image *dockerfile.Image) bool {
-	return strings.Contains(image.Tag(), "alpine") || strings.Contains(image.Tag(), "slim")
+	return imageTagAlpine
 }
 
 func (p *Project) finalStageLightBaseImage() {
@@ -39,7 +67,7 @@ func (p *Project) finalStageLightBaseImage() {
 		return
 	}
 
-	preferredImage := dockerfile.NewImage("node:alpine")
+	preferredImage := dockerfile.NewImage("node:" + imageTagAlpine)
 	if finalStageBaseImage.Name() == "node" {
 		tag := getNodeAlpineEquivalentTagForImage(finalStageBaseImage)
 		preferredImage = dockerfile.NewImage(fmt.Sprintf("node:%s", tag))
