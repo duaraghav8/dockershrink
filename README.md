@@ -206,3 +206,16 @@ twine upload dist/*
 ```
 8. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
 9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
+
+## Golang rewrite TODO
+- Implement AI prompting
+- End to end testing
+- Distribution setup with same tooling as dockershrink-cli
+- Implement `generate` command
+- Make new release
+- Update README
+    - add all dev instructions (`go test`, `fmt`, `mod tidy`, `mod vendor`, `get -u <package>`)
+- Linkedin + Slack posts
+- Create TODO items in repo Issues
+    - allow more actions (documentation search, web search)
+    - Optimize prompt for cost

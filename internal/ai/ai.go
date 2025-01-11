@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/duaraghav8/dockershrink/internal/ai/promptcreator"
 	"github.com/openai/openai-go"
 )
 
@@ -12,6 +13,8 @@ const (
 	OpenAIPreferredModel = openai.ChatModelGPT4o2024_11_20
 	MaxLLMCalls          = 10
 )
+
+const ToolReadFiles = "read_files"
 
 type AIService struct {
 	client *openai.Client
@@ -24,8 +27,14 @@ func NewAIService(client *openai.Client) *AIService {
 }
 
 func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse, error) {
-	systemInstructions := ""
-	userQuery := ""
+	systemInstructions, err := ai.constructSystemInstructions(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct system prompt: %w", err)
+	}
+	userQuery, err := ai.constructUserQuery(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to construct user prompt: %w", err)
+	}
 
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(systemInstructions),
@@ -41,7 +50,7 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		{
 			Type: openai.F(openai.ChatCompletionToolTypeFunction),
 			Function: openai.F(openai.FunctionDefinitionParam{
-				Name:        openai.String("read_files"),
+				Name:        openai.String(ToolReadFiles),
 				Description: openai.String("Read the contents of specific files inside the project"),
 				Parameters: openai.F(openai.FunctionParameters{
 					"type": "object",
@@ -90,7 +99,7 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 			params.Messages.Value = append(params.Messages.Value, response.Choices[0].Message)
 
 			for _, toolCall := range toolCalls {
-				if toolCall.Function.Name == "read_files" {
+				if toolCall.Function.Name == ToolReadFiles {
 					var extractedParams struct {
 						FilePaths []string `json:"filepaths"`
 					}
@@ -112,5 +121,29 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		}
 	}
 
-	return nil, fmt.Errorf("maximum number of LLM calls reached")
+	return nil, fmt.Errorf("Maximum number of LLM calls reached")
+}
+
+func (ai *AIService) constructSystemInstructions(req *OptimizeRequest) (string, error) {
+	multistageBuildsPrompt := ""
+	if req.DockerfileStageCount == 1 {
+		// Only add instructions for multistage builds if the Dockerfile is single-stage
+		multistageBuildsPrompt = RuleMultistageBuildsPrompt
+	}
+	data := map[string]string{
+		"Backtick":             "`",
+		"TripleBackticks":      "```",
+		"RuleMultistageBuilds": multistageBuildsPrompt,
+	}
+	return promptcreator.ConstructPrompt(OptimizeRequestSystemPrompt, data)
+}
+
+func (ai *AIService) constructUserQuery(req *OptimizeRequest) (string, error) {
+	data := map[string]string{
+		"TripleBackticks": "```",
+		"DirTree":         req.ProjectDirectory.DirTree(),
+		"Dockerfile":      req.Dockerfile,
+		"PackageJSON":     req.PackageJSON,
+	}
+	return promptcreator.ConstructPrompt(OptimizeRequestUserPrompt, data)
 }

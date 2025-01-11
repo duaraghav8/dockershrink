@@ -11,6 +11,7 @@ import (
 	"github.com/duaraghav8/dockershrink/internal/packagejson"
 	"github.com/duaraghav8/dockershrink/internal/project"
 	"github.com/duaraghav8/dockershrink/internal/restrictedfilesystem"
+	"github.com/duaraghav8/dockershrink/internal/tree"
 	"github.com/fatih/color"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
@@ -78,6 +79,9 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		dockerignoreContent = string(content)
 	} else {
 		color.Yellow("* No .dockerignore file found at %s", dockerignorePath)
+		// set path to empty string to signify to the rest of the application
+		// that .dockerignore does not exist for this project
+		dockerignorePath = ""
 	}
 	dockerignore, err := dockerignore.NewDockerignore(dockerignoreContent)
 
@@ -122,7 +126,26 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		color.Red("Error getting current working directory: %v", err)
 		os.Exit(1)
 	}
-	projectDirFS := restrictedfilesystem.NewRestrictedFilesystem(cwd)
+
+	// Create directory tree string representation for the LLM prompt
+	// Exclude all directories that don't directly contain the project's files.
+	// These dirs increase prompt token count without adding much value.
+	dirsExcludedFromTreeStructure := append(defaultDirsExcludedFromTreeStructure[:], outputDir)
+	cwdTree, err := tree.BuildTreeWithIgnore(cwd, dirsExcludedFromTreeStructure)
+	if err != nil {
+		color.Red("Error building directory tree: %v", err)
+		os.Exit(1)
+	}
+	if len(cwdTree) > dirTreeStrLenLimit {
+		cwdTree = cwdTree[:dirTreeStrLenLimit] + "\n... (truncated)"
+	}
+
+	projectDirFS := restrictedfilesystem.NewRestrictedFilesystem(
+		cwd,
+		cwdTree,
+		dockerfilePath,
+		dockerignorePath,
+	)
 
 	proj := project.NewProject(dockerfileObject, dockerignore, packageJson, projectDirFS)
 
@@ -163,7 +186,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		// Display actions taken
 		fmt.Printf("\n============ %d Action(s) Taken ============\n", len(response.ActionsTaken))
 		for _, action := range response.ActionsTaken {
-			color.Cyan("File: " + color.BlueString(action.Filename))
+			color.Cyan("File: " + color.BlueString(action.Filepath))
 			color.Cyan("Title: " + color.GreenString(action.Title))
 			color.Cyan("Description: " + color.WhiteString(action.Description))
 			fmt.Println("---------------------------------")
@@ -174,7 +197,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	if len(response.Recommendations) > 0 {
 		fmt.Printf("\n\n============ %d Recommendation(s) ============\n", len(response.Recommendations))
 		for _, rec := range response.Recommendations {
-			color.Cyan("File: " + color.BlueString(rec.Filename))
+			color.Cyan("File: " + color.BlueString(rec.Filepath))
 			color.Cyan("Title: " + color.GreenString(rec.Title))
 			color.Cyan("Description: " + color.WhiteString(rec.Description))
 			fmt.Println("---------------------------------")

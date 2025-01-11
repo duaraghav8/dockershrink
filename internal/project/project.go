@@ -41,11 +41,14 @@ func NewProject(
 
 func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationResponse, error) {
 	// Ensure that .dockerignore exists and contains the recommended entries
+	dockerignoreFilepath := p.directory.GetDockerignoreFilePath()
 	if !p.dockerignore.Exists() {
+		dockerignoreFilepath = ".dockerignore"
+
 		p.dockerignore.Create()
 		action := &models.OptimizationAction{
 			Rule:        "create-dockerignore",
-			Filename:    ".dockerignore",
+			Filepath:    dockerignoreFilepath,
 			Title:       "Created .dockerignore file",
 			Description: "Created a new .dockerignore file to exclude unnecessary files & folders from the Docker build context.",
 		}
@@ -57,7 +60,7 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 	if len(added) > 0 {
 		action := &models.OptimizationAction{
 			Rule:        "update-dockerignore",
-			Filename:    ".dockerignore",
+			Filepath:    dockerignoreFilepath,
 			Title:       "Updated .dockerignore file",
 			Description: fmt.Sprintf("Added the following entries to .dockerignore to exclude them from the Docker build context:\n%s", strings.Join(added, "\n")),
 		}
