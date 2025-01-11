@@ -97,3 +97,104 @@ commands: `{script["commands"]}`
         response = response.strip().strip("```").strip()
 
         return response
+
+    def generate_dockerfile(self, package_json_analysis: Dict) -> str:
+        """Generate a Dockerfile with dependency validation"""
+        system_prompt = """
+        You are an expert software and DevOps engineer who specializes in Docker and NodeJS applications.
+        Generate an optimized multi-stage Dockerfile that minimizes image size while maintaining functionality.
+
+        Requirements for the Dockerfile:
+        * Create a multi-stage build with at least two stages
+        * First stage for building/testing (use node:slim)
+        * Final stage for production (use node:alpine)
+        * Set NODE_ENV=production before npm/yarn commands
+        * Install only production dependencies in final stage
+        * Copy only necessary files between stages
+        * Include LABEL metadata if relevant
+        * Add helpful comments explaining each stage
+
+        Build stage must:
+        * Copy package*.json first
+        * Install all dependencies
+        * Copy over application source code
+        * Run 'npx depcheck' to verify no unused packages
+        * Run build script if present
+        * Test the application if test script exists
+
+        Production stage must:
+        * Use lightest possible base image
+        * Install only production dependencies
+        * Copy built artifacts from build stage
+        * Set appropriate CMD/ENTRYPOINT
+        * Exclude devDependencies and test files
+
+        Return only the Dockerfile content without any formatting or markdown.
+        Dockerfile can include comments to explain each stage.
+        """
+
+        project_info = f"""
+        Package name: {package_json_analysis['name']}
+        Entry point: {package_json_analysis['main']}
+        Has build script: {package_json_analysis['has_build_script']}
+        Has start script: {package_json_analysis['has_start_script']}
+        Scripts available: {list(package_json_analysis['scripts'].keys())}
+        Dependencies: {list(package_json_analysis.get('dependencies', {}).keys())}
+        """
+
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": project_info,
+            },
+        ]
+        completion = self._client.chat.completions.create(
+            messages=messages,
+            model=openai_model,
+        )
+        response = completion.choices[0].message.content
+        response = response.strip().strip("```").strip()
+        return response
+
+    def generate_dockerignore(self, package_json_analysis: Dict) -> str:
+        """
+        Generate a .dockerignore file based on the analysis of package.json file.
+        """
+        system_prompt = """
+        You are an expert DevOps engineer specializing in Docker and NodeJS applications.
+        Generate a .dockerignore file for a NodeJS application that:
+        - Ignores unnecessary files and directories
+        - Optimizes the Docker build context
+        - No need to have package-lock.json in the .dockerignore file
+        - Return only the Dockerignore content without any formatting or markdown.
+
+        """
+        project_info = f"""
+        Package name: {package_json_analysis['name']}
+        Entry point: {package_json_analysis['main']}
+        Has build script: {package_json_analysis['has_build_script']}
+        Has start script: {package_json_analysis['has_start_script']}
+        Scripts available: {list(package_json_analysis['scripts'].keys())}
+        """
+
+        messages = [
+            {
+                "role": "system",
+                "content": system_prompt,
+            },
+            {
+                "role": "user",
+                "content": project_info,
+            },
+        ]
+        completion = self._client.chat.completions.create(
+            messages=messages,
+            model=openai_model,
+        )
+        response = completion.choices[0].message.content
+        response = response.strip().strip("```").strip()
+        return response
