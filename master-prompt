@@ -28,6 +28,14 @@ Always try to clarify things rather than making assumptions.
 
 
 ## OUTPUT
+As your final response, you need to provide 3 pieces of information:
+1. The optimized Dockerfile
+2. List of actions you have taken to optimize the Dockerfile
+3. List of recommendations.
+   A recommendation is an action that a user can take to further reduce their image's bloat.
+   This will only come into picture in case a certain rule or lack of rule(s) prevented you from making that optimization or you weren't sure that this should be applied but its good advise.
+   If you don't have any further recommendations, just return an empty list.
+
 
 ## RULES
 
