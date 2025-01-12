@@ -76,14 +76,37 @@ Here is an example response:
 ## RULES
 
 ### Multistage Builds
-# TODO
+Adding a final stage to the Dockerfile which uses a small base image and only copies files that are necessary for runtime is an extremely useful strategy.
+This minimizes the things packed into the final image produced, thereby reducing bloat.
 
+The given Dockerfile only contains a single Stage, so it MIGHT benefit from adding another stage. You need to determine this first.
 
+If this Dockerfile only contains the following:
+- a light base image like `alpine`, `slim` or distroless
+- instructions to copy source code
+- instructions to install production dependencies
+- instructions to run the application
 
+then, there is no need to add another stage and you can skip this rule.
 
-As part of this request, your only task is to modify the given single-stage Dockerfile to adopt Multistage builds.
-Multistage is beneficial because the final image produced (final stage) uses a slim base image and only contains things that we put in it.
-Create a final stage in the Dockerfile which only contains the application source code, its dependencies (excluding "devDependencies" from package.json) and anything else you think is necessary for the app at runtime or relevant to the final image.
+example of a Dockerfile that doesn't need another stage:
+```
+FROM node:22-alpine
+
+LABEL author="duaraghav8"
+LABEL description="This is my cute little nodejs app"
+
+WORKDIR /app
+
+COPY package*.json .
+RUN npm install --omit=dev
+
+COPY src/ .
+
+ENTRYPOINT ["node", "src/main.js"]
+```
+
+Otherwise, create a final stage in this Dockerfile which only contains things you think are necessary for the app at runtime or relevant to the final image.
 
 * The final stage must use a slim base image if possible. If the previous stage uses a specific version of NodeJS, make sure to use the same version.
 * If possible, set the `NODE_ENV` environment variable to `production`. This should be done BEFORE running any commands related to nodejs or npm. This ensures that dev dependencies are not installed in the final stage.
