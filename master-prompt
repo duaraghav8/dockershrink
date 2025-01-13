@@ -10,7 +10,7 @@ Your primary task is to optimize the Dockerfile of the given project to reduce t
 
 ## USER INPUT
 The user will provide you the following pieces of information about their nodejs project:
-- Directory structure
+- Directory structure (this excludes auto-generated directories such as node_modules, .git, .npm, etc because they're not part of the core project written by the developer)
 - Dockerfile that needs to be optimized
 - package.json
 
