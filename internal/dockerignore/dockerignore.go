@@ -8,6 +8,8 @@ type Dockerignore struct {
 	rawData string
 }
 
+// TODO: Fix Exists vs Create methods
+
 func NewDockerignore(content string) (*Dockerignore, error) {
 	return &Dockerignore{rawData: content}, nil
 }

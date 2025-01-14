@@ -16,6 +16,7 @@ const (
 
 const Linebreak = "\n"
 
+// Dockerfile provides APIs to programmatically perform Read-Write on Dockerfiles.
 type Dockerfile struct {
 	code string
 	ast  *parser.Node
@@ -39,6 +40,7 @@ func (d *Dockerfile) Raw() string {
 	return d.code
 }
 
+// GetStageCount returns the number of stages in the Dockerfile
 func (d *Dockerfile) GetStageCount() uint {
 	count := 0
 	for _, child := range d.ast.Children {
@@ -72,6 +74,7 @@ func (d *Dockerfile) GetFinalStage() (*Stage, error) {
 	}, nil
 }
 
+// SetStageBaseImage sets the base image for a given stage in the Dockerfile
 func (d *Dockerfile) SetStageBaseImage(stage *Stage, image *Image) {
 	// Find the exact string in the Dockerfile that specifies the Image name for the stage
 	// Replace the image name with the new image name.
