@@ -8,20 +8,16 @@ type Dockerignore struct {
 	rawData string
 }
 
-// TODO: Fix Exists vs Create methods
-
-func NewDockerignore(content string) (*Dockerignore, error) {
-	return &Dockerignore{rawData: content}, nil
+func NewDockerignore(content string) *Dockerignore {
+	return &Dockerignore{rawData: content}
 }
 
-func (d *Dockerignore) Exists() bool {
-	return d.rawData != ""
+func (d *Dockerignore) Raw() string {
+	return d.rawData
 }
 
-func (d *Dockerignore) Create() {
-	d.rawData = ""
-}
-
+// AddIfNotPresent adds the given entries to the .dockerignore file if they are not already present in it.
+// It returns the entries that were added.
 func (d *Dockerignore) AddIfNotPresent(entries []string) []string {
 	originalEntries := strings.Split(d.rawData, "\n")
 	originalEntriesSet := make(map[string]struct{})
@@ -41,8 +37,4 @@ func (d *Dockerignore) AddIfNotPresent(entries []string) []string {
 	}
 
 	return toBeAdded
-}
-
-func (d *Dockerignore) Raw() string {
-	return d.rawData
 }
