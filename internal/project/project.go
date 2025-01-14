@@ -40,33 +40,9 @@ func NewProject(
 }
 
 func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationResponse, error) {
-	// Ensure that .dockerignore exists and contains the recommended entries
-	dockerignoreFilepath := p.directory.GetDockerignoreFilePath()
-	if p.dockerignore == nil {
-		dockerignoreFilepath = ".dockerignore"
+	p.optimizeDockerignore()
 
-		p.dockerignore = dockerignore.NewDockerignore("")
-		action := &models.OptimizationAction{
-			Rule:        "create-dockerignore",
-			Filepath:    dockerignoreFilepath,
-			Title:       "Created .dockerignore file",
-			Description: "Created a new .dockerignore file to exclude unnecessary files & folders from the Docker build context.",
-		}
-		p.addActionTaken(action)
-	}
-
-	entries := []string{"node_modules", "npm_debug.log", ".git"}
-	added := p.dockerignore.AddIfNotPresent(entries)
-	if len(added) > 0 {
-		action := &models.OptimizationAction{
-			Rule:        "update-dockerignore",
-			Filepath:    dockerignoreFilepath,
-			Title:       "Updated .dockerignore file",
-			Description: fmt.Sprintf("Added the following entries to .dockerignore to exclude them from the Docker build context:\n%s", strings.Join(added, "\n")),
-		}
-		p.addActionTaken(action)
-	}
-
+	// Optimize Dockerfile
 	originalDockerfile := p.dockerfile
 
 	if aiService != nil {
@@ -128,4 +104,33 @@ func (p *Project) addRecommendation(r *models.OptimizationAction) {
 
 func (p *Project) addActionTaken(a *models.OptimizationAction) {
 	p.actionsTaken = append(p.actionsTaken, a)
+}
+
+// optimizeDockerignore ensures that .dockerignore exists and contains the recommended entries
+func (p *Project) optimizeDockerignore() {
+	dockerignoreFilepath := p.directory.GetDockerignoreFilePath()
+	if p.dockerignore == nil {
+		dockerignoreFilepath = ".dockerignore"
+
+		p.dockerignore = dockerignore.NewDockerignore("")
+		action := &models.OptimizationAction{
+			Rule:        "create-dockerignore",
+			Filepath:    dockerignoreFilepath,
+			Title:       "Created .dockerignore file",
+			Description: "Created a new .dockerignore file to exclude unnecessary files & folders from the Docker build context.",
+		}
+		p.addActionTaken(action)
+	}
+
+	entries := []string{"node_modules", "npm_debug.log", ".git"}
+	added := p.dockerignore.AddIfNotPresent(entries)
+	if len(added) > 0 {
+		action := &models.OptimizationAction{
+			Rule:        "update-dockerignore",
+			Filepath:    dockerignoreFilepath,
+			Title:       "Updated .dockerignore file",
+			Description: fmt.Sprintf("Added the following entries to .dockerignore to exclude them from the Docker build context:\n%s", strings.Join(added, "\n")),
+		}
+		p.addActionTaken(action)
+	}
 }
