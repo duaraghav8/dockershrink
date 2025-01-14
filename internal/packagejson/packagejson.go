@@ -2,7 +2,6 @@ package packagejson
 
 import (
 	"encoding/json"
-	"errors"
 )
 
 type PackageJSON struct {
@@ -19,18 +18,6 @@ func NewPackageJSON(content string) (*PackageJSON, error) {
 	return &PackageJSON{rawData: data, rawDataStr: content}, nil
 }
 
-func (p *PackageJSON) GetScript(name string) (string, error) {
-	scripts, ok := p.rawData["scripts"].(map[string]interface{})
-	if !ok {
-		return "", errors.New("scripts not found in package.json")
-	}
-	script, ok := scripts[name].(string)
-	if !ok {
-		return "", nil
-	}
-	return script, nil
-}
-
 func (p *PackageJSON) Raw() map[string]interface{} {
 	return p.rawData
 }
@@ -38,3 +25,15 @@ func (p *PackageJSON) Raw() map[string]interface{} {
 func (p *PackageJSON) String() string {
 	return p.rawDataStr
 }
+
+// func (p *PackageJSON) GetScript(name string) (string, error) {
+// 	scripts, ok := p.rawData["scripts"].(map[string]interface{})
+// 	if !ok {
+// 		return "", errors.New("scripts not found in package.json")
+// 	}
+// 	script, ok := scripts[name].(string)
+// 	if !ok {
+// 		return "", nil
+// 	}
+// 	return script, nil
+// }

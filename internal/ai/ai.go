@@ -26,6 +26,9 @@ func NewAIService(client *openai.Client) *AIService {
 	}
 }
 
+// OptimizeDockerfile optimizes the given Dockerfile using OpenAI GPT-4o
+// It returns the optimized Dockerfile along with the actions taken and
+// recommendations for further optimization.
 func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse, error) {
 	systemInstructions, err := ai.constructSystemInstructions(req)
 	if err != nil {
