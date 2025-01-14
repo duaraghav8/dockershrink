@@ -214,7 +214,7 @@ twine upload dist/*
 - Implement `generate` command
 - Make new release
 - Update README
-    - add all dev instructions (`go test`, `fmt`, `mod tidy`, `mod vendor`, `get -u <package>`)
+    - add all dev instructions (`go test ./...`, `fmt`, `mod tidy`, `mod vendor`, `get -u <package>`)
 - Linkedin + Slack posts
 - Create TODO items in repo Issues
     - allow more actions (documentation search, web search)
