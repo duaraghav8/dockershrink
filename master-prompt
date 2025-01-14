@@ -213,7 +213,24 @@ But if not, then add depcheck to the Dockerfile.
 
 ### Exclude devDependencies
 
-TODO
+The goal of this rule is to ensure that the final Docker image produced does not contain development modules specified under `devDependencies` in `package.json`.
+These modules are only useful during development & testing of the project and are not required for the final distribution at runtime. Examples are grunt, ESLint, etc.
+
+how to check if dev deps are present?
+
+NODE_ENV
+
+options for npm & yarn for excluding devdeps
+
+use the same installation command as the original dockerfile, but with the appropriate options
+
+don't let user copy devDeps from previous stage
+don't let user copy deps from build context, always perform fresh install
+
+if no deps are included at all, then nothing to do
+
+if at this moment, the dockerfile only has a single stage and is installing dev deps, then best thing is to add a new stage and exclude devdeps
+"a fresh install of only prod deps in the final stage" is the most preferred approach
 
 
 ====================
