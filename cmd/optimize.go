@@ -68,22 +68,22 @@ func runOptimize(cmd *cobra.Command, args []string) {
 
 	dockerfileObject, err := dockerfile.NewDockerfile(string(dockerfileContents))
 
-	// Read .dockerignore
-	var dockerignoreContent string
+	// Read .dockerignore if it exists
+	var dockerignoreObject *dockerignore.Dockerignore
+
 	if _, err := os.Stat(dockerignorePath); err == nil {
 		content, err := os.ReadFile(dockerignorePath)
 		if err != nil {
-			color.Red("Error reading .dockerignore: %v", err)
+			color.Red("Error reading %s: %v", dockerignorePath, err)
 			os.Exit(1)
 		}
-		dockerignoreContent = string(content)
+		dockerignoreObject = dockerignore.NewDockerignore(string(content))
 	} else {
 		color.Yellow("* No .dockerignore file found at %s", dockerignorePath)
 		// set path to empty string to signify to the rest of the application
 		// that .dockerignore does not exist for this project
 		dockerignorePath = ""
 	}
-	dockerignore, err := dockerignore.NewDockerignore(dockerignoreContent)
 
 	// Read package.json
 	var packageJson *packagejson.PackageJSON
@@ -147,7 +147,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		dockerignorePath,
 	)
 
-	proj := project.NewProject(dockerfileObject, dockerignore, packageJson, projectDirFS)
+	proj := project.NewProject(dockerfileObject, dockerignoreObject, packageJson, projectDirFS)
 
 	response, err := proj.OptimizeDockerImage(aiService)
 	if err != nil {

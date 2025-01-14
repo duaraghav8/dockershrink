@@ -42,10 +42,10 @@ func NewProject(
 func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationResponse, error) {
 	// Ensure that .dockerignore exists and contains the recommended entries
 	dockerignoreFilepath := p.directory.GetDockerignoreFilePath()
-	if !p.dockerignore.Exists() {
+	if p.dockerignore == nil {
 		dockerignoreFilepath = ".dockerignore"
 
-		p.dockerignore.Create()
+		p.dockerignore = dockerignore.NewDockerignore("")
 		action := &models.OptimizationAction{
 			Rule:        "create-dockerignore",
 			Filepath:    dockerignoreFilepath,
