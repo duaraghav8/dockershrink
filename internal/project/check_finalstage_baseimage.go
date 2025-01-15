@@ -15,6 +15,7 @@ const (
 	imageTagSlim   = "slim"
 )
 
+// isAlpineOrSlim return true if the given image is an alpine or slim image.
 func isAlpineOrSlim(image *dockerfile.Image) bool {
 	tag := image.Tag()
 	return strings.Contains(tag, imageTagAlpine) || strings.Contains(tag, imageTagSlim)
@@ -36,6 +37,9 @@ func getNodeAlpineEquivalentTagForImage(image *dockerfile.Image) string {
 	*/
 	slimOnlyImageTypes := []string{"bullseye", "bookworm", "buster", "iron"}
 
+	if image.Name() != "node" {
+		return ""
+	}
 	tag := image.Tag()
 	if tag == dockerfile.DefaultTag {
 		return imageTagAlpine
