@@ -215,9 +215,36 @@ But if not, then add depcheck to the Dockerfile.
 
 
 ### Exclude devDependencies
+The goal of this rule is to ensure that the final Docker image produced does not contain any development modules specified under {{ .Backtick }}devDependencies{{ .Backtick }} in {{ .Backtick }}package.json{{ .Backtick }}.
+These modules are only useful during development & testing of the project and are not required for the final distribution at runtime. Examples are grunt, ESLint, etc.
 
-**** TODO ****
+For this rule, mainly the final stage needs to be analysed.
+If, at this point, the Dockerfile only contains a single stage, then that is the final stage.
 
+Dev dependencies are excluded if any of the following conditions holds true in the final stage:
+* {{ .Backtick }}NODE_ENV{{ .Backtick }} environment variable is set to "production" before running any installation commands
+   eg- {{ .TripleBackticks }}ENV NODE_ENV=production
+RUN npm install{{ .TripleBackticks }}
+* installation commands contain option(s) to exclude dev dependencies.
+  eg- {{ .Backtick }}npm install --omit=dev{{ .Backtick }}, {{ .Backtick }}yarn install --production{{ .Backtick }}, {{ .Backtick }}npm install --production
+* node_modules are copied from a previous stage and the previous stage does not install dev dependencies (satisfies any of the 2 conditions above)
+  eg- {{ .TripleBackticks }}# /app contains node_modules already and they don't contain dev deps
+COPY --from=build-stage /app /app{{ .TripleBackticks }}
+* No dependencies are installed or copied at all
+
+But if none of the above conditions are true, then dev dependencies probably exist and this issue must be addressed.
+The best way to do this is to add a new Stage at the end and only install what's necessary (refer to the Multistage builds rule above).
+If you're unable to do this, add a recommendation instead of taking any actions.
+
+Furthermore, if node_modules are copied from the build context, ie, from the user's system, assume that it contains dev dependencies.
+eg- {{ .Backtick }}COPY node_modules /app/node_modules{{ .Backtick }}
+This must be replaced by a command for fresh installation.
+eg- {{ .Backtick }}npm install --production{{ .Backtick }}
+
+NOTE: Always keep the installation commands as consistent as possible with the original commands.
+For example, if the user originally used {{ .Backtick }}yarn install{{ .Backtick }}, fix it to {{ .Backtick }}yarn install --production{{ .Backtick }} rather than switching to npm for installation.
+
+The best approach to dependencies is to perform a fresh installation of only production dependencies in the final stage of the Dockerfile.
 `
 
 const OptimizeRequestUserPrompt = `Project Directory Structure:
