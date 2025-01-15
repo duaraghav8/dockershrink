@@ -48,10 +48,9 @@ func buildTree(dirPath string, ignoreDirs []string, prefix string, isRoot bool, 
 	})
 
 	// If this is the root, add "."
-	// alternatively, add filepath.Base(dirPath)
+	// alternatively, add root directory name: `filepath.Base(dirPath)`
 	if isRoot {
-		sb.WriteString(".")
-		sb.WriteString("\n")
+		sb.WriteString(".\n")
 	}
 
 	// Iterate over directory entries
@@ -67,13 +66,13 @@ func buildTree(dirPath string, ignoreDirs []string, prefix string, isRoot bool, 
 		fullPath := filepath.Join(dirPath, entry.Name())
 
 		if entry.IsDir() {
-			// If we want to ignore this directory, just add it (without recursion)
-			if contains(ignoreDirs, entry.Name()) {
-				sb.WriteString(fmt.Sprintf("%s%s%s\n", prefix, connector, entry.Name()))
-			} else {
-				// Add the directory name
-				sb.WriteString(fmt.Sprintf("%s%s%s\n", prefix, connector, entry.Name()))
+			// Add the directory name
+			sb.WriteString(fmt.Sprintf("%s%s%s/\n", prefix, connector, entry.Name()))
 
+			if contains(ignoreDirs, entry.Name()) {
+				// If this is an ignored directory, skip exploring it and let the user know
+				sb.WriteString(fmt.Sprintf("%s%s(truncated)\n", prefix+subPrefix, ""))
+			} else {
 				// Recurse into this directory
 				err = buildTree(fullPath, ignoreDirs, prefix+subPrefix, false, sb)
 				if err != nil {
