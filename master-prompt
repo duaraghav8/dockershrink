@@ -213,8 +213,27 @@ But if not, then add depcheck to the Dockerfile.
 
 ### Exclude devDependencies
 
-The goal of this rule is to ensure that the final Docker image produced does not contain development modules specified under `devDependencies` in `package.json`.
+The goal of this rule is to ensure that the final Docker image produced does not contain any development modules specified under `devDependencies` in `package.json`.
 These modules are only useful during development & testing of the project and are not required for the final distribution at runtime. Examples are grunt, ESLint, etc.
+
+For this rule, mainly the final stage needs to be analysed.
+If, at this point, the Dockerfile only contains a single stage, then that stage is treated as the final stage.
+
+Dev dependencies are excluded if any of the following conditions holds true in the final stage:
+* `NODE_ENV` environment variable is set to "production" before running any installation commands
+   eg- ```ENV NODE_ENV=production
+RUN npm install```
+* installation commands contain option(s) to exclude dev dependencies.
+  eg- `npm install --omit=dev`, `yarn install --production`, `npm install --production`
+* node_modules are copied from a previous stage and the previous stage does not install dev dependencies (satisfies any of the 2 conditions above)
+  eg- ```# /app contains node_modules already and they don't contain dev deps
+COPY --from=build-stage /app /app```
+
+But if none of the above conditions are true, then dev dependencies probably exist and this issue must be addressed.
+
+Furthermore, if node_modules are copied from the build context, ie, from the user's system, assume that it contains dev dependencies. So this must be fixed too.
+eg- `COPY node_modules /app/node_modules`
+
 
 how to check if dev deps are present?
 
