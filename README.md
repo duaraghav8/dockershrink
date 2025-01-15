@@ -208,7 +208,6 @@ twine upload dist/*
 9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
 
 ## Golang rewrite TODO
-- Write unit tests
 - End to end testing
 - Distribution setup with same tooling as dockershrink-cli
 - Implement `generate` command
