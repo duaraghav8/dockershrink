@@ -228,28 +228,21 @@ RUN npm install```
 * node_modules are copied from a previous stage and the previous stage does not install dev dependencies (satisfies any of the 2 conditions above)
   eg- ```# /app contains node_modules already and they don't contain dev deps
 COPY --from=build-stage /app /app```
+* No dependencies are installed or copied at all
 
 But if none of the above conditions are true, then dev dependencies probably exist and this issue must be addressed.
+The best way to do this is to add a new Stage at the end and only install what's necessary (refer to the Multistage builds rule above).
+If you're unable to do this, add a recommendation instead of taking any actions.
 
-Furthermore, if node_modules are copied from the build context, ie, from the user's system, assume that it contains dev dependencies. So this must be fixed too.
+Furthermore, if node_modules are copied from the build context, ie, from the user's system, assume that it contains dev dependencies.
 eg- `COPY node_modules /app/node_modules`
+This must be replaced by a command for fresh installation.
+eg- `npm install --production`
 
+NOTE: Always keep the installation commands as consistent as possible with the original commands.
+For example, if the user originally used `yarn install`, fix it to `yarn install --production` rather than switching to npm for installation.
 
-how to check if dev deps are present?
-
-NODE_ENV
-
-options for npm & yarn for excluding devdeps
-
-use the same installation command as the original dockerfile, but with the appropriate options
-
-don't let user copy devDeps from previous stage
-don't let user copy deps from build context, always perform fresh install
-
-if no deps are included at all, then nothing to do
-
-if at this moment, the dockerfile only has a single stage and is installing dev deps, then best thing is to add a new stage and exclude devdeps
-"a fresh install of only prod deps in the final stage" is the most preferred approach
+The best approach to dependencies is to perform a fresh installation of only production dependencies in the final stage of the Dockerfile.
 
 
 ====================
