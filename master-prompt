@@ -217,7 +217,7 @@ The goal of this rule is to ensure that the final Docker image produced does not
 These modules are only useful during development & testing of the project and are not required for the final distribution at runtime. Examples are grunt, ESLint, etc.
 
 For this rule, mainly the final stage needs to be analysed.
-If, at this point, the Dockerfile only contains a single stage, then that stage is treated as the final stage.
+If, at this point, the Dockerfile only contains a single stage, then that is the final stage.
 
 Dev dependencies are excluded if any of the following conditions holds true in the final stage:
 * `NODE_ENV` environment variable is set to "production" before running any installation commands
