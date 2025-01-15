@@ -209,7 +209,8 @@ twine upload dist/*
 
 ## Golang rewrite TODO
 - End to end testing
-- Distribution setup with same tooling as dockershrink-cli
+- only output detailed error if if --verbose is specified (create a custom Logger to handle all cli output)
+- fix homebrew-dockershrink repo
 - Implement `generate` command
 - Make new release
 - Update README

@@ -79,7 +79,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		}
 		dockerignoreObject = dockerignore.NewDockerignore(string(content))
 	} else {
-		color.Yellow("* No .dockerignore file found at %s", dockerignorePath)
+		color.Yellow("* No dockerignore file found at %s", dockerignorePath)
 		// set path to empty string to signify to the rest of the application
 		// that .dockerignore does not exist for this project
 		dockerignorePath = ""
@@ -151,7 +151,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 
 	response, err := proj.OptimizeDockerImage(aiService)
 	if err != nil {
-		color.Red("Error optimizing Docker image: %v", err)
+		color.Red("Error optimizing Docker image: %s", err)
 		if verbose {
 			fmt.Println(err)
 		}

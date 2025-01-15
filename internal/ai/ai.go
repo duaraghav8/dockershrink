@@ -60,7 +60,7 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 					"properties": map[string]interface{}{
 						"filepaths": map[string]interface{}{
 							"type":        "array",
-							"items":       "string",
+							"items":       map[string]interface{}{"type": "string"},
 							"description": "List of files to read. Each item in the array is a file path relative to the project root directory.",
 						},
 					},
@@ -128,21 +128,24 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 }
 
 func (ai *AIService) constructSystemInstructions(req *OptimizeRequest) (string, error) {
+	data := map[string]string{
+		"Backtick":        "`",
+		"TripleBackticks": "```",
+	}
+
 	multistageBuildsPrompt := ""
 	if req.DockerfileStageCount == 1 {
 		// Only add instructions for multistage builds if the Dockerfile is single-stage
-		multistageBuildsPrompt = RuleMultistageBuildsPrompt
+		multistageBuildsPrompt, _ = promptcreator.ConstructPrompt(RuleMultistageBuildsPrompt, data)
 	}
-	data := map[string]string{
-		"Backtick":             "`",
-		"TripleBackticks":      "```",
-		"RuleMultistageBuilds": multistageBuildsPrompt,
-	}
+
+	data["RuleMultistageBuilds"] = multistageBuildsPrompt
 	return promptcreator.ConstructPrompt(OptimizeRequestSystemPrompt, data)
 }
 
 func (ai *AIService) constructUserQuery(req *OptimizeRequest) (string, error) {
 	data := map[string]string{
+		"Backtick":        "`",
 		"TripleBackticks": "```",
 		"DirTree":         req.ProjectDirectory.DirTree(),
 		"Dockerfile":      req.Dockerfile,
