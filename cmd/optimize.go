@@ -8,6 +8,7 @@ import (
 	"github.com/duaraghav8/dockershrink/internal/ai"
 	"github.com/duaraghav8/dockershrink/internal/dockerfile"
 	"github.com/duaraghav8/dockershrink/internal/dockerignore"
+	"github.com/duaraghav8/dockershrink/internal/log"
 	"github.com/duaraghav8/dockershrink/internal/packagejson"
 	"github.com/duaraghav8/dockershrink/internal/project"
 	"github.com/duaraghav8/dockershrink/internal/restrictedfilesystem"
@@ -47,6 +48,10 @@ func init() {
 }
 
 func runOptimize(cmd *cobra.Command, args []string) {
+	logger := log.NewLogger(verbose)
+
+	// TODO: replace all print statements here with logger calls
+
 	// Initialize AI service if API key is provided or environment variable is set
 	var aiService *ai.AIService
 	if openaiApiKey == "" {
@@ -56,7 +61,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		client := openai.NewClient(
 			option.WithAPIKey(openaiApiKey),
 		)
-		aiService = ai.NewAIService(client)
+		aiService = ai.NewAIService(logger, client)
 	}
 
 	// Read Dockerfile
