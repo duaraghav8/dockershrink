@@ -5,6 +5,12 @@ import (
 	"os"
 )
 
+// TODO
+// - remove logger metadata from log messages, just keep the message
+// - debug logs should be gray color to signify background stuff
+// - data should be map[string]string, print everything as key=value
+//   - if some value is too long, print it in a separate line and give enough whitespace in between
+
 type Logger struct {
 	debugEnabled bool
 }

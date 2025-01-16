@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/duaraghav8/dockershrink/internal/ai/promptcreator"
 	"github.com/duaraghav8/dockershrink/internal/log"
@@ -42,6 +43,9 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		return nil, fmt.Errorf("failed to construct user prompt: %w", err)
 	}
 
+	ai.L.Debug("System instructions", map[string]interface{}{"content": systemInstructions})
+	ai.L.Debug("User query", map[string]interface{}{"content": userQuery})
+
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(systemInstructions),
 		openai.UserMessage(userQuery),
@@ -74,33 +78,55 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 	}
 	// TODO: Enable "get_documentation" tool call
 
+	params := openai.ChatCompletionNewParams{
+		Messages: openai.F(messages),
+		Tools:    openai.F(availableTools),
+		ResponseFormat: openai.F[openai.ChatCompletionNewParamsResponseFormatUnion](
+			openai.ResponseFormatJSONSchemaParam{
+				Type:       openai.F(openai.ResponseFormatJSONSchemaTypeJSONSchema),
+				JSONSchema: openai.F(responseFormat),
+			},
+		),
+		Model: openai.F(OpenAIPreferredModel),
+	}
+
 	for i := 0; i < MaxLLMCalls; i++ {
-		params := openai.ChatCompletionNewParams{
-			Messages: openai.F(messages),
-			Tools:    openai.F(availableTools),
-			ResponseFormat: openai.F[openai.ChatCompletionNewParamsResponseFormatUnion](
-				openai.ResponseFormatJSONSchemaParam{
-					Type:       openai.F(openai.ResponseFormatJSONSchemaTypeJSONSchema),
-					JSONSchema: openai.F(responseFormat),
-				},
-			),
-			Model: openai.F(OpenAIPreferredModel),
-		}
+		ai.L.Debug("Calling LLM for optimization", map[string]interface{}{"attempt": i + 1})
+
 		response, err := ai.client.Chat.Completions.New(context.Background(), params)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get chat completion: %w", err)
 		}
 
+		ai.L.Debug("Received response", map[string]interface{}{
+			"content":   response.Choices[0].Message.Content,
+			"toolCalls": response.Choices[0].Message.ToolCalls,
+			"json":      response.Choices[0].Message.JSON,
+		})
+
 		toolCalls := response.Choices[0].Message.ToolCalls
 		if len(toolCalls) == 0 {
+			ai.L.Debug("Received final response", nil)
 			// no tool calls, the optimized Dockerfile has been returned by the LLM
 			optimizeResponse := OptimizeResponse{}
 			err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &optimizeResponse)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse final response from LLM: %w", err)
 			}
+
+			ai.L.Debug("Response", map[string]interface{}{
+				"dockerfile":      optimizeResponse.Dockerfile,
+				"actions":         optimizeResponse.ActionsTaken,
+				"recommendations": optimizeResponse.Recommendations,
+			})
+
 			return &optimizeResponse, nil
 		} else {
+
+			ai.L.Debug("Tool call", map[string]interface{}{
+				"message": response.Choices[0].Message.Content,
+			})
+
 			// add the tool call message back to the ongoing conversation with LLM
 			params.Messages.Value = append(params.Messages.Value, response.Choices[0].Message)
 
@@ -113,15 +139,43 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 						return nil, fmt.Errorf("failed to parse function call arguments (%s) from LLM: %w", toolCall.Function.Arguments, err)
 					}
 
+					ai.L.Debug("read files", map[string]interface{}{
+						"filepaths": extractedParams.FilePaths,
+					})
+
 					projectFiles, err := req.ProjectDirectory.ReadFiles(extractedParams.FilePaths)
 					if err != nil {
 						return nil, fmt.Errorf("failed to read files from the project requested by LLM: %w", err)
 					}
-					projectFilesJSON, err := json.Marshal(projectFiles)
-					if err != nil {
-						return nil, fmt.Errorf("failed to convert project files into JSON object: %w", err)
+
+					responsePrompt := "Here are the files you requested:\n"
+					for path, content := range projectFiles {
+						var filePrompt string
+
+						if len(strings.TrimSpace(content)) == 0 {
+							filePrompt = fmt.Sprintf("%s\n[File is empty]\n\n", path)
+						} else {
+							data := map[string]string{
+								"TripleBackticks": "```",
+								"Filepath":        path,
+								"Content":         content,
+							}
+							filePrompt, _ = promptcreator.ConstructPrompt(ToolReadFilesResponseSingleFilePrompt, data)
+						}
+
+						responsePrompt += filePrompt
 					}
-					params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, string(projectFilesJSON)))
+
+					ai.L.Debug("Sending back the files", map[string]interface{}{
+						"json": responsePrompt,
+					})
+
+					params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, responsePrompt))
+				} else {
+					ai.L.Debug("Unknown tool", map[string]interface{}{
+						"name": toolCall.Function.Name,
+						"args": toolCall.Function.Arguments,
+					})
 				}
 			}
 		}

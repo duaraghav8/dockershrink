@@ -263,3 +263,10 @@ package.json:
 {{ .PackageJSON }}
 {{ .TripleBackticks }}
 `
+
+const ToolReadFilesResponseSingleFilePrompt = `{{ .Filepath }}
+{{ .TripleBackticks }}
+{{ .Content }}
+{{ .TripleBackticks }}
+
+`
