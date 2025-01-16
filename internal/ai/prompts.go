@@ -269,3 +269,6 @@ const ToolReadFilesResponseSingleFilePrompt = `{{ .Filepath }}
 {{ .TripleBackticks }}
 
 `
+
+const RequestedFileNotFoundPrompt = `{{ .Filepath }}: No such file or directory was found.
+You can try to fix the path and call the function again or skip this file.`
