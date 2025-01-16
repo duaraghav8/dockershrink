@@ -3,7 +3,9 @@ package ai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"strings"
 
 	"github.com/duaraghav8/dockershrink/internal/ai/promptcreator"
@@ -145,6 +147,20 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 
 					projectFiles, err := req.ProjectDirectory.ReadFiles(extractedParams.FilePaths)
 					if err != nil {
+						// If no such file or directory was found, the LLM probably hallucinated and gave an incorrect filepath.
+						// Send feedback to it.
+						if errors.Is(err, fs.ErrNotExist) {
+							data := map[string]string{
+								"Filepath": "",
+							}
+							if pathErr, ok := err.(*fs.PathError); ok {
+								data["Filepath"] = pathErr.Path
+							}
+							fileNotFoundPrompt, _ := promptcreator.ConstructPrompt(RequestedFileNotFoundPrompt, data)
+							params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, fileNotFoundPrompt))
+							continue
+						}
+
 						return nil, fmt.Errorf("failed to read files from the project requested by LLM: %w", err)
 					}
 
