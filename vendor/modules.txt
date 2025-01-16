@@ -35,7 +35,7 @@ github.com/moby/buildkit/frontend/dockerfile/command
 github.com/moby/buildkit/frontend/dockerfile/parser
 github.com/moby/buildkit/frontend/dockerfile/shell
 github.com/moby/buildkit/util/stack
-# github.com/openai/openai-go v0.1.0-alpha.43
+# github.com/openai/openai-go v0.1.0-alpha.45
 ## explicit; go 1.21
 github.com/openai/openai-go
 github.com/openai/openai-go/internal

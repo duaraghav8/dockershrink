@@ -214,6 +214,7 @@ twine upload dist/*
 - changes for --verbose option
   - only output detailed error if --verbose is specified (create a custom Logger to handle all cli output)
   - Output all interaction with LLM during agentic loop
+- refactor ai.go to bring back sanity
 - fix homebrew-dockershrink repo
 - Implement `generate` command
 - Make new release
