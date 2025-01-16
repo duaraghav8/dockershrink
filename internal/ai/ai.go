@@ -6,22 +6,25 @@ import (
 	"fmt"
 
 	"github.com/duaraghav8/dockershrink/internal/ai/promptcreator"
+	"github.com/duaraghav8/dockershrink/internal/log"
 	"github.com/openai/openai-go"
 )
 
 const (
 	OpenAIPreferredModel = openai.ChatModelGPT4o2024_11_20
-	MaxLLMCalls          = 10
+	MaxLLMCalls          = 5
 )
 
 const ToolReadFiles = "read_files"
 
 type AIService struct {
+	L      *log.Logger
 	client *openai.Client
 }
 
-func NewAIService(client *openai.Client) *AIService {
+func NewAIService(logger *log.Logger, client *openai.Client) *AIService {
 	return &AIService{
+		L:      logger,
 		client: client,
 	}
 }
