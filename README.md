@@ -209,7 +209,13 @@ twine upload dist/*
 
 ## Golang rewrite TODO
 - End to end testing
-- only output detailed error if if --verbose is specified (create a custom Logger to handle all cli output)
+- newly created .dockerignore has linebreak on 1st line
+- impose limits on input tokens (check size of Dockerfile + package.json + dir tree; check size of files being sent back as read_files() tool response)
+- read_files(): handle the case where LLM specifies a wrong filename
+  don't exit the app, send response back to llm "file does not exist. are you sure you have the right name?"
+- changes for --verbose option
+  - only output detailed error if --verbose is specified (create a custom Logger to handle all cli output)
+  - Output all interaction with LLM during agentic loop
 - fix homebrew-dockershrink repo
 - Implement `generate` command
 - Make new release
