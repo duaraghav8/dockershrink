@@ -6,7 +6,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/invopop/jsonschema v0.13.0
 	github.com/moby/buildkit v0.18.2
-	github.com/openai/openai-go v0.1.0-alpha.43
+	github.com/openai/openai-go v0.1.0-alpha.45
 	github.com/spf13/cobra v1.8.1
 )
 
