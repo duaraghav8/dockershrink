@@ -140,6 +140,15 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 					if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &extractedParams); err != nil {
 						return nil, fmt.Errorf("failed to parse function call arguments (%s) from LLM: %w", toolCall.Function.Arguments, err)
 					}
+					if len(extractedParams.Filepaths) == 0 {
+						// LLM called the tool without any files to read.
+						// Send feedback, no need to run the tool.
+						params.Messages.Value = append(
+							params.Messages.Value,
+							openai.ToolMessage(toolCall.ID, ToolReadFilesNoFilesSpecifiedPrompt),
+						)
+						continue
+					}
 
 					ai.L.Debug("Tool: read_files", map[string]string{
 						"filepaths": fmt.Sprintf("%+v", extractedParams.Filepaths),

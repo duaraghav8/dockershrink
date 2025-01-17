@@ -210,11 +210,15 @@ twine upload dist/*
 ## Golang rewrite TODO
 - End to end testing
 - newly created .dockerignore has linebreak on 1st line
+- llm always puts depcheck as recommendation rather than applying it automatically.
+- multistage criteria doesn't seem to work (llm is still adding multistage when not needed.)
 - impose limits on input tokens (check size of Dockerfile + package.json + dir tree; check size of files being sent back as read_files() tool response)
 - changes for --verbose option
   - only output detailed error if --verbose is specified (create a custom Logger to handle all cli output)
   - Output all interaction with LLM during agentic loop
 - refactor ai.go to bring back sanity
+- if dockerfile provided in final response fails to parse, send the error back to LLM and ask it to fix it. Do this max of 3 times.
+- Set limit on tool call. Once this limit is reached, tell LLM to produce the final response, no more tools available.
 - fix homebrew-dockershrink repo
 - Implement `generate` command
 - Make new release
