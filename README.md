@@ -208,10 +208,15 @@ twine upload dist/*
 9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
 
 ## Golang rewrite TODO
+- end to end testing over all candidate projects
+
+- read prompt optimization guide
+- experiment with temperature
+- LLM put depcheck as both recommendation and action taken. should not have put in recommendation.
+- llm is trying to forcefully add "npm prune". instead, just try to do a fresh install with --production
 - test whether multistage criteria works well or not
 - impose limits on input tokens (check size of Dockerfile + package.json + dir tree; check size of files being sent back as read_files() tool response)
-- changes for --verbose option
-  - only output detailed error if --verbose is specified (create a custom Logger to handle all cli output)
+
 - fix homebrew-dockershrink repo
 - Implement `generate` command
 - Make new release
