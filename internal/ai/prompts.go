@@ -161,6 +161,7 @@ As your final response, you need to provide 3 pieces of information:
 3. List of recommendations.
    A recommendation is an action that a user can take to further reduce their image's bloat.
    This will only come into picture in case a certain rule or lack of rule(s) prevents you from making that optimization or you weren't sure that this should be applied but its good advise.
+   Include an explanation of why you're recommending this action. If this action was supposed to be a rule but you couldn't apply, mention the reasons as well.
    You can also give a recommendation in case you want to make changes outside of the Dockerfile.
    If you don't have any further recommendations, this list can be empty.
 
@@ -212,6 +213,7 @@ But if not, then add depcheck to the Dockerfile.
 * Add depcheck command as early as possible in the dockerfile, but only after the package.json and source code have been copied into the docker image.
   If you are unsure of when both of them have been copied, then you can simply add depcheck command after the last {{ .Backtick }}COPY{{ .Backtick }} statement in the Dockerfile.
 * In case the Dockerfile has multiple stages, always prefer to run depcheck during the build stage if possible.
+* The depcheck command should always be added as a separate {{ .Backtick }}RUN{{ .Backtick }} statement.
 
 
 ### Exclude devDependencies
