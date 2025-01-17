@@ -26,7 +26,7 @@ func NewDockerfile(contents string) (*Dockerfile, error) {
 	if len(strings.TrimSpace(contents)) == 0 {
 		return nil, errors.New("Dockerfile is empty")
 	}
-	result, err := parser.Parse(strings.NewReader(contents))
+	result, err := parse(contents)
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +34,16 @@ func NewDockerfile(contents string) (*Dockerfile, error) {
 		code: contents,
 		ast:  result.AST,
 	}, nil
+}
+
+// Validate validates the given Dockerfile code
+func Validate(code string) (bool, error) {
+	_, err := parse(code)
+	return err == nil, err
+}
+
+func parse(code string) (*parser.Result, error) {
+	return parser.Parse(strings.NewReader(code))
 }
 
 func (d *Dockerfile) Raw() string {
