@@ -45,8 +45,7 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		return nil, fmt.Errorf("failed to construct user prompt: %w", err)
 	}
 
-	// ai.L.Debug("System instructions", map[string]string{"content": systemInstructions})
-	ai.L.Debug("User message", map[string]string{"prompt": userQuery})
+	ai.L.Debug("Sending user message to LLM", map[string]string{"prompt": userQuery})
 
 	messages := []openai.ChatCompletionMessageParamUnion{
 		openai.SystemMessage(systemInstructions),
@@ -93,39 +92,44 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 	}
 
 	for i := 0; i < MaxLLMCalls; i++ {
-		ai.L.Debug("Calling LLM for optimization", map[string]string{"attempt": fmt.Sprintf("%d", i+1)})
+		ai.L.Debug(
+			"Agentic Loop: Calling LLM",
+			map[string]string{
+				"attempt": fmt.Sprintf("#%d", i+1),
+			},
+		)
 
 		response, err := ai.client.Chat.Completions.New(context.Background(), params)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get chat completion: %w", err)
 		}
 
-		ai.L.Debug("Received response", map[string]string{
+		ai.L.Debug("Received response from LLM", map[string]string{
 			"content": response.Choices[0].Message.Content,
 			"json":    response.Choices[0].Message.JSON.RawJSON(),
 		})
 
 		toolCalls := response.Choices[0].Message.ToolCalls
 		if len(toolCalls) == 0 {
-			ai.L.Debug("Received final response", nil)
+			ai.L.Debug("Response contains final optimized assets", nil)
 
-			// no tool calls, the optimized Dockerfile has been returned by the LLM
 			optimizeResponse := OptimizeResponse{}
 			err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &optimizeResponse)
 			if err != nil {
 				return nil, fmt.Errorf("failed to parse final response from LLM: %w", err)
 			}
 
-			ai.L.Debug("Unpacked LLM Response", map[string]string{
-				"dockerfile":      optimizeResponse.Dockerfile,
-				"recommendations": fmt.Sprintf("%+v", optimizeResponse.Recommendations),
-				"actions_taken":   fmt.Sprintf("%+v", optimizeResponse.ActionsTaken),
-			})
+			// TODO: also log the actions taken and recommendations
+			ai.L.Debug(
+				"Unpacked LLM Response",
+				map[string]string{
+					"dockerfile": optimizeResponse.Dockerfile,
+				},
+			)
 
 			return &optimizeResponse, nil
 		} else {
-
-			ai.L.Debug("Tool call", map[string]string{
+			ai.L.Debug("LLM has called tool(s)", map[string]string{
 				"message": response.Choices[0].Message.Content,
 			})
 
@@ -150,9 +154,13 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 						continue
 					}
 
-					ai.L.Debug("Tool: read_files", map[string]string{
-						"filepaths": fmt.Sprintf("%+v", extractedParams.Filepaths),
-					})
+					ai.L.Debug(
+						"Tool info",
+						map[string]string{
+							"tool":      toolCall.Function.Name,
+							"filepaths": strings.Join(extractedParams.Filepaths, "\n"),
+						},
+					)
 
 					projectFiles, err := req.ProjectDirectory.ReadFiles(extractedParams.Filepaths)
 					if err != nil {
@@ -166,17 +174,20 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 								data["Filepath"] = pathErr.Path
 							}
 							fileNotFoundPrompt, _ := promptcreator.ConstructPrompt(RequestedFileNotFoundPrompt, data)
+
+							ai.L.Debug(
+								"Filepath requested by LLM does not exist, sending feedback to it.",
+								map[string]string{
+									"filepath":        data["Filepath"],
+									"response_to_llm": fileNotFoundPrompt,
+								},
+							)
+
 							params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, fileNotFoundPrompt))
-
-							ai.L.Debug("filepath specified by LLM does not exist", map[string]string{
-								"filepath":        data["Filepath"],
-								"response_to_llm": fileNotFoundPrompt,
-							})
-
 							continue
 						}
 
-						return nil, fmt.Errorf("failed to read files from the project requested by LLM: %w", err)
+						return nil, fmt.Errorf("failed to read file(s) from the project requested by LLM: %w", err)
 					}
 
 					responsePrompt := ""
@@ -197,16 +208,14 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 						responsePrompt += filePrompt
 					}
 
-					ai.L.Debug("read_files: Sending back the files requested by LLM", map[string]string{
-						"response prompt": responsePrompt,
-					})
+					ai.L.Debug(
+						fmt.Sprintf("Tool %s response: Sending back the files requested by LLM", ToolReadFiles),
+						map[string]string{
+							"response_prompt": responsePrompt,
+						},
+					)
 
 					params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, responsePrompt))
-				} else {
-					ai.L.Debug("Unknown tool used by LLM", map[string]string{
-						"name": toolCall.Function.Name,
-						"args": toolCall.Function.Arguments,
-					})
 				}
 			}
 		}
