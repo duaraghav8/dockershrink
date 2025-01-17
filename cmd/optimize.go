@@ -65,8 +65,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	// Read Dockerfile
 	dockerfileContents, err := os.ReadFile(dockerfilePath)
 	if err != nil {
-		color.Red("Error reading %s: %v", dockerfilePath, err)
-		os.Exit(1)
+		logger.Fatalf("Error reading %s: %v", dockerfilePath, err)
 	}
 
 	dockerfileObject, err := dockerfile.NewDockerfile(string(dockerfileContents))
@@ -77,12 +76,11 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	if _, err := os.Stat(dockerignorePath); err == nil {
 		content, err := os.ReadFile(dockerignorePath)
 		if err != nil {
-			color.Red("Error reading %s: %v", dockerignorePath, err)
-			os.Exit(1)
+			logger.Fatalf("Error reading %s: %v", dockerignorePath, err)
 		}
 		dockerignoreObject = dockerignore.NewDockerignore(string(content))
 	} else {
-		color.Yellow("* No dockerignore file found at %s", dockerignorePath)
+		logger.Warnf("* No dockerignore file found at %s", dockerignorePath)
 		// set path to empty string to signify to the rest of the application
 		// that .dockerignore does not exist for this project
 		dockerignorePath = ""
@@ -93,13 +91,11 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	if packageJsonPath != "" {
 		content, err := os.ReadFile(packageJsonPath)
 		if err != nil {
-			color.Red("Error reading package.json at %s: %v", packageJsonPath, err)
-			os.Exit(1)
+			logger.Fatalf("Error reading package.json at %s: %v", packageJsonPath, err)
 		}
 		packageJson, err = packagejson.NewPackageJSON(string(content))
 		if err != nil {
-			color.Red("Failed to parse package.json: %v", err)
-			os.Exit(1)
+			logger.Fatalf("Failed to parse package.json: %v", err)
 		}
 	} else {
 		// Search default paths
@@ -108,26 +104,23 @@ func runOptimize(cmd *cobra.Command, args []string) {
 			if _, err := os.Stat(path); err == nil {
 				content, err := os.ReadFile(path)
 				if err != nil {
-					color.Red("Error reading package.json: %v", err)
-					os.Exit(1)
+					logger.Fatalf("Error reading package.json: %v", err)
 				}
 				packageJson, err = packagejson.NewPackageJSON(string(content))
 				if err != nil {
-					color.Red("Failed to parse package.json: %v", err)
-					os.Exit(1)
+					logger.Fatalf("Failed to parse package.json: %v", err)
 				}
 				break
 			}
 		}
 		if packageJson == nil {
-			color.Yellow("* No package.json found in the default paths")
+			logger.Warnf("* No package.json found in the default paths")
 		}
 	}
 
 	cwd, err := os.Getwd()
 	if err != nil {
-		color.Red("Error getting current working directory: %v", err)
-		os.Exit(1)
+		logger.Fatalf("Error getting current working directory: %v", err)
 	}
 
 	// Create directory tree string representation for the LLM prompt
@@ -136,8 +129,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	dirsExcludedFromTreeStructure := append(defaultDirsExcludedFromTreeStructure[:], outputDir)
 	cwdTree, err := tree.BuildTreeWithIgnore(cwd, dirsExcludedFromTreeStructure)
 	if err != nil {
-		color.Red("Error building directory tree: %v", err)
-		os.Exit(1)
+		logger.Fatalf("Error building directory tree: %v", err)
 	}
 	if len(cwdTree) > dirTreeStrLenLimit {
 		cwdTree = cwdTree[:dirTreeStrLenLimit] + "\n... (truncated)"
@@ -154,39 +146,31 @@ func runOptimize(cmd *cobra.Command, args []string) {
 
 	response, err := proj.OptimizeDockerImage(aiService)
 	if err != nil {
-		color.Red("Error optimizing Docker image: %s", err)
-		if debug {
-			fmt.Println(err)
-		}
-		os.Exit(1)
+		logger.Fatalf("Error optimizing Docker image (use --debug to get more info): %s", err)
 	}
 
 	if len(response.ActionsTaken) > 0 {
 		// Save optimized files
 		if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
-			color.Red("Error creating output directory: %v", err)
-			os.Exit(1)
+			logger.Fatalf("Error creating output directory: %v", err)
 		}
 
 		// write Dockerfile to file
 		dockerfileOutputPath := filepath.Join(outputDir, "Dockerfile")
 		if err := os.WriteFile(dockerfileOutputPath, []byte(response.Dockerfile), os.ModePerm); err != nil {
-			color.Red("Error writing optimized Dockerfile: %v", err)
-			os.Exit(1)
+			logger.Fatalf("Error writing optimized Dockerfile: %v", err)
 		}
 
 		// if Dockerignore exists, write it to file
 		if response.Dockerignore != "" {
 			dockerignoreOutputPath := filepath.Join(outputDir, ".dockerignore")
 			if err := os.WriteFile(dockerignoreOutputPath, []byte(response.Dockerignore), os.ModePerm); err != nil {
-				color.Red("Error writing optimized Dockerfile: %v", err)
-				os.Exit(1)
+				logger.Fatalf("Error writing optimized Dockerfile: %v", err)
 			}
 		}
 
-		color.Green("Optimized file(s) saved to %s/", outputDir)
+		logger.Infof("Optimized file(s) saved to %s/", outputDir)
 
-		// Display actions taken
 		fmt.Printf("\n============ %d Action(s) Taken ============\n", len(response.ActionsTaken))
 		for _, action := range response.ActionsTaken {
 			color.Cyan("File: " + color.BlueString(action.Filepath))
@@ -196,7 +180,6 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Display Recommendations
 	if len(response.Recommendations) > 0 {
 		fmt.Printf("\n\n============ %d Recommendation(s) ============\n", len(response.Recommendations))
 		for _, rec := range response.Recommendations {
@@ -208,6 +191,6 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	}
 
 	if len(response.ActionsTaken) == 0 && len(response.Recommendations) == 0 {
-		color.Green("Docker image is already optimized, no further actions were taken.")
+		logger.Infof("Docker image is already optimized, no further actions were taken.")
 	}
 }
