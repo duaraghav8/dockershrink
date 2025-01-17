@@ -3,52 +3,50 @@ package log
 import (
 	"log"
 	"os"
-)
 
-// TODO
-// - remove logger metadata from log messages, just keep the message
-// - debug logs should be gray color to signify background stuff
+	"github.com/fatih/color"
+)
 
 type Logger struct {
 	debugEnabled bool
+	logger       *log.Logger
 }
 
 // NewLogger creates a logger. If debug = true, debug messages are printed.
 func NewLogger(debug bool) *Logger {
-	return &Logger{debugEnabled: debug}
+	return &Logger{
+		debugEnabled: debug,
+		logger:       log.New(os.Stdout, "", 0),
+	}
 }
 
 func (l *Logger) Debug(msg string, data map[string]string) {
-	if l.debugEnabled {
-		l.printLog("DEBUG", msg, data)
+	if !l.debugEnabled {
+		return
+	}
+	l.logger.Printf("[DEBUG] %s\n", msg)
+	for k, v := range data {
+		l.logger.Printf("    %s=%s", k, v)
 	}
 }
 
-func (l *Logger) Info(msg string, data map[string]string) {
-	l.printLog("INFO", msg, data)
+func (l *Logger) Infof(format string, a ...any) {
+	l.printf(color.FgGreen, format, a...)
 }
 
-func (l *Logger) Warn(msg string, data map[string]string) {
-	l.printLog("WARN", msg, data)
+func (l *Logger) Warnf(format string, a ...any) {
+	l.printf(color.FgYellow, format, a...)
 }
 
-func (l *Logger) Error(msg string, data map[string]string) {
-	l.printLog("ERROR", msg, data)
+func (l *Logger) Errorf(format string, a ...any) {
+	l.printf(color.FgRed, format, a...)
 }
 
-func (l *Logger) Fatal(msg string, data map[string]string) {
-	l.printLog("FATAL", msg, data)
+func (l *Logger) Fatalf(format string, a ...any) {
+	l.Errorf(format, a...)
 	os.Exit(1)
 }
 
-func (l *Logger) printLog(level, msg string, data map[string]string) {
-	if data != nil && len(data) > 0 {
-		log.Printf("[%s] %s\n", level, msg)
-		for k, v := range data {
-			log.Printf("    %s=%s", k, v)
-		}
-		log.Println("")
-	} else {
-		log.Printf("[%s] %s\n", level, msg)
-	}
+func (l *Logger) printf(c color.Attribute, format string, a ...any) {
+	color.New(c).Printf(format+"\n", a...)
 }
