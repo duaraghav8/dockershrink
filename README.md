@@ -208,8 +208,6 @@ twine upload dist/*
 9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
 
 ## Golang rewrite TODO
-- End to end testing
-- newly created .dockerignore has linebreak on 1st line
 - llm always puts depcheck as recommendation rather than applying it automatically.
 - multistage criteria doesn't seem to work (llm is still adding multistage when not needed.)
 - impose limits on input tokens (check size of Dockerfile + package.json + dir tree; check size of files being sent back as read_files() tool response)
