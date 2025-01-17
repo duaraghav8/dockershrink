@@ -33,7 +33,15 @@ func (d *Dockerignore) AddIfNotPresent(entries []string) []string {
 	}
 
 	if len(toBeAdded) > 0 {
-		d.rawData = strings.TrimSpace(d.rawData) + "\n" + strings.Join(toBeAdded, "\n")
+		joined := strings.Join(toBeAdded, "\n")
+		trimmed := strings.TrimSpace(d.rawData)
+		if trimmed == "" {
+			// If dockerignore is empty, just join the new entries
+			d.rawData = joined
+		} else {
+			// If not empty, add a newline before new entries
+			d.rawData = trimmed + "\n" + joined
+		}
 	}
 
 	return toBeAdded

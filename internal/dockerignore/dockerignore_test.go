@@ -23,3 +23,18 @@ func TestDockerignore_AddIfNotPresent(t *testing.T) {
 		t.Errorf("expected no more added entries, got %v", added)
 	}
 }
+
+func TestDockerignore_AddIfNotPresent_Empty(t *testing.T) {
+	d := NewDockerignore("")
+	toAdd := []string{"dist", "coverage"}
+
+	added := d.AddIfNotPresent(toAdd)
+	if len(added) != 2 || added[0] != "dist" || added[1] != "coverage" {
+		t.Errorf("expected added entries ['dist','coverage'], got %v", added)
+	}
+
+	// Check the raw content has no leading newline
+	if d.Raw() != "dist\ncoverage" {
+		t.Errorf("expected 'dist\\ncoverage', got %q", d.Raw())
+	}
+}
