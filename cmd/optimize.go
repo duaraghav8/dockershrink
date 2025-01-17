@@ -33,7 +33,7 @@ var (
 	packageJsonPath  string
 	outputDir        string
 	openaiApiKey     string
-	verbose          bool
+	debug            bool
 )
 
 func init() {
@@ -42,15 +42,13 @@ func init() {
 	optimizeCmd.Flags().StringVar(&packageJsonPath, "package-json", "", "Path to package.json (default: ./package.json or ./src/package.json)")
 	optimizeCmd.Flags().StringVar(&outputDir, "output-dir", "dockershrink.optimized", "Directory to save optimized files")
 	optimizeCmd.Flags().StringVar(&openaiApiKey, "openai-api-key", "", "OpenAI API key to enable Generative AI features (alternatively, set the OPENAI_API_KEY environment variable)")
-	optimizeCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Print complete stack trace in case of failures")
+	optimizeCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Output detailed logs for debugging")
 
 	rootCmd.AddCommand(optimizeCmd)
 }
 
 func runOptimize(cmd *cobra.Command, args []string) {
-	logger := log.NewLogger(verbose)
-
-	// TODO: replace all print statements here with logger calls
+	logger := log.NewLogger(debug)
 
 	// Initialize AI service if API key is provided or environment variable is set
 	var aiService *ai.AIService
@@ -157,7 +155,7 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	response, err := proj.OptimizeDockerImage(aiService)
 	if err != nil {
 		color.Red("Error optimizing Docker image: %s", err)
-		if verbose {
+		if debug {
 			fmt.Println(err)
 		}
 		os.Exit(1)
