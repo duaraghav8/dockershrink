@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/duaraghav8/dockershrink/internal/ai/promptcreator"
+	"github.com/duaraghav8/dockershrink/internal/dockerfile"
 	"github.com/duaraghav8/dockershrink/internal/log"
 	"github.com/openai/openai-go"
 )
@@ -126,6 +127,18 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 					"dockerfile": optimizeResponse.Dockerfile,
 				},
 			)
+
+			ok, err := dockerfile.Validate(optimizeResponse.Dockerfile)
+			if !ok {
+				data := map[string]string{
+					"error": err.Error(),
+				}
+				ai.L.Debug("LLM returned an invalid Dockerfile", data)
+
+				feedback, _ := promptcreator.ConstructPrompt(InvalidDockerfileInResponsePrompt, data)
+				params.Messages.Value = append(params.Messages.Value, openai.SystemMessage(feedback))
+				continue
+			}
 
 			return &optimizeResponse, nil
 		} else {

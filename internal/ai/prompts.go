@@ -276,3 +276,9 @@ const ToolReadFilesNoFilesSpecifiedPrompt = "No files were specified for the fun
 
 const RequestedFileNotFoundPrompt = `{{ .Filepath }}: No such file or directory was found.
 You can try to fix the path and call the function again or skip this file.`
+
+const InvalidDockerfileInResponsePrompt = `The Dockerfile code you've provided is invalid.
+Below is the error received when parsing the code:
+{{ .error }}
+
+Please correct the Dockerfile code.`
