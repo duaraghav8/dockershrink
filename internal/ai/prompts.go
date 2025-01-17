@@ -270,5 +270,7 @@ const ToolReadFilesResponseSingleFilePrompt = `{{ .Filepath }}
 
 `
 
+const ToolReadFilesNoFilesSpecifiedPrompt = "No files were specified for the function, so I have nothing to return to you."
+
 const RequestedFileNotFoundPrompt = `{{ .Filepath }}: No such file or directory was found.
 You can try to fix the path and call the function again or skip this file.`
