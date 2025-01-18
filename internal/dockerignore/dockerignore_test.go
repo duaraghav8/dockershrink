@@ -38,3 +38,30 @@ func TestDockerignore_AddIfNotPresent_Empty(t *testing.T) {
 		t.Errorf("expected 'dist\\ncoverage', got %q", d.Raw())
 	}
 }
+
+func TestDockerignore_AddIfNotPresent_TrailingSlashHandling(t *testing.T) {
+	// dockerignore already contains "node_modules"
+	d := NewDockerignore("node_modules/\nbuild\n.git/\n.github")
+	toAdd := []string{"node_modules", ".git", ".github"}
+
+	// Attempt to add "node_modules/"
+	added := d.AddIfNotPresent(toAdd)
+	if len(added) != 0 {
+		t.Errorf("expected 0 entries added, got %v", added)
+	}
+
+	// Ensure the content wasn't duplicated
+	if strings.Count(d.Raw(), "node_modules") != 1 {
+		t.Errorf("expected only one 'node_modules' entry, got %q", d.Raw())
+	}
+
+	d = NewDockerignore("node_modules/\nbuild\n.git/\n\n")
+	added = d.AddIfNotPresent(toAdd)
+
+	if len(added) != 1 {
+		t.Errorf("expected only 1 entry added, got %v", added)
+	}
+	if added[0] != ".github" {
+		t.Errorf("expected added entry '.github', got %q", added[0])
+	}
+}

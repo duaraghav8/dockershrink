@@ -210,7 +210,6 @@ twine upload dist/*
 ## Golang rewrite TODO
 - end to end testing over all candidate projects
 
-- read prompt optimization guide
 - experiment with temperature
 - LLM put depcheck as both recommendation and action taken. should not have put in recommendation.
 - llm is trying to forcefully add "npm prune". instead, just try to do a fresh install with --production
