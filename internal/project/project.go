@@ -122,7 +122,8 @@ func (p *Project) optimizeDockerignore() {
 		p.addActionTaken(action)
 	}
 
-	entries := []string{"node_modules", "npm_debug.log", ".git"}
+	// TODO: check if we could simply use defaultDirsExcludedFromTreeStructure from cmd/utils.go
+	entries := []string{"node_modules", "npm_debug.log", ".git", ".github"}
 	added := p.dockerignore.AddIfNotPresent(entries)
 	if len(added) > 0 {
 		action := &models.OptimizationAction{
