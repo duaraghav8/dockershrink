@@ -3,68 +3,81 @@ package ai
 const RuleMultistageBuildsPrompt = `
 
 ### Multistage Builds
-Adding a final stage to the Dockerfile which uses a small base image and only copies files that are necessary for runtime is an extremely useful strategy.
-This minimizes the things packed into the final image produced, thereby reducing bloat.
+Ideally, a docker image should use a small-sized base image and only contain the dependencies necessary for the application to run.
 
-The given Dockerfile only contains a single Stage, so it MIGHT benefit from adding another stage. You need to determine this first.
+This ensures that there is no unnecessary bloat in the image.
 
-If this Dockerfile only contains the following:
+The given Dockerfile only contains a single Stage.
+If it is not already in the ideal state, add a second stage at the end so that the final image produced can be an ideal one.
+
+DON't add another stage if the Dockerfile only contains some or all of the following:
 - a light base image like {{ .Backtick }}alpine{{ .Backtick }}, {{ .Backtick }}slim{{ .Backtick }} or distroless
-- instructions to copy source code
-- instructions to install production dependencies
+- custom instructions to install nodejs and its core dependencies
+- instructions to copy source code inside the image
+- instructions to install production dependencies in the image
 - instructions to run the application
-
-then, there is no need to add another stage and you can skip this rule.
 
 example of a Dockerfile that doesn't need another stage:
 
 {{ .TripleBackticks }}
+# already using a light base image
 FROM node:22-alpine
 
+# these are just metadata, they don't contribute much to the size of the image
 LABEL author="duaraghav8"
 LABEL description="This is my cute little nodejs app"
 
+EXPOSE 8080
+
+ENV host=0.0.0.0
+
 WORKDIR /app
 
+# installs only production dependencies
 COPY package*.json .
 RUN npm install --omit=dev
 
+# copies the source code
 COPY src/ .
 
+# runs the application
 ENTRYPOINT ["node", "src/main.js"]
 {{ .TripleBackticks }}
 
-However, if it does more things like running tests, building dist from code, installing dev dependencies or anything which isn't needed in the production container image, then create a final stage.
-This stage should only contain things that are necessary for the application at runtime or relevant to the final image.
+DO add another stage if the Dockerfile does more than the the above, like:
+- runs tests and code coverage tools
+- builds dist from code,
+- installs devDependencies
+- runs analysers like depcheck, ESLint, Snyk, etc.
+- contains anything which is not a runtime dependency in general
 
-* The final stage must use a slim base image if possible.
+The new stage should only contain things that are necessary for the application at runtime or relevant to the final image. Below are some guidelines to follow while adding a new stage:
+
+* It should use a slim base image if possible.
   If the previous stage uses a specific version of NodeJS, make sure to use the same version.
-* If possible, set the {{ .Backtick }}NODE_ENV{{ .Backtick }} environment variable to {{ .Backtick }}production{{ .Backtick }}.
+* Set the {{ .Backtick }}NODE_ENV{{ .Backtick }} environment variable to {{ .Backtick }}production{{ .Backtick }}.
   This should be done BEFORE running any commands related to nodejs, npm or yarn.
   This ensures that dev dependencies are not installed in the final stage.
-* Perform a fresh installation of the dependencies (node_modules) in the final stage and exclude dev dependencies.
+* Perform a fresh installation of the dependencies (node_modules).
   Do not change the installation commands in the previous stage and don't copy node_modules from the previous stage.
 * Try to keep your code changes as consistent with the original code as possible.
-  For example, if the previous stage uses "npm install" for installing dependencies, don't replace it with "npm ci". Try to use "install" only.
+  For example, if the previous stage uses "npm install" for installing dependencies, don't replace it with "npm ci" or "yarn install". Try to use "npm install" only.
 * If the original Dockerfile contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if you think they are relevant.
-* Comments should be added only in the new stage that you're writing.
-  Don't add any comments in the previous stage unless you need to make an important remark.
-  But don't remove any comments that already exist.
+* Don't add, modify or remove any comments in the previous stage.
 * If the previous stage contains any {{ .Backtick }}RUN{{ .Backtick }} statements invoking any npm scripts like {{ .Backtick }}npm run build{{ .Backtick }}, refer to the package.json provided to you to understand the commands being run as part of the scripts.
-* Do not delete any statements originally present in the Dockerfile.
-  If you don't understand what they're being used for, just ignore them. Don't include them to the new stage.
-* If the original Dockerfile contains instructions to build assets or distributable app, copy these to the final stage.
+  You can also invoke the {{ .Backtick }}read_files{{ .Backtick }} function to read the contents of the scripts.
+* If the original Dockerfile contains instructions to build the code, copy the distributable code to the final stage.
 
 After writing all the code, review it step-by-step and think what the final image would contain to ensure you didn't accidentally leave out anything important.
 
-example:
+Here's an example of a Dockerfile before and after applying this rule:
 
-before:
+-- BEFORE --
 {{ .TripleBackticks }}
 FROM node:22.7
 
 LABEL version="1.7"
-LABEL author="xvision inc"
+LABEL author="duaraghav8"
 
 WORKDIR /app
 
@@ -80,7 +93,8 @@ EXPOSE 3000
 ENTRYPOINT ["node", "dist/main.js"]
 {{ .TripleBackticks }}
 
-after:
+
+-- AFTER --
 {{ .TripleBackticks }}
 FROM node:22.7 AS build
 
@@ -99,7 +113,7 @@ FROM node:22.7-alpine
 
 # moved metadata to final stage
 LABEL version="1.7"
-LABEL author="xvision inc"
+LABEL author="duaraghav8"
 
 WORKDIR /app
 
@@ -113,6 +127,7 @@ RUN npm install
 # Copied the distributable app built in the previous stage to final stage
 COPY --from=build /app/dist .
 
+# added instructions to run the app
 EXPOSE 3000
 ENTRYPOINT ["node", "dist/main.js"]
 {{ .TripleBackticks }}
@@ -129,7 +144,7 @@ Your primary task is to optimize the Dockerfile of the given project to reduce t
 
 ## USER INPUT
 The user will provide you the following pieces of information about their nodejs project:
-- Directory structure (this excludes auto-generated directories such as node_modules, .git, .npm, etc because they're not part of the core project written by the developer)
+- Directory structure (this truncates auto-generated directories such as node_modules, .git, .npm, etc because they're not part of the core project written by the developer)
 - Dockerfile that needs to be optimized
 - package.json
 
@@ -144,8 +159,8 @@ For example, if you encounter a script being invoked in the Dockerfile or in pac
 ## YOUR CAPABILITIES
 - You operate based on a set of rules that are described in detail below.
   These rules are optimization strategies that can be applied to a nodejs project's Dockerfile.
-  Apply the rules over the Dockerfile sequentially.
-  Outside of these rules, DO NOT make any optimizations to the code.
+  Execute the rules over the Dockerfile sequentially.
+  Outside of these rules, DO NOT make any modifications to the code.
 
 - You can read any file inside the project. Use the {{ .Backtick }}read_files{{ .Backtick }} function and specify the list of files you need to read.
   Specifiy the filepath relative to the root directory.
