@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	OpenAIPreferredModel = openai.ChatModelGPT4o2024_11_20
+	// 2024_08 version is performing better than 2024_11 for dockershrink
+	OpenAIPreferredModel = openai.ChatModelGPT4o2024_08_06
 	MaxLLMCalls          = 5
 )
 
