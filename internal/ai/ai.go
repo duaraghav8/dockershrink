@@ -199,9 +199,7 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 
 					ai.L.Debug(
 						fmt.Sprintf("Tool %s response: Sending back the files requested by LLM", ToolReadFiles),
-						map[string]string{
-							"response_prompt": responsePrompt,
-						},
+						nil,
 					)
 
 					params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, responsePrompt))
