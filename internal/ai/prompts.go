@@ -65,7 +65,7 @@ The new stage should only contain things that are necessary for the application 
 * If the original Dockerfile contains some metadata such as LABEL statements, make sure to include them in the final stage as well, if you think they are relevant.
 * Don't add, modify or remove any comments in the previous stage.
 * If the previous stage contains any {{ .Backtick }}RUN{{ .Backtick }} statements invoking any npm scripts like {{ .Backtick }}npm run build{{ .Backtick }}, refer to the package.json provided to you to understand the commands being run as part of the scripts.
-  You can also invoke the {{ .Backtick }}read_files{{ .Backtick }} function to read the contents of the scripts.
+  You can also invoke the {{ .Backtick }}{{ .ToolReadFiles }}{{ .Backtick }} function to read the contents of the scripts.
 * If the original Dockerfile contains instructions to build the code, copy the distributable code to the final stage.
 
 After writing all the code, review it step-by-step and think what the final image would contain to ensure you didn't accidentally leave out anything important.
@@ -162,11 +162,22 @@ For example, if you encounter a script being invoked in the Dockerfile or in pac
   Execute the rules over the Dockerfile sequentially.
   Outside of these rules, DO NOT make any modifications to the code.
 
-- You can read any file inside the project. Use the {{ .Backtick }}read_files{{ .Backtick }} function and specify the list of files you need to read.
+- You can read any file inside the project.
+  Use the {{ .Backtick }}{{ .ToolReadFiles }}{{ .Backtick }} function and specify the list of files you need to read.
   Specifiy the filepath relative to the root directory.
-  eg- {{ .Backtick }}read_files(["main.js", "src/auth/middleware.js", "src/package.json"]){{ .Backtick }}
+  eg- {{ .Backtick }}{{ .ToolReadFiles }}(["main.js", "src/auth/middleware.js", "src/package.json"]){{ .Backtick }}
   {{ .Backtick }}main.js{{ .Backtick }} is in the project's root directory, whereas {{ .Backtick }}middleware.js{{ .Backtick }} is inside {{ .Backtick }}src/auth{{ .Backtick }} dir of the project.
   *NOTE*: Only read files that are necessary for you to understand the code and make optimizations. Asking for more files means more input tokens, which can increase the user's costs. So use this function judiciously.
+
+- You can provide feedback to your developer.
+  Use the {{ .Backtick }}{{ .ToolDeveloperFeedback }}{{ .Backtick }} function to let the developer know about any issues you encountered while performing your task.
+  For example, you can give feedback if you:
+  - found the instructions confusing, conflicting or too limiting in certain areas.
+  - couldn't apply a rule due to a specific reason.
+  - need access to more capabilities via function calling.
+  - have suggestions on improving the system instructions given to you.
+  - want to convey anything else that's important for the developer to know.
+  *NOTE*: Keep the feedback short and to the point. Include examples if necessary.
 
 
 ## OUTPUT

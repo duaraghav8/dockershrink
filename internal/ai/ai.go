@@ -19,8 +19,6 @@ const (
 	MaxLLMCalls          = 5
 )
 
-const ToolReadFiles = "read_files"
-
 type AIService struct {
 	L      *log.Logger
 	client *openai.Client
@@ -58,28 +56,6 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 		Schema:      openai.F(optimizeResponseSchema),
 		Strict:      openai.Bool(true),
 	}
-	availableTools := []openai.ChatCompletionToolParam{
-		{
-			Type: openai.F(openai.ChatCompletionToolTypeFunction),
-			Function: openai.F(openai.FunctionDefinitionParam{
-				Name:        openai.String(ToolReadFiles),
-				Description: openai.String("Read the contents of specific files inside the project"),
-				Parameters: openai.F(openai.FunctionParameters{
-					"type": "object",
-					"properties": map[string]interface{}{
-						"filepaths": map[string]interface{}{
-							"type":        "array",
-							"items":       map[string]interface{}{"type": "string"},
-							"description": "List of files to read. Each item in the array is a file path relative to the project root directory.",
-						},
-					},
-					"required": []string{"filepaths"},
-				}),
-			}),
-		},
-	}
-	// TODO: Enable "get_documentation" tool call
-
 	params := openai.ChatCompletionNewParams{
 		Messages: openai.F(messages),
 		Tools:    openai.F(availableTools),
@@ -229,6 +205,25 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 					)
 
 					params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, responsePrompt))
+					continue
+				}
+
+				if toolCall.Function.Name == ToolDeveloperFeedback {
+					var extractedParams struct {
+						Feedback string `json:"feedback"`
+					}
+					if err := json.Unmarshal([]byte(toolCall.Function.Arguments), &extractedParams); err != nil {
+						return nil, fmt.Errorf("failed to parse %s function call arguments (%s) from LLM: %w", ToolDeveloperFeedback, toolCall.Function.Arguments, err)
+					}
+
+					ai.L.Debug(
+						fmt.Sprintf("Received feedback for Developer from LLM"),
+						map[string]string{
+							"feedback": extractedParams.Feedback,
+						},
+					)
+
+					params.Messages.Value = append(params.Messages.Value, openai.ToolMessage(toolCall.ID, extractedParams.Feedback))
 				}
 			}
 		}
@@ -239,8 +234,10 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 
 func (ai *AIService) constructSystemInstructions(req *OptimizeRequest) (string, error) {
 	data := map[string]string{
-		"Backtick":        "`",
-		"TripleBackticks": "```",
+		"Backtick":              "`",
+		"TripleBackticks":       "```",
+		"ToolReadFiles":         ToolReadFiles,
+		"ToolDeveloperFeedback": ToolDeveloperFeedback,
 	}
 
 	multistageBuildsPrompt := ""
