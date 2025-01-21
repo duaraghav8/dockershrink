@@ -15,7 +15,7 @@ from colorama import init, Fore, Style
 # Initialize colorama
 init(autoreset=True)
 
-VERSION = "0.1.5"
+VERSION = "0.1.6"
 
 
 def add_common_arguments(parser):
