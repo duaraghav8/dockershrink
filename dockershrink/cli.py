@@ -46,13 +46,13 @@ def add_common_arguments(parser):
     )
 
 
-def setup_ai_service(args):
+def setup_ai_service(args, required: bool = False):
     """Initialize OpenAI client if API key is provided"""
     openai_api_key = args.openai_api_key or os.getenv("OPENAI_API_KEY")
 
     if openai_api_key:
         return dockershrink.AIService(OpenAI(api_key=openai_api_key))
-    else:
+    if required:
         print(f"{Fore.RED}OpenAI API key not provided")
         sys.exit(1)
 
@@ -150,7 +150,7 @@ def version_command(args):
 
 
 def optimize_command(args):
-    ai_service = setup_ai_service(args)
+    ai_service = setup_ai_service(args, required=False)
 
     # Read Dockerfile
     dockerfile_path = Path(args.dockerfile)
@@ -241,7 +241,7 @@ def optimize_command(args):
 
 
 def generate_command(args):
-    ai_service = setup_ai_service(args)
+    ai_service = setup_ai_service(args, required=True)
 
     package_json_paths = (
         [Path(args.package_json)]
