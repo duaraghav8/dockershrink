@@ -1,21 +1,17 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/duaraghav8/dockershrink/internal/ai"
 	"github.com/duaraghav8/dockershrink/internal/dockerfile"
 	"github.com/duaraghav8/dockershrink/internal/dockerignore"
 	"github.com/duaraghav8/dockershrink/internal/log"
-	"github.com/duaraghav8/dockershrink/internal/packagejson"
 	"github.com/duaraghav8/dockershrink/internal/project"
 	"github.com/duaraghav8/dockershrink/internal/restrictedfilesystem"
-	"github.com/duaraghav8/dockershrink/internal/tree"
 	"github.com/fatih/color"
-	"github.com/openai/openai-go"
-	"github.com/openai/openai-go/option"
 	"github.com/spf13/cobra"
 )
 
@@ -41,18 +37,7 @@ func init() {
 
 func runOptimize(cmd *cobra.Command, args []string) {
 	logger := log.NewLogger(debug)
-
-	// Initialize AI service if API key is provided or environment variable is set
-	var aiService *ai.AIService
-	if openaiApiKey == "" {
-		openaiApiKey = os.Getenv("OPENAI_API_KEY")
-	}
-	if openaiApiKey != "" {
-		client := openai.NewClient(
-			option.WithAPIKey(openaiApiKey),
-		)
-		aiService = ai.NewAIService(logger, client)
-	}
+	aiService, _ := getAIService(logger)
 
 	// Read Dockerfile
 	dockerfileContents, err := os.ReadFile(dockerfilePath)
@@ -78,35 +63,12 @@ func runOptimize(cmd *cobra.Command, args []string) {
 		dockerignorePath = ""
 	}
 
-	// Read package.json
-	var packageJson *packagejson.PackageJSON
-	if packageJsonPath != "" {
-		content, err := os.ReadFile(packageJsonPath)
-		if err != nil {
-			logger.Fatalf("Error reading package.json at %s: %v", packageJsonPath, err)
-		}
-		packageJson, err = packagejson.NewPackageJSON(string(content))
-		if err != nil {
-			logger.Fatalf("Failed to parse package.json: %v", err)
-		}
-	} else {
-		// Search default paths
-		paths := []string{"package.json", "src/package.json"}
-		for _, path := range paths {
-			if _, err := os.Stat(path); err == nil {
-				content, err := os.ReadFile(path)
-				if err != nil {
-					logger.Fatalf("Error reading package.json: %v", err)
-				}
-				packageJson, err = packagejson.NewPackageJSON(string(content))
-				if err != nil {
-					logger.Fatalf("Failed to parse package.json: %v", err)
-				}
-				break
-			}
-		}
-		if packageJson == nil {
-			logger.Warnf("* No package.json found in the default paths")
+	packageJson, err := getPackageJson()
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			logger.Warnf("* No package.json file found")
+		} else {
+			logger.Fatalf("Failed to read package.json: %v", err)
 		}
 	}
 
@@ -114,17 +76,9 @@ func runOptimize(cmd *cobra.Command, args []string) {
 	if err != nil {
 		logger.Fatalf("Error getting current working directory: %v", err)
 	}
-
-	// Create directory tree string representation for the LLM prompt
-	// Exclude all directories that don't directly contain the project's files.
-	// These dirs increase prompt token count without adding much value.
-	dirsExcludedFromTreeStructure := append(defaultDirsExcludedFromTreeStructure[:], outputDir)
-	cwdTree, err := tree.BuildTreeWithIgnore(cwd, dirsExcludedFromTreeStructure)
+	cwdTree, err := getDirTree(cwd)
 	if err != nil {
-		logger.Fatalf("Error building directory tree: %v", err)
-	}
-	if len(cwdTree) > dirTreeStrLenLimit {
-		cwdTree = cwdTree[:dirTreeStrLenLimit] + "\n... (truncated)"
+		logger.Fatalf("%v", err)
 	}
 
 	projectDirFS := restrictedfilesystem.NewRestrictedFilesystem(

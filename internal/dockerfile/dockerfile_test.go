@@ -7,6 +7,38 @@ import (
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 )
 
+func TestValidate(t *testing.T) {
+	t.Run("Valid Dockerfile", func(t *testing.T) {
+		validDockerfile := `FROM node:18-alpine
+RUN echo "Hello World"`
+		ok, err := Validate(validDockerfile)
+		if err != nil {
+			t.Fatalf("expected valid Dockerfile, got error: %v", err)
+		}
+		if !ok {
+			t.Fatal("expected Validate to return true for valid Dockerfile")
+		}
+	})
+
+	// TODO: enable this test once Validate() can detect dyntactical errors in Dockerfile
+	/*
+			t.Run("Syntax Error", func(t *testing.T) {
+				syntaxErrorDockerfile := `"""
+		FROM node:18-alpine
+		RUN echo "Hello World"
+		"""
+		Some random gibberish text`
+				ok, err := Validate(syntaxErrorDockerfile)
+				if err == nil {
+					t.Fatal("expected an error for Dockerfile with syntax error, got nil")
+				}
+				if ok {
+					t.Fatal("expected Validate to return false for Dockerfile with syntax error")
+				}
+			})
+	*/
+}
+
 func TestDockerfile_GetStageCount(t *testing.T) {
 	dockerfileContent := `FROM node:18-alpine
 FROM python:3.11

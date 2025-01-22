@@ -22,6 +22,16 @@ type OptimizeResponse struct {
 	ActionsTaken    []*models.OptimizationAction `json:"actions_taken" jsonschema_description:"List of modifictions made in the Dockerfile"`
 }
 
+type GenerateRequest struct {
+	PackageJSON      string
+	ProjectDirectory *restrictedfilesystem.RestrictedFilesystem
+}
+
+type GenerateResponse struct {
+	Dockerfile string `json:"dockerfile" jsonschema_description:"The generated dockerfile"`
+	Comments   string `json:"comments" jsonschema_description:"Additional comments"`
+}
+
 func GenerateSchema[T any]() interface{} {
 	// Structured Outputs uses a subset of JSON schema
 	// These flags are necessary to comply with the subset
@@ -36,3 +46,4 @@ func GenerateSchema[T any]() interface{} {
 
 // Generate the JSON schema at initialization time
 var optimizeResponseSchema = GenerateSchema[OptimizeResponse]()
+var generateResponseSchema = GenerateSchema[GenerateResponse]()

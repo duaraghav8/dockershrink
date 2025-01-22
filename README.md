@@ -222,6 +222,3 @@ twine upload dist/*
     - add all dev instructions (`go test ./...`, `fmt`, `mod tidy`, `mod vendor`, `get -u <package>`)
 - Make new release
 - Linkedin + Slack posts
-- Create TODO items in repo Issues
-    - allow more actions (documentation search, web search)
-    - Optimize prompt for cost

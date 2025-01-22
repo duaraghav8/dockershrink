@@ -9,3 +9,8 @@ type OptimizationResponse struct {
 	ActionsTaken    []*models.OptimizationAction
 	Recommendations []*models.OptimizationAction
 }
+
+type GenerationResponse struct {
+	Dockerfile   string
+	Dockerignore string
+}
