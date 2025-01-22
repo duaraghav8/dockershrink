@@ -55,7 +55,7 @@ Dockershrink looks for the following files:
 
 :point_right: `.dockerignore` (Optional, created if it doesn't already exist)
 
-It then creates a new directory (default: `dockershrink.optimized`) inside the project, which contains modified versions of your configuration files that will result in a smaller Docker Image.
+It then creates a new directory (default: `dockershrink.out`) inside the project, which contains modified versions of your configuration files that will result in a smaller Docker Image.
 
 The CLI outputs a list of actions it took over your files.
 
@@ -208,18 +208,19 @@ twine upload dist/*
 9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
 
 ## Golang rewrite TODO
-- end to end testing over all candidate projects
+- end to end testing over candidate projects
 
-- LLM put depcheck as both recommendation and action taken. should not have put in recommendation.
-- llm is trying to forcefully add "npm prune". instead, just try to do a fresh install with --production
+- with gpt 4o 2024_08 version, it seems like the llm gives the answer straightaway.
+  2024_11 does the opposite (tries to view a lot of code files recursively)
+  Test whether it asks to examine a build script (make dummy build script which actually adds more size to image)
+- (project TestTaskGpn) LLM didn't add action or recommendation for depcheck
 - test whether multistage criteria works well or not
 - impose limits on input tokens (check size of Dockerfile + package.json + dir tree; check size of files being sent back as read_files() tool response)
 
 - fix homebrew-dockershrink repo
-- Implement `generate` command
-- Make new release
 - Update README
     - add all dev instructions (`go test ./...`, `fmt`, `mod tidy`, `mod vendor`, `get -u <package>`)
+- Make new release
 - Linkedin + Slack posts
 - Create TODO items in repo Issues
     - allow more actions (documentation search, web search)
