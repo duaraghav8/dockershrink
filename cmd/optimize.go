@@ -19,30 +19,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var optimizeCmd = &cobra.Command{
-	Use:   "optimize",
-	Short: "Optimizes the Docker image definition for a project",
-	Long: `Optimizes the Dockerfile and .dockerignore files and provides recommendations where applicable.
-NOTE: This command currently only supports NodeJS projects.`,
-	Run: runOptimize,
-}
-
 var (
 	dockerfilePath   string
 	dockerignorePath string
-	packageJsonPath  string
-	outputDir        string
-	openaiApiKey     string
-	debug            bool
 )
+
+var optimizeCmd = &cobra.Command{
+	Use:   "optimize",
+	Short: "Optimizes the Docker image definition for a project",
+	Long: `Optimizes the Dockerfile and .dockerignore files for a NodeJS project and provides recommendations where applicable.
+OpenAI API key is optional for this command, but it is recommended to provide one for better results.`,
+	Run: runOptimize,
+}
 
 func init() {
 	optimizeCmd.Flags().StringVar(&dockerfilePath, "dockerfile", "Dockerfile", "Path to Dockerfile")
 	optimizeCmd.Flags().StringVar(&dockerignorePath, "dockerignore", ".dockerignore", "Path to .dockerignore")
-	optimizeCmd.Flags().StringVar(&packageJsonPath, "package-json", "", "Path to package.json (default: ./package.json or ./src/package.json)")
-	optimizeCmd.Flags().StringVar(&outputDir, "output-dir", "dockershrink.optimized", "Directory to save optimized files")
-	optimizeCmd.Flags().StringVar(&openaiApiKey, "openai-api-key", "", "OpenAI API key to enable Generative AI features (alternatively, set the OPENAI_API_KEY environment variable)")
-	optimizeCmd.Flags().BoolVarP(&debug, "debug", "d", false, "Output detailed logs for debugging")
 
 	rootCmd.AddCommand(optimizeCmd)
 }
