@@ -40,7 +40,7 @@ func NewProject(
 }
 
 func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationResponse, error) {
-	p.optimizeDockerignore()
+	p.createAndOptimizeDockerignore()
 
 	// Optimize Dockerfile
 	originalDockerfile := p.dockerfile
@@ -60,7 +60,7 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 
 		p.dockerfile, err = dockerfile.NewDockerfile(resp.Dockerfile)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse Dockerfile returned by AI service: %w", err)
+			return nil, fmt.Errorf("Failed to process Dockerfile returned by AI service: %w", err)
 		}
 
 		for _, r := range resp.Recommendations {
@@ -98,6 +98,29 @@ func (p *Project) OptimizeDockerImage(aiService *ai.AIService) (*OptimizationRes
 	}, nil
 }
 
+func (p *Project) GenerateDockerImage(aiService *ai.AIService) (*GenerationResponse, error) {
+	p.createAndOptimizeDockerignore()
+
+	req := &ai.GenerateRequest{
+		PackageJSON:      p.packageJSON.String(),
+		ProjectDirectory: p.directory,
+	}
+	resp_df, err := aiService.GenerateDockerfile(req)
+	if err != nil {
+		return nil, fmt.Errorf("AI service failed to generate Dockerfile: %w", err)
+	}
+
+	p.dockerfile, err = dockerfile.NewDockerfile(resp_df)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to process Dockerfile returned by AI service: %w", err)
+	}
+
+	return &GenerationResponse{
+		Dockerfile:   p.dockerfile.Raw(),
+		Dockerignore: p.dockerignore.Raw(),
+	}, nil
+}
+
 func (p *Project) addRecommendation(r *models.OptimizationAction) {
 	p.recommendations = append(p.recommendations, r)
 }
@@ -107,7 +130,7 @@ func (p *Project) addActionTaken(a *models.OptimizationAction) {
 }
 
 // optimizeDockerignore ensures that .dockerignore exists and contains the recommended entries
-func (p *Project) optimizeDockerignore() {
+func (p *Project) createAndOptimizeDockerignore() {
 	dockerignoreFilepath := p.directory.GetDockerignoreFilePath()
 	if p.dockerignore == nil {
 		dockerignoreFilepath = ".dockerignore"

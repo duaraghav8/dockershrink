@@ -37,6 +37,9 @@ func NewDockerfile(contents string) (*Dockerfile, error) {
 }
 
 // Validate validates the given Dockerfile code
+// This function is not fool-proof and may not detect syntactical errors in the Dockerfile.
+// the moby parser is permissive by design so this function needs to build custom checks
+// for further validation.
 func Validate(code string) (bool, error) {
 	_, err := parse(code)
 	return err == nil, err
