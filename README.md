@@ -17,6 +17,10 @@ Dockershrink can automatically apply techniques like Multi-Stage builds, switchi
 
 Currently, the tool only supports [NodeJS](https://nodejs.org/en) applications.
 
+It can:
+1. **Generate** optimized Docker image defintions (Dockerfile and .dockerignore) for new projects
+2. **Optimize** existing image definition by including best practices to avoid bloat
+
 
 > [!IMPORTANT]
 > Dockershrink is **BETA** software.
@@ -43,166 +47,125 @@ Dockershrink aims to automatically apply advanced optimization techniques so eng
 You're welcome :wink:
 
 
-
-## How it works
-When you invoke the dockershrink CLI on your project, it analyzes code files.
-
-Dockershrink looks for the following files:
-
-:point_right: `Dockerfile` (Required)
-
-:point_right: `package.json` (Optional)
-
-:point_right: `.dockerignore` (Optional, created if it doesn't already exist)
-
-It then creates a new directory (default: `dockershrink.optimized`) inside the project, which contains modified versions of your configuration files that will result in a smaller Docker Image.
-
-The CLI outputs a list of actions it took over your files.
-
-It may also include suggestions on further improvements you could make.
-
-
 ## Installation
-You can install dockershrink using PIP or PIPX
+Dockershrink is shipped as a stand-alone binary.
+
+You can either download it from the [Releases](https://github.com/duaraghav8/dockershrink/releases) Page or use [Homebrew](https://brew.sh/) to install it:
+
 ```bash
-$ pip install dockershrink
-```
-```bash
-$ pipx install dockershrink
+$ brew install duaraghav8/tap/dockershrink
 ```
 
-Alternatively, you can also install it using [Homebrew](https://brew.sh/):
-```bash
-brew install duaraghav8/tap/dockershrink
-```
-
-But you should prefer to use `pip` instead because installation via brew takes a lot longer and occupies significanlty more space on your system (see [this issue](https://github.com/duaraghav8/homebrew-dockershrink/issues/3))
+> [!IMPORTANT]
+> On MacOS, you will have to use homebrew because the compiled binary is not [Notarized](https://developer.apple.com/documentation/security/notarizing-macos-software-before-distribution).
 
 ## Usage
 
-Navigate into the root directory of one of your Node.js projects and invoke dockershrink with the `optimize` command:
+Navigate into the root directory of your Node.js project and invoke dockershrink:
 
 ```bash
+# To optimize existing Docker-related files
 $ dockershrink optimize
+
+# To generate new Docker files
+$ export OPENAI_API_KEY=...
+$ dockershrink generate
 ```
 
-Dockershrink will create a new directory with the optimized files and output the actions taken and (maybe) some more suggestions.
+Dockershrink creates a new directory which contains the files produced by it.
+By default, this directory is `dockershrink.out`.
 
-For detailed information about the `optimize` command, run
+For detailed information about a command, run
 
 ```bash
-dockershrink optimize --help
+$ dockershrink help optimize
+$ dockershrink help generate
 ```
 
-You can also use the `--verbose` option to get stack traces in case of failures:
+You can also use the `--debug` option to get DEBUG logs. These are especially helpful during troubleshooting.
 
 ```bash
-$ dockershrink optimize --verbose
-```
-
-To enable `DEBUG` logs, you can set the environment variable
-
-```bash
-export DOCKERSHRINK_CLI_LOGLEVEL=DEBUG
-dockershrink optimize
+$ dockershrink generate --debug
 ```
 
 ### Using AI Features
 
 > [!NOTE]
-> Using AI features is optional, but **highly recommended** for more customized and powerful optimizations.
->
-> To use AI, you need to supply your own OpenAI API key, so even though Dockershrink itself is free, openai usage might incur some cost for you.
+> Using AI features is optional for "optimize" (but highly recommended) and mandatory for "generate".
 
-By default, dockershrink only runs rule-based analysis to optimize your image definition.
 
 If you want to enable AI, you must supply your [OpenAI API Key](https://openai.com/index/openai-api/).
+
+So even though Dockershrink itself is free, openai usage might incur some cost for you.
 
 ```bash
 dockershrink optimize --openai-api-key <your openai api key>
 
 # Alternatively, you can supply the key as an environment variable
 export OPENAI_API_KEY=<your openai api key>
-dockershrink optimize
+dockershrink generate
 ```
 
 > [!NOTE]
 > Dockershrink does not store your OpenAI API Key.
 >
-> So you must provide your key every time you want "optimize" to use AI features.
+> So you must provide your key every time you want Dockershrink to use it.
 > This is to avoid any unexpected costs.
-
-
-### Default file paths
-By default, the CLI looks for the files to optimize in the current directory.
-
-You can also specify the paths to all files using options (see `dockershrink optimize --help` for the available options).
 
 ---
 
 ## Development :computer:
-
 > [!NOTE]
 > This section is for authors and contributors.
-> If you're simply interested in using Dockershrink, you can skip this section.
+> If you're simply interested in using Dockershrink, you can skip it.
 
-1. Clone this repository
-2. Navigate inside the root directory of the project and create a new virtual environment
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-3. Install all dependencies
-```bash
-pip install --no-cache-dir -r requirements.txt
-```
-4. Install the editable CLI tool
-```bash
-# -e ensures that the tool is editable, ie, code changes reflect in the tool immediately, without having to re-install it
-pip install -e .
 
-# Try running the cli
-dockershrink --help
-```
-5. Make your code changes
-6. Run black
+### Prerequisites
+
+- Clone this repository on to your local machine.
+- Make sure [Golang](https://golang.org/dl/) is installed on your system (at least version 1.23)
+- Make sure [Docker](https://www.docker.com/get-started) installed on your system and the Docker daemon is running.
+- Install [GoReleaser](https://goreleaser.com/) (at least version 2.4)
+
+### Development
+1. After cloning this repository, navigate inside the root directory of the project
+2. Run tests to ensure everything is working
 ```bash
-black .
+go test ./...
 ```
-7. In case of any changes in dependencies, update requirements.txt
+3. Make your code changes, add relevant tests.
+4. Tidy up and make sure all tests pass
 ```bash
-pip freeze > requirements.txt
+go mod tidy
+go mod vendor
+go test ./...
 ```
 
-### Release :rocket:
-Once all code changes have been made for the next release:
-- Upgrade the version in [pyproject.toml](./pyproject.toml) and [cli.py](./dockershrink/cli.py)
-- Make sure that dependencies and their versions are updated in [requirements.txt](./requirements.txt) and pyproject.toml
+### Build for local testing
+```bash
+# Single binary
+goreleaser build --single-target --clean --snapshot
 
-Then proceed to follow these steps to release new dockershrink version on PyPI:
+# All binaries
+goreleaser release --snapshot --clean
+```
 
-1. Build dockershrink from source
+### Create a new release
+1. Create a Git Tag with the new version
+
 ```bash
-python -m build
+git tag -a v0.1.0 -m "Release version 0.1.0"
+git push origin v0.1.0
 ```
-2. Upload to testpypi
+
+2. Release
 ```bash
-twine upload --repository testpypi dist/*
+# Make sure GPG is present on your system and you have a default key which is added to Github.
+
+# set your github access token
+export GITHUB_TOKEN="<your GH token>"
+
+goreleaser release --clean
 ```
-3. The new version of the package should now be available in [TestPyPI](https://test.pypi.org/project/dockershrink/).
-4. Try installing the test package
-```bash
-pip install --index-url https://test.pypi.org/simple/ --no-deps dockershrink
-```
-5. Create a new Tag and push it
-```bash
-git tag -a <VERSION> -m "Tag version <VERSION>"
-git push origin <VERSION>
-```
-6. [Create a new release](https://github.com/duaraghav8/dockershrink/releases/new) in this repository
-7. Upload the package to PyPI
-```bash
-twine upload dist/*
-```
-8. The new version of the package should now be available in [PyPI](https://pypi.org/project/dockershrink/)
-9. Update the package in [Dockershrink Homebrew Tap](https://github.com/duaraghav8/homebrew-dockershrink) as well.
+
+This will create a new release under Releases and also make it available via Homebrew.

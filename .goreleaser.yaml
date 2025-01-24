@@ -1,0 +1,50 @@
+version: 2
+
+project_name: dockershrink
+
+before:
+  hooks:
+    - go test ./...
+    - go mod tidy
+
+builds:
+  - id: dockershrink
+    main: ./main.go
+    binary: dockershrink
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/duaraghav8/dockershrink/cmd.Version={{.Version}}
+
+archives:
+  - format_overrides:
+      - format: zip
+        goos: windows
+
+checksum:
+  name_template: "checksums.txt"
+
+signs:
+  - artifacts: checksum
+
+changelog:
+  disable: true
+
+brews:
+  - url_template: "https://github.com/duaraghav8/dockershrink/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+    commit_author:
+      name: "Raghav Dua"
+    homepage: "https://github.com/duaraghav8/dockershrink"
+    description: "AI tool to reduce the size of Docker images"
+    dependencies:
+      - name: "go"
+    repository:
+      owner: "duaraghav8"
+      name: "homebrew-dockershrink"
