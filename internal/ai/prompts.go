@@ -235,7 +235,7 @@ If the given Dockerfile is already invoking depcheck or npm-check, then you don'
 But if not, then add depcheck to the Dockerfile.
 
 * The easiest way to run depcheck is by running the command {{ .Backtick }}npx depcheck{{ .Backtick }}.
-  npx comes installed with npm so you can be sure that it already exists in the image.
+  Do not try to install npx. It already comes installed in a node docker image so any attempt to install npx will result in an error. Just directly run the depcheck command.
 * Add depcheck command as early as possible in the dockerfile, but only after the package.json and source code have been copied into the docker image.
   If you are unsure of when both of them have been copied, then you can simply add depcheck command after the last {{ .Backtick }}COPY{{ .Backtick }} statement in the Dockerfile.
 * In case the Dockerfile has multiple stages, always prefer to run depcheck during the build stage if possible.
