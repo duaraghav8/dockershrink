@@ -21,6 +21,9 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct system prompt: %w", err)
 	}
+
+	DistributeTokens(&req.Dockerfile, &req.PackageJSON)
+
 	userQuery, err := ai.constructOptimizeUserQuery(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to construct user prompt: %w", err)
