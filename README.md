@@ -8,7 +8,6 @@
 
 Dockershrink is an AI-powered Commandline Tool that helps you reduce the size of your Docker images
 
-
 ![Typical interaction with dockershrink CLI](./assets/images/dockershrink-how-it-works.gif)
 
 It combines the power of algorithmic analysis with Generative AI to apply state-of-the-art optimizations to your Image configurations :brain:
@@ -18,17 +17,17 @@ Dockershrink can automatically apply techniques like Multi-Stage builds, switchi
 Currently, the tool only supports [NodeJS](https://nodejs.org/en) applications.
 
 It can:
+
 1. **Generate** optimized Docker image defintions (Dockerfile and .dockerignore) for new projects
 2. **Optimize** existing image definition by including best practices to avoid bloat
 
-
 > [!IMPORTANT]
 > Dockershrink is **BETA** software.
-> 
+>
 > You can provide your feedback by [creating an Issue](https://github.com/duaraghav8/dockershrink/issues) in this repository.
 
-
 ## Why does dockershrink exist?
+
 Every org using containers in development or production environments understands the pain of managing hundreds or even thousands of bloated Docker images in their infrastructure.
 
 High data storage and transfer costs, long build times, underprodctive developers - we've seen it all.
@@ -46,8 +45,8 @@ Dockershrink aims to automatically apply advanced optimization techniques so eng
 
 You're welcome :wink:
 
-
 ## Installation
+
 Dockershrink is shipped as a stand-alone binary.
 
 You can either download it from the [Releases](https://github.com/duaraghav8/dockershrink/releases) Page or use [Homebrew](https://brew.sh/) to install it:
@@ -116,16 +115,24 @@ dockershrink generate
 **Examples:**
 
 - **OpenAI (default):**
+
   ```bash
   export DOCKERSHRINK_API_KEY="<your OpenAI API key>"
   dockershrink generate
   ```
 
 - **AWS Bedrock:**
+
   ```bash
   export DOCKERSHRINK_API_KEY="<your bedrock key>"
   export DOCKERSHRINK_BASE_URL="http://your-bedrock-endpoint"
   dockershrink generate
+  ```
+
+- **Ollama:**
+  ```bash
+  # Assumes you are running a model that [supports tool calling](https://ollama.com/blog/tool-support) locally with Ollama
+  dockershrink optimize --api-key 'ollama' --model "llama3.1"
   ```
 
 > [!NOTE]
@@ -137,10 +144,10 @@ dockershrink generate
 ---
 
 ## Development :computer:
+
 > [!NOTE]
 > This section is for authors and contributors.
 > If you're simply interested in using Dockershrink, you can skip it.
-
 
 ### Prerequisites
 
@@ -150,13 +157,17 @@ dockershrink generate
 - Install [GoReleaser](https://goreleaser.com/) (at least version 2.4)
 
 ### Development
+
 1. After cloning this repository, navigate inside the root directory of the project
 2. Run tests to ensure everything is working
+
 ```bash
 go test ./...
 ```
+
 3. Make your code changes, add relevant tests.
 4. Tidy up and make sure all tests pass
+
 ```bash
 go mod tidy
 go mod vendor
@@ -164,6 +175,7 @@ go test ./...
 ```
 
 ### Build for local testing
+
 ```bash
 # Single binary
 goreleaser build --single-target --clean --snapshot
@@ -173,6 +185,7 @@ goreleaser release --snapshot --clean
 ```
 
 ### Create a new release
+
 1. Create a Git Tag with the new version
 
 ```bash
@@ -181,6 +194,7 @@ git push origin v0.1.0
 ```
 
 2. Release
+
 ```bash
 # Make sure GPG is present on your system and you have a default key which is added to Github.
 
