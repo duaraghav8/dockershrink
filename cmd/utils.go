@@ -20,7 +20,7 @@ const (
 	OpenAIPreferredModel = openai.ChatModelGPT4o2024_08_06
 
 	ollamaKey            = "ollama"
-	ollamaDefaultBaseURL = "http://localhost:11434/v1"
+	ollamaDefaultBaseURL = "http://localhost:11434/v1/"
 )
 
 var defaultDirsExcludedFromTreeStructure = [...]string{

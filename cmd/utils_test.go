@@ -35,7 +35,7 @@ func TestResolveBaseURL_OllamaDefault(t *testing.T) {
     defer os.Unsetenv("DOCKERSHRINK_BASE_URL")
 
     got := resolveBaseURL()
-    want := "http://localhost:11434/v1"
+    want := "http://localhost:11434/v1/"
     if got != want {
         t.Errorf("expected %q, got %q", want, got)
     }
