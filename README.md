@@ -68,7 +68,7 @@ Navigate into the root directory of your Node.js project and invoke dockershrink
 $ dockershrink optimize
 
 # To generate new Docker files
-$ export OPENAI_API_KEY=...
+$ export DOCKERSHRINK_API_KEY=...
 $ dockershrink generate
 ```
 
@@ -93,21 +93,43 @@ $ dockershrink generate --debug
 > [!NOTE]
 > Using AI features is optional for "optimize" (but highly recommended) and mandatory for "generate".
 
+Dockershrink can use **any OpenAI-compatible API endpoint** for its AI features. This includes OpenAI, Anthropic, and AWS Bedrock.
 
-If you want to enable AI, you must supply your [OpenAI API Key](https://openai.com/index/openai-api/).
+If you want to enable AI, you must supply your API key and (optionally) a custom base URL for your chosen endpoint.
 
-So even though Dockershrink itself is free, openai usage might incur some cost for you.
+Requests will be sent to [OpenAI's API](https://openai.com/index/openai-api/) by default, if no base URL is provided.
+
+So even though Dockershrink itself is free, LLM usage might incur some cost for you.
 
 ```bash
-dockershrink optimize --openai-api-key <your openai api key>
+dockershrink optimize --api-key <your endpoint's api key> --base-url <your endpoint's base url>
+```
 
-# Alternatively, you can supply the key as an environment variable
-export OPENAI_API_KEY=<your openai api key>
+Or set them as environment variables:
+
+```bash
+export DOCKERSHRINK_API_KEY="<your endpoints api key>"
+export DOCKERSHRINK_BASE_URL="<your endpoints base url>"
 dockershrink generate
 ```
 
+**Examples:**
+
+- **OpenAI (default):**
+  ```bash
+  export DOCKERSHRINK_API_KEY="<your OpenAI API key>"
+  dockershrink generate
+  ```
+
+- **AWS Bedrock:**
+  ```bash
+  export DOCKERSHRINK_API_KEY="<your bedrock key>"
+  export DOCKERSHRINK_BASE_URL="http://your-bedrock-endpoint"
+  dockershrink generate
+  ```
+
 > [!NOTE]
-> Dockershrink does not store your OpenAI API Key.
+> Dockershrink does not store your provided API Key.
 >
 > So you must provide your key every time you want Dockershrink to use it.
 > This is to avoid any unexpected costs.

@@ -47,7 +47,7 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 				JSONSchema: openai.F(responseFormat),
 			},
 		),
-		Model: openai.F(OpenAIPreferredModel),
+		Model: openai.F(ai.model),
 	}
 
 	for i := 0; i < MaxLLMCalls; i++ {
@@ -75,7 +75,12 @@ func (ai *AIService) OptimizeDockerfile(req *OptimizeRequest) (*OptimizeResponse
 			optimizeResponse := OptimizeResponse{}
 			err = json.Unmarshal([]byte(response.Choices[0].Message.Content), &optimizeResponse)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse final response from LLM: %w", err)
+				return nil, fmt.Errorf(
+					"failed to parse final response from LLM: %w\n"+
+					"if you are using non OpenAI or Anthropic models (e.g. DeepSeek), it may not return valid JSON\n"+
+					"for best results, use an OpenAI or Anthropic model, as they support structured JSON output", 
+					err,
+				)
 			}
 
 			// TODO: also log the actions taken and recommendations

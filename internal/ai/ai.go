@@ -5,20 +5,18 @@ import (
 	"github.com/openai/openai-go"
 )
 
-const (
-	// 2024_08 version is performing better than 2024_11 for dockershrink
-	OpenAIPreferredModel = openai.ChatModelGPT4o2024_08_06
-	MaxLLMCalls          = 5
-)
+const MaxLLMCalls = 5
 
 type AIService struct {
 	L      *log.Logger
 	client *openai.Client
+	model	 string
 }
 
-func NewAIService(logger *log.Logger, client *openai.Client) *AIService {
+func NewAIService(logger *log.Logger, client *openai.Client, model string) *AIService {
 	return &AIService{
 		L:      logger,
 		client: client,
+		model:  model,
 	}
 }
