@@ -12,8 +12,16 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
-// max number of characters allowed in the directory tree structure
-const dirTreeStrLenLimit = 4400 // ~1K tokens in LLM prompt
+const (
+	// max number of characters allowed in the directory tree structure
+	dirTreeStrLenLimit   = 4400 // ~1K tokens in LLM prompt
+
+	// 2024_08 version is performing better than 2024_11 for dockershrink
+	OpenAIPreferredModel = openai.ChatModelGPT4o2024_08_06
+
+	ollamaKey            = "ollama"
+	ollamaDefaultBaseURL = "http://localhost:11434/v1/"
+)
 
 var defaultDirsExcludedFromTreeStructure = [...]string{
 	"node_modules",
@@ -33,20 +41,74 @@ var defaultDirsExcludedFromTreeStructure = [...]string{
 	// "dist",
 }
 
+func resolveAPIKey() string {
+	if apiKey != "" {
+		return apiKey
+	}
+	if key := os.Getenv("DOCKERSHRINK_API_KEY"); key != "" {
+		return key
+	}
+
+	// support legacy api key config if not provided via new config
+	if openaiApiKey != "" {
+		return openaiApiKey
+	}
+	if key := os.Getenv("OPENAI_API_KEY"); key != "" {
+		return key
+	}
+
+	return ""
+}
+
+func resolveBaseURL() string {
+	if baseUrl != "" {
+		return baseUrl
+	}
+	if url := os.Getenv("DOCKERSHRINK_BASE_URL"); url != "" {
+		return url
+	}
+
+	// use ollama default if base url not provided and apiKey == "ollama"
+	if resolveAPIKey() == ollamaKey {
+		return ollamaDefaultBaseURL
+	}
+
+	return ""
+}
+
+func resolveModel() string {
+	if model != "" {
+		return model
+	}
+	if m := os.Getenv("DOCKERSHRINK_MODEL"); m != "" {
+		return m
+	}
+
+	return OpenAIPreferredModel
+}
+
 // getAIService returns an instance of AIService if the OpenAI API key is set
 // this function does not treat the absence of openai API key as an error
 func getAIService(logger *log.Logger) (*ai.AIService, bool) {
-	if openaiApiKey == "" {
-		openaiApiKey = os.Getenv("OPENAI_API_KEY")
-	}
-	if openaiApiKey == "" {
-		// openai api key was neither provided as a flag nor as an environment variable
+	key := resolveAPIKey()
+	if key == "" {
+		// api key was not provided via a valid flag or environment variable
 		return nil, false
 	}
-	client := openai.NewClient(
-		option.WithAPIKey(openaiApiKey),
-	)
-	return ai.NewAIService(logger, client), true
+
+	opts := []option.RequestOption{option.WithAPIKey(key)}
+	url := resolveBaseURL()
+
+	if url != "" {
+		// add overridden base url as client argument
+		opts = append(opts, option.WithBaseURL(url))
+	}
+
+	client := openai.NewClient(opts...)
+
+	aiModel := resolveModel()
+	
+	return ai.NewAIService(logger, client, aiModel), true
 }
 
 // getPackageJson reads the package.json file and returns it as a PackageJSON object
